@@ -365,9 +365,15 @@ class SlackApp:
     def _handle_lobbylens_command(
         self, text: str, channel_id: str, user_id: str
     ) -> Dict[str, str]:
-        """Handle /lobbylens command for manual digest generation."""
-        if text.lower() == "digest":
-            # Generate manual digest
+        """Handle /lobbylens command for manual digest generation and LDA commands."""
+        if not text:
+            return self._lobbylens_help()
+        
+        parts = text.strip().split()
+        command = parts[0].lower()
+        
+        if command == "digest":
+            # Generate manual digest (V2 signals)
             try:
                 digest = self.digest_computer.compute_enhanced_digest(
                     channel_id, "daily"
@@ -395,17 +401,304 @@ class SlackApp:
                     "response_type": "ephemeral",
                     "text": f"❌ Failed to generate digest: {e}",
                 }
+        
+        elif command == "lda":
+            # Handle LDA subcommands
+            return self._handle_lda_subcommands(parts[1:], channel_id, user_id)
+        
         else:
+            return self._lobbylens_help()
+    
+    def _handle_lda_subcommands(self, args: List[str], channel_id: str, user_id: str) -> Dict[str, str]:
+        """Handle LDA subcommands."""
+        from .utils import is_lda_enabled
+        from .lda_digest import LDADigestComputer
+        
+        if not is_lda_enabled():
             return {
                 "response_type": "ephemeral",
-                "text": "🔍 **LobbyLens Commands:**\n"
-                "• `/lobbypulse` - Generate fresh lobbying digest\n"
-                "• `/watchlist` - Manage watchlist entities\n"
-                "• `/threshold` - Set alert thresholds\n"
-                "• `/summary` - Toggle filing descriptions\n"
-                "• `/lobbylens digest` - Generate manual digest\n\n"
-                "_Use `/lobbypulse help` for detailed usage._",
+                "text": "💵 LDA features are currently disabled. Set ENABLE_LDA_V1=true to enable."
             }
+        
+        if not args:
+            return self._lda_help()
+        
+        subcommand = args[0].lower()
+        
+        try:
+            lda_digest = LDADigestComputer(self.db_manager)
+            
+            if subcommand == "digest":
+                # Generate LDA digest
+                quarter = None
+                if len(args) > 1 and args[1].startswith("q="):
+                    quarter = args[1][2:]  # Extract quarter from q=2025Q3
+                
+                digest = lda_digest.compute_lda_digest(channel_id, quarter)
+                
+                # Post digest to channel
+                result = self.post_message(channel_id, digest)
+                
+                if result.get("ok"):
+                    # Record digest run
+                    self.db_manager.record_digest_run(channel_id, "lda_digest")
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "✅ LDA digest generated and posted to channel."
+                    }
+                else:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": f"❌ Failed to post LDA digest: {result.get('error', 'Unknown error')}"
+                    }
+            
+            elif subcommand == "top":
+                if len(args) < 2:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "Usage: `/lobbylens lda top registrants [q=2025Q3] [n=10]` or `/lobbylens lda top clients [q=2025Q3] [n=10]`"
+                    }
+                
+                entity_type = args[1].lower()
+                quarter = None
+                limit = 10
+                
+                # Parse optional parameters
+                for arg in args[2:]:
+                    if arg.startswith("q="):
+                        quarter = arg[2:]
+                    elif arg.startswith("n="):
+                        try:
+                            limit = int(arg[2:])
+                        except ValueError:
+                            pass
+                
+                if entity_type == "registrants":
+                    results = lda_digest.get_top_registrants(quarter, limit)
+                    title = f"Top Registrants ({quarter or 'Current Quarter'})"
+                elif entity_type == "clients":
+                    results = lda_digest.get_top_clients(quarter, limit)
+                    title = f"Top Clients ({quarter or 'Current Quarter'})"
+                else:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "Usage: `/lobbylens lda top registrants` or `/lobbylens lda top clients`"
+                    }
+                
+                if not results:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": f"No {entity_type} found for the specified quarter."
+                    }
+                
+                # Format results
+                from .utils import format_amount
+                lines = [f"💵 {title}", ""]
+                for i, result in enumerate(results, 1):
+                    name = result['name']
+                    amount = format_amount(result['total_amount'])
+                    count = result['filing_count']
+                    lines.append(f"{i}. {name} — {amount} ({count} filings)")
+                
+                return {
+                    "response_type": "ephemeral",
+                    "text": "\n".join(lines)
+                }
+            
+            elif subcommand == "issues":
+                quarter = None
+                if len(args) > 1 and args[1].startswith("q="):
+                    quarter = args[1][2:]
+                
+                results = lda_digest.get_issues_summary(quarter)
+                
+                if not results:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": f"No issues found for the specified quarter."
+                    }
+                
+                # Format results
+                from .utils import format_amount
+                lines = [f"💵 Issue Summary ({quarter or 'Current Quarter'})", ""]
+                for result in results:
+                    code = result['code']
+                    count = result['filing_count']
+                    total = format_amount(result['total_amount'])
+                    lines.append(f"• {code}: {count} filings ({total})")
+                
+                return {
+                    "response_type": "ephemeral",
+                    "text": "\n".join(lines)
+                }
+            
+            elif subcommand == "entity":
+                if len(args) < 2:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "Usage: `/lobbylens lda entity <name>`"
+                    }
+                
+                entity_name = " ".join(args[1:])
+                quarter = None
+                
+                # Check if last arg is a quarter
+                if args[-1].startswith("q="):
+                    quarter = args[-1][2:]
+                    entity_name = " ".join(args[1:-1])
+                
+                result = lda_digest.search_entity(entity_name, quarter)
+                
+                if "error" in result:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": result["error"]
+                    }
+                
+                # Format entity results
+                from .utils import format_amount
+                entity = result['entity']
+                total_amount = format_amount(result['total_amount'])
+                filing_count = result['filing_count']
+                quarter_str = result['quarter']
+                
+                lines = [
+                    f"💵 {entity['name']} ({entity['type'].title()})",
+                    f"Quarter: {quarter_str}",
+                    f"Total: {total_amount} ({filing_count} filings)",
+                    ""
+                ]
+                
+                # Show recent filings
+                if result['filings']:
+                    lines.append("Recent filings:")
+                    for filing in result['filings'][:5]:
+                        amount = format_amount(filing.get('amount', 0))
+                        if entity['type'] == 'client':
+                            other_party = filing.get('registrant_name', 'Unknown')
+                            lines.append(f"• → {other_party} ({amount})")
+                        else:
+                            other_party = filing.get('client_name', 'Unknown')
+                            lines.append(f"• {other_party} → ({amount})")
+                
+                return {
+                    "response_type": "ephemeral",
+                    "text": "\n".join(lines)
+                }
+            
+            elif subcommand == "watchlist":
+                if len(args) < 2:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "Usage: `/lobbylens lda watchlist add/remove/list <term>`"
+                    }
+                
+                action = args[1].lower()
+                
+                if action == "list":
+                    watchlist = self.db_manager.get_channel_watchlist(channel_id)
+                    if not watchlist:
+                        return {
+                            "response_type": "ephemeral",
+                            "text": "No watchlist items configured for this channel."
+                        }
+                    
+                    lines = ["💵 LDA Watchlist:", ""]
+                    for item in watchlist:
+                        entity_type = item['entity_type'].title()
+                        name = item['display_name'] or item['watch_name']
+                        lines.append(f"• {name} ({entity_type})")
+                    
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "\n".join(lines)
+                    }
+                
+                elif action in ["add", "remove"]:
+                    if len(args) < 3:
+                        return {
+                            "response_type": "ephemeral",
+                            "text": f"Usage: `/lobbylens lda watchlist {action} <entity_name>`"
+                        }
+                    
+                    entity_name = " ".join(args[2:])
+                    
+                    if action == "add":
+                        # Default to client type for LDA watchlist
+                        success = self.db_manager.add_to_watchlist(
+                            channel_id, "client", entity_name
+                        )
+                        if success:
+                            return {
+                                "response_type": "ephemeral",
+                                "text": f"✅ Added '{entity_name}' to LDA watchlist."
+                            }
+                        else:
+                            return {
+                                "response_type": "ephemeral",
+                                "text": f"❌ Failed to add '{entity_name}' to watchlist."
+                            }
+                    
+                    else:  # remove
+                        success = self.db_manager.remove_from_watchlist(channel_id, entity_name)
+                        if success:
+                            return {
+                                "response_type": "ephemeral",
+                                "text": f"✅ Removed '{entity_name}' from watchlist."
+                            }
+                        else:
+                            return {
+                                "response_type": "ephemeral",
+                                "text": f"❌ '{entity_name}' not found in watchlist."
+                            }
+                
+                else:
+                    return {
+                        "response_type": "ephemeral",
+                        "text": "Usage: `/lobbylens lda watchlist add/remove/list <term>`"
+                    }
+            
+            elif subcommand == "help":
+                return self._lda_help()
+            
+            else:
+                return self._lda_help()
+        
+        except Exception as e:
+            logger.error(f"LDA command failed: {e}")
+            return {
+                "response_type": "ephemeral",
+                "text": f"❌ LDA command failed: {str(e)}"
+            }
+    
+    def _lobbylens_help(self) -> Dict[str, str]:
+        """Return LobbyLens help message."""
+        return {
+            "response_type": "ephemeral",
+            "text": "🔍 **LobbyLens Commands:**\n"
+            "• `/lobbypulse` - Generate fresh government activity digest\n"
+            "• `/watchlist` - Manage watchlist entities\n"
+            "• `/threshold` - Set alert thresholds\n"
+            "• `/summary` - Toggle filing descriptions\n"
+            "• `/lobbylens digest` - Generate manual V2 digest\n"
+            "• `/lobbylens lda` - LDA (lobbying money) commands\n\n"
+            "_Use `/lobbylens lda help` for LDA commands._",
+        }
+    
+    def _lda_help(self) -> Dict[str, str]:
+        """Return LDA help message."""
+        return {
+            "response_type": "ephemeral",
+            "text": "💵 **LDA Commands:**\n"
+            "• `/lobbylens lda digest` - Generate LDA money digest\n"
+            "• `/lobbylens lda top registrants [q=2025Q3] [n=10]` - Top registrants\n"
+            "• `/lobbylens lda top clients [q=2025Q3] [n=10]` - Top clients\n"
+            "• `/lobbylens lda issues [q=2025Q3]` - Issue summary\n"
+            "• `/lobbylens lda entity <name>` - Search entity\n"
+            "• `/lobbylens lda watchlist add/remove/list <term>` - Manage watchlist\n"
+            "• `/lobbylens lda help` - Show this help\n\n"
+            "_Quarter format: 2025Q1, 2025Q2, etc._",
+        }
 
     def handle_message_event(
         self, event_data: Dict[str, Any]

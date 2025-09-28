@@ -47,6 +47,83 @@ class PostgresManager(DatabaseManager):
                 # Create enhanced tables for LobbyLens features
                 cursor.execute(
                     """
+                -- Core LDA entities (clients, registrants)
+                CREATE TABLE IF NOT EXISTS entity (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    type TEXT NOT NULL,  -- 'client', 'registrant'
+                    normalized_name TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(normalized_name, type)
+                );
+
+                -- Issue codes (HCR, TAX, DEF, etc.)
+                CREATE TABLE IF NOT EXISTS issue (
+                    id SERIAL PRIMARY KEY,
+                    code TEXT NOT NULL UNIQUE,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Filing records (quarterly LDA data)
+                CREATE TABLE IF NOT EXISTS filing (
+                    id SERIAL PRIMARY KEY,
+                    filing_uid TEXT NOT NULL UNIQUE,  -- Source unique ID
+                    client_id INTEGER,
+                    registrant_id INTEGER,
+                    filing_date TIMESTAMP,
+                    quarter TEXT,  -- e.g., "2025Q3"
+                    year INTEGER,
+                    amount INTEGER DEFAULT 0,
+                    url TEXT,
+                    summary TEXT,  -- From specific_issues/description
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (client_id) REFERENCES entity(id),
+                    FOREIGN KEY (registrant_id) REFERENCES entity(id)
+                );
+
+                -- Filing-issue relationships (many-to-many)
+                CREATE TABLE IF NOT EXISTS filing_issue (
+                    id SERIAL PRIMARY KEY,
+                    filing_id INTEGER NOT NULL,
+                    issue_id INTEGER NOT NULL,
+                    FOREIGN KEY (filing_id) REFERENCES filing(id),
+                    FOREIGN KEY (issue_id) REFERENCES issue(id),
+                    UNIQUE(filing_id, issue_id)
+                );
+
+                -- Metadata for ETL tracking
+                CREATE TABLE IF NOT EXISTS meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Ingest log for ETL runs
+                CREATE TABLE IF NOT EXISTS ingest_log (
+                    id SERIAL PRIMARY KEY,
+                    run_id TEXT NOT NULL,
+                    started_at TIMESTAMP NOT NULL,
+                    completed_at TIMESTAMP,
+                    source TEXT NOT NULL,  -- 'bulk', 'api'
+                    mode TEXT NOT NULL,     -- 'backfill', 'update'
+                    added_count INTEGER DEFAULT 0,
+                    updated_count INTEGER DEFAULT 0,
+                    error_count INTEGER DEFAULT 0,
+                    errors TEXT,  -- JSON array of error messages
+                    status TEXT DEFAULT 'running'  -- 'running', 'completed', 'failed'
+                );
+
+                -- Create indexes for core LDA tables
+                CREATE INDEX IF NOT EXISTS idx_entity_normalized ON entity(normalized_name, type);
+                CREATE INDEX IF NOT EXISTS idx_filing_uid ON filing(filing_uid);
+                CREATE INDEX IF NOT EXISTS idx_filing_quarter ON filing(quarter, year);
+                CREATE INDEX IF NOT EXISTS idx_filing_date ON filing(filing_date);
+                CREATE INDEX IF NOT EXISTS idx_filing_amount ON filing(amount);
+                CREATE INDEX IF NOT EXISTS idx_filing_client ON filing(client_id);
+                CREATE INDEX IF NOT EXISTS idx_filing_registrant ON filing(registrant_id);
+                CREATE INDEX IF NOT EXISTS idx_issue_code ON issue(code);
+
                 -- Channel-specific settings and state
                 CREATE TABLE IF NOT EXISTS channel_settings (
                     id TEXT PRIMARY KEY,
@@ -107,10 +184,10 @@ class PostgresManager(DatabaseManager):
                 );
 
                 -- Create indexes for performance
-                CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);  # noqa: E501
-                CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);  # noqa: E501
-                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);  # noqa: E501
-                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);  # noqa: E501
+                CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
+                CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
+                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
+                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
                 """
                 )
 
