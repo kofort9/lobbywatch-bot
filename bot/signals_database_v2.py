@@ -18,7 +18,7 @@ class SignalsDatabaseV2:
         self.db_path = db_path
         self._ensure_schema()
 
-    def _ensure_schema(self):
+    def _ensure_schema(self) -> None:
         """Create the enhanced signals table"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()

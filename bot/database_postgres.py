@@ -23,9 +23,9 @@ class PostgresManager(DatabaseManager):
             database_url: PostgreSQL connection URL
         """
         self.database_url = database_url
-        self.db_path = database_url  # For compatibility with parent class
+        self.db_path = Path(database_url)  # For compatibility with parent class
 
-    def get_connection(self):
+    def get_connection(self) -> Any:
         """Get PostgreSQL connection with proper settings."""
         try:
             conn = psycopg2.connect(

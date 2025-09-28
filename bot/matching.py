@@ -88,7 +88,7 @@ class FuzzyMatcher:
         return max(token_score, sequence_score)
 
     def find_entity_matches(
-        self, search_term: str, entity_type: str = None, limit: int = 10
+        self, search_term: str, entity_type: Optional[str] = None, limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Find entity matches with scores."""
         matches = []
@@ -278,7 +278,7 @@ class FuzzyMatcher:
 class MatchingService:
     """Service for handling entity matching workflows."""
 
-    def __init__(self, db_manager):
+    def __init__(self, db_manager: Any) -> None:
         self.db_manager = db_manager
 
     def process_watchlist_add(

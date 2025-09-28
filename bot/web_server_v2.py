@@ -19,7 +19,7 @@ def create_web_server_v2() -> Flask:
     database = SignalsDatabaseV2()
 
     @app.route("/", methods=["GET"])
-    def root():
+    def root() -> Any:
         """Root endpoint."""
         return jsonify(
             {
@@ -36,24 +36,24 @@ def create_web_server_v2() -> Flask:
         )
 
     @app.route("/health", methods=["GET"])
-    def health_check():
+    def health_check() -> Any:
         """Health check endpoint."""
         return jsonify({"status": "healthy", "service": "lobbylens-v2"})
 
     @app.route("/lobbylens/health", methods=["GET"])
-    def lobbylens_health_check():
+    def lobbylens_health_check() -> Any:
         """LobbyLens specific health check endpoint."""
         return jsonify({"status": "healthy", "service": "lobbylens-v2"})
 
     @app.route("/lobbylens/commands", methods=["POST"])
-    def handle_slash_command():
+    def handle_slash_command() -> Any:
         """Handle Slack slash commands."""
         try:
             # Parse command data
             command_data = {
                 "command": request.form.get("command"),
                 "text": request.form.get("text", ""),
-                "channel_id": request.form.get("channel_id"),
+                "channel_id": request.form.get("channel_id") or "",
                 "channel_name": request.form.get("channel_name"),
                 "user_id": request.form.get("user_id"),
                 "user_name": request.form.get("user_name"),
@@ -76,7 +76,7 @@ def create_web_server_v2() -> Flask:
             )
 
     @app.route("/lobbylens/events", methods=["POST"])
-    def handle_events():
+    def handle_events() -> Any:
         """Handle Slack events."""
         try:
             # Handle URL verification
@@ -94,7 +94,7 @@ def create_web_server_v2() -> Flask:
             return jsonify({"status": "error", "message": str(e)})
 
     @app.route("/lobbylens/digest/manual/<channel_id>", methods=["POST"])
-    def manual_digest(channel_id: str):
+    def manual_digest(channel_id: str) -> Any:
         """Manual digest endpoint for testing."""
         try:
             # Get digest type from request

@@ -158,7 +158,7 @@ class SignalsDigestFormatter:
 
     def _count_issues(self, signals: List[Dict[str, Any]]) -> Dict[str, int]:
         """Count issue codes across signals."""
-        issue_counts = {}
+        issue_counts: Dict[str, int] = {}
 
         for signal in signals:
             issue_codes = self._parse_issue_codes(signal.get("issue_codes", []))

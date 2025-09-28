@@ -165,7 +165,7 @@ class DigestComputer:
             ),
         ).fetchall()
 
-    def _expand_issue_code(self, code: str, description: str = None) -> str:
+    def _expand_issue_code(self, code: str, description: Optional[str] = None) -> str:
         """Expand issue code abbreviations to full names."""
         # Common lobbying issue code expansions
         expansions = {

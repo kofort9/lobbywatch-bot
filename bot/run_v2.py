@@ -126,7 +126,7 @@ def run_quarterly_lda_ingest() -> None:
     logger.info("Quarterly LDA ingest would run here")
 
 
-def run_web_server(port: int = None) -> None:
+def run_web_server(port: Optional[int] = None) -> None:
     """Run web server for Slack integration"""
     # Use Railway's dynamic port if available
     if port is None:
@@ -140,7 +140,7 @@ def run_web_server(port: int = None) -> None:
     app.run(host="0.0.0.0", port=port, debug=False)
 
 
-def main():
+def main() -> None:
     """Main entry point"""
     parser = argparse.ArgumentParser(
         description="LobbyLens v2 - Enhanced Government Signals Bot"

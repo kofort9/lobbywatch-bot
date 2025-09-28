@@ -28,11 +28,11 @@ class SignalEvent:
     bill_id: Optional[str] = None
     rin: Optional[str] = None
     docket_id: Optional[str] = None
-    issue_codes: List[str] = None
-    metric_json: Dict[str, Any] = None
+    issue_codes: Optional[List[str]] = None
+    metric_json: Optional[Dict[str, Any]] = None
     priority_score: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.issue_codes is None:
             self.issue_codes = []
         if self.metric_json is None:

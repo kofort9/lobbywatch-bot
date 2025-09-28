@@ -164,7 +164,7 @@ class DigestV2Formatter:
                 if 0 <= days_until <= 7:
                     deadline_signals.append(signal)
 
-        return sorted(deadline_signals, key=lambda x: x.deadline)
+        return sorted(deadline_signals, key=lambda x: x.deadline or datetime.min.replace(tzinfo=timezone.utc))
 
     def _get_docket_surge_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get docket signals with surge activity"""
@@ -178,7 +178,7 @@ class DigestV2Formatter:
 
         return sorted(
             surge_signals,
-            key=lambda x: x.metric_json.get("comments_24h_delta_pct", 0),
+            key=lambda x: x.metric_json.get("comments_24h_delta_pct", 0) if x.metric_json else 0,
             reverse=True,
         )
 

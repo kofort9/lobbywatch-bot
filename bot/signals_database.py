@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 class SignalsDatabase:
     """Database operations for signal events."""
 
-    def __init__(self, db_manager):
+    def __init__(self, db_manager: Any) -> None:
         self.db_manager = db_manager
         self._ensure_signals_schema()
 
-    def _ensure_signals_schema(self):
+    def _ensure_signals_schema(self) -> None:
         """Ensure the signals schema exists."""
         conn = self.db_manager.get_connection()
 

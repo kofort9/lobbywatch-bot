@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class DailySignalsCollectorV2:
     """Enhanced daily signals collector with v2 features"""
 
-    def __init__(self, config: Dict[str, Any], watchlist: List[str] = None):
+    def __init__(self, config: Dict[str, Any], watchlist: Optional[List[str]] = None):
         self.config = config
         self.watchlist = watchlist or []
         self.session = requests.Session()

@@ -170,8 +170,8 @@ class DatabaseManager:
         channel_id: str,
         entity_type: str,
         watch_name: str,
-        display_name: str = None,
-        entity_id: int = None,
+        display_name: Optional[str] = None,
+        entity_id: Optional[int] = None,
         fuzzy_score: float = 1.0,
     ) -> bool:
         """Add entity to channel watchlist."""
@@ -218,8 +218,8 @@ class DatabaseManager:
         channel_id: str,
         run_type: str,
         filings_count: int = 0,
-        last_filing_time: str = None,
-        digest_content: str = None,
+        last_filing_time: Optional[str] = None,
+        digest_content: Optional[str] = None,
     ) -> None:
         """Record a digest run for tracking."""
         with self.get_connection() as conn:
@@ -240,7 +240,7 @@ class DatabaseManager:
             )
 
     def get_last_digest_run(
-        self, channel_id: str, run_type: str = None
+        self, channel_id: str, run_type: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Get last digest run for a channel."""
         with self.get_connection() as conn:
@@ -262,7 +262,7 @@ class DatabaseManager:
         alias_name: str,
         canonical_name: str,
         entity_type: str,
-        entity_id: int = None,
+        entity_id: Optional[int] = None,
         confidence_score: float = 1.0,
     ) -> None:
         """Add or update entity alias mapping."""
@@ -289,7 +289,7 @@ class DatabaseManager:
             )
 
     def find_entity_alias(
-        self, alias_name: str, entity_type: str = None
+        self, alias_name: str, entity_type: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Find existing alias mapping."""
         with self.get_connection() as conn:

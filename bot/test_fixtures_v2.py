@@ -215,7 +215,7 @@ class TestFixturesV2:
 class TestValidator:
     """Validator for test scenarios"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.errors = []
         self.warnings = []
 
