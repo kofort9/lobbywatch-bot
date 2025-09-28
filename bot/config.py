@@ -11,51 +11,51 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database
-    database_file: str = Field(default="lobbywatch.db", env="DATABASE_FILE")
+    database_file: str = Field(default="lobbywatch.db", alias="DATABASE_FILE")
     database_url: Optional[str] = Field(
-        default=None, env="DATABASE_URL"
+        default=None, alias="DATABASE_URL"
     )  # Postgres for production
 
     # API Keys (Legacy - no longer available)
-    opensecrets_api_key: Optional[str] = Field(default=None, env="OPENSECRETS_API_KEY")
-    propublica_api_key: Optional[str] = Field(default=None, env="PROPUBLICA_API_KEY")
+    opensecrets_api_key: Optional[str] = Field(default=None, alias="OPENSECRETS_API_KEY")
+    propublica_api_key: Optional[str] = Field(default=None, alias="PROPUBLICA_API_KEY")
 
     # Daily Signals API Keys
-    congress_api_key: Optional[str] = Field(default=None, env="CONGRESS_API_KEY")
+    congress_api_key: Optional[str] = Field(default=None, alias="CONGRESS_API_KEY")
     federal_register_api_key: Optional[str] = Field(
-        default=None, env="FEDERAL_REGISTER_API_KEY"
+        default=None, alias="FEDERAL_REGISTER_API_KEY"
     )
     regulations_gov_api_key: Optional[str] = Field(
-        default=None, env="REGULATIONS_GOV_API_KEY"
+        default=None, alias="REGULATIONS_GOV_API_KEY"
     )
 
     # Slack Configuration
     slack_webhook_url: Optional[str] = Field(
-        default=None, env="SLACK_WEBHOOK_URL"
+        default=None, alias="SLACK_WEBHOOK_URL"
     )  # Legacy webhook support
     slack_bot_token: Optional[str] = Field(
-        default=None, env="SLACK_BOT_TOKEN"
+        default=None, alias="SLACK_BOT_TOKEN"
     )  # Enhanced app features
     slack_signing_secret: Optional[str] = Field(
-        default=None, env="SLACK_SIGNING_SECRET"
+        default=None, alias="SLACK_SIGNING_SECRET"
     )  # Request verification
 
     # Enhanced Features
     lobbylens_channels: Optional[str] = Field(
-        default=None, env="LOBBYLENS_CHANNELS"
+        default=None, alias="LOBBYLENS_CHANNELS"
     )  # Comma-separated channel IDs
 
     # Production Settings
     environment: str = Field(
-        default="development", env="ENVIRONMENT"
+        default="development", alias="ENVIRONMENT"
     )  # development, staging, production
     admin_users: Optional[str] = Field(
-        default=None, env="ADMIN_USERS"
+        default=None, alias="ADMIN_USERS"
     )  # Comma-separated Slack user IDs
 
     # Bot Configuration
-    log_level: str = Field(default="INFO", env="LOG_LEVEL")
-    dry_run: bool = Field(default=False, env="DRY_RUN")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    dry_run: bool = Field(default=False, alias="DRY_RUN")
 
     class Config:
         env_file = ".env"
