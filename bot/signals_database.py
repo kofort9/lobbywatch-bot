@@ -83,7 +83,7 @@ class SignalsDatabase:
             "CREATE INDEX IF NOT EXISTS idx_signal_source ON signal_event(source)"
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score)"
+            "CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score)"  # noqa: E501
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_alias_text ON entity_alias(alias_text)"

@@ -164,7 +164,8 @@ class FuzzyMatcher:
                         {
                             "type": "issue",
                             "id": issue["id"],
-                            "name": f"{issue['code']} ({issue['description'] or issue['code']})",
+                            "name": f"{issue['code']} "
+                            f"({issue['description'] or issue['code']})",
                             "entity_type": "issue",
                             "code": issue["code"],
                             "description": issue["description"],
