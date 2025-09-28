@@ -177,12 +177,14 @@ def main(
         if not settings.slack_bot_token or not settings.slack_signing_secret:
             if settings.is_production():
                 logger.error(
-                    "Web server mode requires SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET in production"
+                    "Web server mode requires SLACK_BOT_TOKEN and "
+                    "SLACK_SIGNING_SECRET in production"
                 )
                 sys.exit(1)
             else:
                 logger.warning(
-                    "SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set - Slack features will be disabled"
+                    "SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set - "
+                    "Slack features will be disabled"
                 )
 
         app = create_web_server(slack_app)
@@ -208,7 +210,8 @@ def main(
             if failed_fetches > 0:
                 errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
-                f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
+                f"Data fetch complete: {successful_fetches} successful, "
+                f"{failed_fetches} failed"
             )
         except Exception as e:
             error_msg = f"Critical error during data fetch: {e}"

@@ -37,7 +37,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -70,7 +70,7 @@ def run_mini_digest(
     database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -183,7 +183,8 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
             if failed_fetches > 0:
                 errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
-                f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
+                f"Data fetch complete: {successful_fetches} successful, "
+                f"{failed_fetches} failed"
             )
         except Exception as e:
             error_msg = f"Critical error during data fetch: {e}"
