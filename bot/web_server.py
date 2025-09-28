@@ -14,6 +14,11 @@ def create_web_server(slack_app) -> Flask:
     
     app = Flask(__name__)
     
+    @app.route('/', methods=['GET'])
+    def root():
+        """Root endpoint."""
+        return jsonify({'service': 'lobbylens', 'status': 'running'})
+    
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint."""

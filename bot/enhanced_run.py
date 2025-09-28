@@ -201,8 +201,12 @@ def main(mode: str, channel: str, dry_run: bool, skip_fetch: bool,
         from .web_server import create_web_server
         
         if not settings.slack_bot_token or not settings.slack_signing_secret:
-            logger.error("Web server mode requires SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET")
-            sys.exit(1)
+            if settings.is_production():
+                logger.error("Web server mode requires SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET in production")
+                sys.exit(1)
+            else:
+                logger.warning("SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set - Slack features will be disabled")
+        
         app = create_web_server(slack_app)
         
         logger.info(f"🚀 Starting web server on port {port}")
