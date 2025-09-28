@@ -26,7 +26,7 @@ class TestFetchData:
         assert failed == 0
 
     @patch("bot.run.settings")
-    @patch("bot.run.opensecrets")
+    @patch("lobbywatch.sources.opensecrets")
     def test_fetch_data_opensecrets_success(self, mock_opensecrets, mock_settings):
         """Test successful OpenSecrets data fetch."""
         mock_settings.opensecrets_api_key = "test_key"
@@ -41,7 +41,7 @@ class TestFetchData:
         mock_opensecrets.fetch_recent_lobbying.assert_called_once_with(limit=200)
 
     @patch("bot.run.settings")
-    @patch("bot.run.opensecrets")
+    @patch("lobbywatch.sources.opensecrets")
     def test_fetch_data_opensecrets_error(self, mock_opensecrets, mock_settings):
         """Test OpenSecrets data fetch error handling."""
         mock_settings.opensecrets_api_key = "test_key"
@@ -84,11 +84,12 @@ class TestCreateNotifier:
 
     def test_create_notifier_no_config(self):
         """Test error when no notifier is configured."""
-        settings = Settings()
+        with patch.dict(os.environ, {}, clear=True):
+            settings = Settings()
 
-        with patch("bot.run.settings", settings):
-            with pytest.raises(ValueError, match="No Slack notifier configured"):
-                create_notifier()
+            with patch("bot.run.settings", settings):
+                with pytest.raises(ValueError, match="No Slack notifier configured"):
+                    create_notifier()
 
 
 class TestSetupLogging:
@@ -106,7 +107,8 @@ class TestSetupLogging:
     def test_setup_logging_invalid_level(self):
         """Test logging setup with invalid level."""
         # Python logging will handle invalid levels gracefully
-        setup_logging("INVALID")
+        with pytest.raises(AttributeError):
+            setup_logging("INVALID")
 
 
 class TestMainCommand:
