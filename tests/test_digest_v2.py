@@ -1,9 +1,9 @@
 """Tests for bot/digest_v2.py - Enhanced digest formatting with v2 features."""
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+# from unittest.mock import patch  # Unused import
 
-import pytest
+# import pytest  # Unused import
 
 from bot.digest_v2 import DigestV2Formatter
 from bot.signals_v2 import SignalType, SignalV2, Urgency
@@ -354,7 +354,9 @@ class TestDigestV2Formatter:
                 url="https://example.com/docket-1",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
-                metric_json={"comments_24h_delta_pct": 100.0},  # Below threshold
+                metric_json={
+                    "comments_24h_delta_pct": 100.0},
+                # Below threshold
             ),
             SignalV2(
                 source="regulations_gov",
@@ -364,7 +366,9 @@ class TestDigestV2Formatter:
                 url="https://example.com/docket-2",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
-                metric_json={"comments_24h_delta_pct": 300.0},  # Above threshold
+                metric_json={
+                    "comments_24h_delta_pct": 300.0},
+                # Above threshold
             ),
             SignalV2(
                 source="congress",
@@ -502,8 +506,12 @@ class TestDigestV2Formatter:
             priority_score=6.5,
             industry_tag="Environment",
             watchlist_hit=False,
-            deadline=now + timedelta(days=5),
-            metric_json={"comments_24h_delta_pct": 250.0, "comments_24h_delta": 500},
+            deadline=now +
+            timedelta(
+                days=5),
+            metric_json={
+                "comments_24h_delta_pct": 250.0,
+                "comments_24h_delta": 500},
         )
 
         result = formatter._format_docket_surge_signal(signal)
@@ -513,9 +521,9 @@ class TestDigestV2Formatter:
         assert "Environmental Standards Docket" in result
         assert "High" in result
         assert "+250% / +500 (24h)" in result
-        assert (
-            "Deadline in 4d" in result
-        )  # The test uses now + 5 days, but by the time it's processed it might be 4 days
+        # The test uses now + 5 days, but by the time it's processed it might
+        # be 4 days
+        assert ("Deadline in 4d" in result)
         assert "Issues: ENV" in result
         assert "<https://example.com/docket-1|Regulations.gov>" in result
 
@@ -658,7 +666,8 @@ class TestDigestV2Formatter:
         )
         watchlist_count = watchlist_section.count("• [Health]")
 
-        # Should respect limits - only first 10 signals are watchlist hits, max 5 shown
+        # Should respect limits - only first 10 signals are watchlist hits, max
+        # 5 shown
         assert watchlist_count <= 5  # Max 5 watchlist alerts
         # Note: what_changed section limit is tested by the formatter logic
 

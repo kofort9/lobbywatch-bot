@@ -32,13 +32,13 @@ def temp_db() -> Generator[Path, None, None]:
             name TEXT NOT NULL,
             type TEXT
         );
-        
+
         CREATE TABLE issue (
             id INTEGER PRIMARY KEY,
             code TEXT NOT NULL,
             description TEXT
         );
-        
+
         CREATE TABLE filing (
             id INTEGER PRIMARY KEY,
             client_id INTEGER,
@@ -51,7 +51,7 @@ def temp_db() -> Generator[Path, None, None]:
             FOREIGN KEY (client_id) REFERENCES entity(id),
             FOREIGN KEY (registrant_id) REFERENCES entity(id)
         );
-        
+
         CREATE TABLE filing_issue (
             id INTEGER PRIMARY KEY,
             filing_id INTEGER NOT NULL,
@@ -89,7 +89,9 @@ def populated_db(temp_db: Path) -> Path:
         (5, "Capitol Consulting", "registrant"),
         (6, "Influence Partners", "registrant"),
     ]
-    conn.executemany("INSERT INTO entity (id, name, type) VALUES (?, ?, ?)", entities)
+    conn.executemany(
+        "INSERT INTO entity (id, name, type) VALUES (?, ?, ?)",
+        entities)
 
     # Insert test issues
     issues = [
@@ -232,34 +234,34 @@ def slack_notifier() -> SlackNotifier:
 @pytest.fixture
 def sample_digest_data():
     """Sample data for digest formatting tests."""
-    return {
-        "new_filings": [
-            {
-                "filing_date": "2023-10-15",
-                "client_name": "Acme Corp",
-                "registrant_name": "K Street Advisors",
-                "amount": 50000,
-                "url": "http://example.com/filing1",
-            },
-            {
-                "filing_date": "2023-10-15",
-                "client_name": "BigTech Inc",
-                "registrant_name": "Capitol Consulting",
-                "amount": 75000,
-                "url": None,
-            },
-        ],
-        "top_registrants": [
-            {"name": "Capitol Consulting", "total_amount": 150000, "filing_count": 3},
-            {"name": "K Street Advisors", "total_amount": 75000, "filing_count": 2},
-        ],
-        "issue_surges": [
-            {"code": "HCR", "count_current": 5, "count_previous": 2, "pct_change": 1.5},
-            {
-                "code": "TAX",
-                "count_current": 3,
-                "count_previous": 0,
-                "pct_change": 999.0,
-            },
-        ],
-    }
+    return {"new_filings": [{"filing_date": "2023-10-15",
+                             "client_name": "Acme Corp",
+                             "registrant_name": "K Street Advisors",
+                             "amount": 50000,
+                             "url": "http://example.com/filing1",
+                             },
+                            {"filing_date": "2023-10-15",
+                             "client_name": "BigTech Inc",
+                             "registrant_name": "Capitol Consulting",
+                             "amount": 75000,
+                             "url": None,
+                             },
+                            ],
+            "top_registrants": [{"name": "Capitol Consulting",
+                                 "total_amount": 150000,
+                                 "filing_count": 3},
+                                {"name": "K Street Advisors",
+                                 "total_amount": 75000,
+                                 "filing_count": 2},
+                                ],
+            "issue_surges": [{"code": "HCR",
+                              "count_current": 5,
+                              "count_previous": 2,
+                              "pct_change": 1.5},
+                             {"code": "TAX",
+                              "count_current": 3,
+                              "count_previous": 0,
+                              "pct_change": 999.0,
+                              },
+                             ],
+            }

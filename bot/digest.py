@@ -56,16 +56,15 @@ class DigestComputer:
         self.state_file.parent.mkdir(exist_ok=True)
 
         with open(self.state_file, "w") as f:
-            json.dump(
-                {"last_run_at": run_time.isoformat(), "version": "1.0"}, f, indent=2
-            )
+            json.dump({"last_run_at": run_time.isoformat(),
+                       "version": "1.0"}, f, indent=2)
 
     def _get_new_filings(
         self, conn: sqlite3.Connection, since: datetime, limit: int = 10
     ) -> List[sqlite3.Row]:
         """Get new filings since last run or specified time."""
         query = """
-        SELECT 
+        SELECT
             f.filing_date,
             f.created_at,
             e1.name as client_name,
@@ -77,7 +76,7 @@ class DigestComputer:
         LEFT JOIN entity e1 ON e1.id = f.client_id
         LEFT JOIN entity e2 ON e2.id = f.registrant_id
         WHERE f.filing_date >= ? OR f.created_at >= ?
-        ORDER BY 
+        ORDER BY
             COALESCE(f.filing_date, f.created_at) DESC,
             f.created_at DESC
         LIMIT ?
@@ -92,11 +91,11 @@ class DigestComputer:
     ) -> List[sqlite3.Row]:
         """Get top registrants by total amount in the last 7 days."""
         query = """
-        SELECT 
+        SELECT
             e.name,
             COUNT(f.id) as filing_count,
             SUM(COALESCE(f.amount, 0)) as total_amount
-        FROM filing f 
+        FROM filing f
         JOIN entity e ON e.id = f.registrant_id
         WHERE f.created_at >= ?
         GROUP BY e.id, e.name
@@ -117,7 +116,7 @@ class DigestComputer:
         """Compare issue code activity: last 7 days vs prior 7 days."""
         query = """
         WITH last_week AS (
-            SELECT 
+            SELECT
                 i.code,
                 i.description,
                 COUNT(*) as count_current
@@ -128,7 +127,7 @@ class DigestComputer:
             GROUP BY i.id, i.code, i.description
         ),
         prev_week AS (
-            SELECT 
+            SELECT
                 i.code,
                 COUNT(*) as count_previous
             FROM filing_issue fi
@@ -137,15 +136,15 @@ class DigestComputer:
             WHERE f.created_at >= ? AND f.created_at < ?
             GROUP BY i.id, i.code
         )
-        SELECT 
+        SELECT
             lw.code,
             lw.description,
             COALESCE(pw.count_previous, 0) as count_previous,
             lw.count_current,
-            CASE 
-                WHEN COALESCE(pw.count_previous, 0) = 0 THEN 
+            CASE
+                WHEN COALESCE(pw.count_previous, 0) = 0 THEN
                     CASE WHEN lw.count_current > 0 THEN 999.0 ELSE 0.0 END
-                ELSE 
+                ELSE
                     (1.0 * lw.count_current / pw.count_previous - 1.0)
             END as pct_change
         FROM last_week lw
@@ -165,7 +164,10 @@ class DigestComputer:
             ),
         ).fetchall()
 
-    def _expand_issue_code(self, code: str, description: Optional[str] = None) -> str:
+    def _expand_issue_code(
+            self,
+            code: str,
+            description: Optional[str] = None) -> str:
         """Expand issue code abbreviations to full names."""
         # Common lobbying issue code expansions
         expansions = {
@@ -240,14 +242,17 @@ class DigestComputer:
                 # Get data components
                 new_filings = self._get_new_filings(conn, since)
                 top_registrants = self._get_top_registrants(conn, week_start)
-                issue_surges = self._get_issue_surges(conn, week_start, prev_week_start)
+                issue_surges = self._get_issue_surges(
+                    conn, week_start, prev_week_start)
 
         except sqlite3.Error as e:
-            raise DigestError(f"Database error during digest computation: {e}") from e
+            raise DigestError(
+                f"Database error during digest computation: {e}") from e
 
         # Format the message
         lines = []
-        lines.append(f"*🔍 LobbyLens Daily Digest* — {now.strftime('%Y-%m-%d')}")
+        lines.append(
+            f"*🔍 LobbyLens Daily Digest* — {now.strftime('%Y-%m-%d')}")
 
         # New filings section
         if new_filings:
@@ -264,7 +269,8 @@ class DigestComputer:
                 lines.append(line)
 
             if len(new_filings) > 10:
-                lines.append(f"• _...and {len(new_filings) - 10} more filings_")
+                lines.append(
+                    f"• _...and {len(new_filings) - 10} more filings_")
         else:
             lines.append(f"\n*📋 New filings:* None found")
 
@@ -308,7 +314,8 @@ class DigestComputer:
         result = "\n".join(lines)
         logger.info(f"Generated digest with {len(lines)} lines")
 
-        return result if len(lines) > 2 else "*No fresh lobbying activity detected.*"
+        return result if len(
+            lines) > 2 else "*No fresh lobbying activity detected.*"
 
 
 def compute_digest(db_path: str) -> str:

@@ -174,7 +174,8 @@ class DailySignalsCollector:
         try:
             fr_signals = self._collect_federal_register_signals(hours_back)
             signals.extend(fr_signals)
-            logger.info(f"Collected {len(fr_signals)} signals from Federal Register")
+            logger.info(
+                f"Collected {len(fr_signals)} signals from Federal Register")
         except Exception as e:
             logger.error(f"Failed to collect Federal Register signals: {e}")
 
@@ -231,7 +232,8 @@ class DailySignalsCollector:
 
         return signals
 
-    def _collect_federal_register_signals(self, hours_back: int) -> List[SignalEvent]:
+    def _collect_federal_register_signals(
+            self, hours_back: int) -> List[SignalEvent]:
         """Collect signals from Federal Register API."""
         signals = []
 
@@ -275,7 +277,8 @@ class DailySignalsCollector:
 
         return signals
 
-    def _collect_regulations_gov_signals(self, hours_back: int) -> List[SignalEvent]:
+    def _collect_regulations_gov_signals(
+            self, hours_back: int) -> List[SignalEvent]:
         """Collect signals from Regulations.gov API."""
         signals = []
         api_key = self.config["regulations_gov_api_key"]
@@ -285,28 +288,36 @@ class DailySignalsCollector:
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Recent dockets (use X-Api-Key header as per API docs)
-        # Try a simpler query first - just get recent dockets without date filter
+        # Try a simpler query first - just get recent dockets without date
+        # filter
         dockets_url = f"https://api.regulations.gov/v4/dockets?sort=-lastModifiedDate&page[size]=20"
 
         try:
             headers = {"X-Api-Key": api_key}
             logger.debug(f"Regulations.gov URL: {dockets_url}")
             logger.debug(f"Regulations.gov headers: {headers}")
-            response = self.session.get(dockets_url, headers=headers, timeout=30)
-            logger.debug(f"Regulations.gov response status: {response.status_code}")
+            response = self.session.get(
+                dockets_url, headers=headers, timeout=30)
+            logger.debug(
+                f"Regulations.gov response status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
-            logger.debug(f"Regulations.gov response data keys: {list(data.keys())}")
+            logger.debug(
+                f"Regulations.gov response data keys: {list(data.keys())}")
 
             for docket in data.get("data", []):
                 # Check for comment surge
-                comment_count = docket.get("attributes", {}).get("totalComments", 0)
+                comment_count = docket.get(
+                    "attributes", {}).get(
+                    "totalComments", 0)
                 comment_surge = self._detect_comment_surge(
                     docket.get("id", ""), comment_count
                 )
 
                 # Parse timestamp safely
-                last_modified = docket.get("attributes", {}).get("lastModifiedDate", "")
+                last_modified = docket.get(
+                    "attributes", {}).get(
+                    "lastModifiedDate", "")
                 if last_modified:
                     # Handle timezone-aware datetime
                     if last_modified.endswith("Z"):
@@ -388,9 +399,13 @@ class DailySignalsCollector:
 
         return list(issues)
 
-    def _detect_comment_surge(self, docket_id: str, current_count: int) -> bool:
+    def _detect_comment_surge(
+            self,
+            docket_id: str,
+            current_count: int) -> bool:
         """Detect if there's a comment surge (simplified - would need historical data)."""
-        # This is a simplified version - in practice, you'd compare with historical data
+        # This is a simplified version - in practice, you'd compare with
+        # historical data
         return current_count > 100  # Threshold for surge detection
 
     def _score_signals(self, signals: List[SignalEvent]) -> List[SignalEvent]:
@@ -414,7 +429,8 @@ class DailySignalsCollector:
             # Time proximity bonus (recent events get higher scores)
             # Ensure timestamp is timezone-aware
             if signal.timestamp.tzinfo is None:
-                signal.timestamp = signal.timestamp.replace(tzinfo=timezone.utc)
+                signal.timestamp = signal.timestamp.replace(
+                    tzinfo=timezone.utc)
             hours_ago = (
                 datetime.now(timezone.utc) - signal.timestamp
             ).total_seconds() / 3600

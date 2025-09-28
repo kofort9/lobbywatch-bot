@@ -20,7 +20,8 @@ class TestSlackNotifier:
 
     def test_send_success(self, mock_slack_webhook):
         """Test successful message sending."""
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST")
 
         # Should not raise an exception
         notifier.send("Test message")
@@ -42,7 +43,8 @@ class TestSlackNotifier:
             text="Not Found",
         )
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST")
 
         with pytest.raises(NotificationError, match="Slack notification failed"):
             notifier.send("Test message")
@@ -55,7 +57,8 @@ class TestSlackNotifier:
             text="channel_not_found",
         )
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST")
 
         with pytest.raises(NotificationError, match="Slack webhook returned"):
             notifier.send("Test message")
@@ -63,9 +66,11 @@ class TestSlackNotifier:
     @patch("requests.post")
     def test_send_timeout(self, mock_post):
         """Test handling of request timeouts."""
-        mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
+        mock_post.side_effect = requests.exceptions.Timeout(
+            "Request timed out")
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST")
 
         with pytest.raises(NotificationError, match="Slack notification failed"):
             notifier.send("Test message")
@@ -77,7 +82,8 @@ class TestSlackNotifier:
 
     def test_send_with_special_formatting(self, mock_slack_webhook):
         """Test sending messages with Slack formatting."""
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST")
 
         message = "*Bold text* and _italic text_ with <https://example.com|links>"
         notifier.send(message)

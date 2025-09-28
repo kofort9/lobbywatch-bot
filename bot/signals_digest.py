@@ -15,7 +15,10 @@ class SignalsDigestFormatter:
     def __init__(self, signals_db: SignalsDatabase):
         self.signals_db = signals_db
 
-    def format_daily_digest(self, channel_id: str, hours_back: int = 24) -> str:
+    def format_daily_digest(
+            self,
+            channel_id: str,
+            hours_back: int = 24) -> str:
         """Format a comprehensive daily signals digest."""
         signals = self.signals_db.get_recent_signals(hours_back, limit=100)
 
@@ -29,8 +32,10 @@ class SignalsDigestFormatter:
         processed_signals = self._process_signals(signals, watchlist)
 
         # Calculate mini stats
-        bills_count = len([s for s in signals if s.get("source") == "congress"])
-        rules_count = len([s for s in signals if s.get("source") == "federal_register"])
+        bills_count = len(
+            [s for s in signals if s.get("source") == "congress"])
+        rules_count = len(
+            [s for s in signals if s.get("source") == "federal_register"])
         dockets_count = len(
             [s for s in signals if s.get("source") == "regulations_gov"]
         )
@@ -51,7 +56,8 @@ class SignalsDigestFormatter:
             s for s in processed_signals if s.get("watchlist_hit", False)
         ][:3]
         if watchlist_signals:
-            lines.append(f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
+            lines.append(
+                f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
             for signal in watchlist_signals:
                 lines.append(self._format_watchlist_signal(signal))
 
@@ -100,7 +106,10 @@ class SignalsDigestFormatter:
 
         return "\n".join(lines)
 
-    def format_mini_digest(self, channel_id: str, hours_back: int = 4) -> Optional[str]:
+    def format_mini_digest(
+            self,
+            channel_id: str,
+            hours_back: int = 4) -> Optional[str]:
         """Format a mini digest if thresholds are met."""
         signals = self.signals_db.get_recent_signals(hours_back, limit=20)
 
@@ -108,7 +117,9 @@ class SignalsDigestFormatter:
             return None
 
         # Check for high-priority signals
-        high_priority = [s for s in signals if s.get("priority_score", 0) > 5.0]
+        high_priority = [
+            s for s in signals if s.get(
+                "priority_score", 0) > 5.0]
 
         if not high_priority:
             return None
@@ -133,14 +144,15 @@ class SignalsDigestFormatter:
         return (
             f"📰 **Daily Government Signals** — {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n\n"
             "No significant government activity detected in the last 24 hours.\n\n"
-            f"_Updated at {datetime.now(timezone.utc).strftime('%H:%M')} PT_"
-        )
+            f"_Updated at {datetime.now(timezone.utc).strftime('%H:%M')} PT_")
 
     def _format_timestamp(self, timestamp_str: str) -> str:
         """Format timestamp for display."""
         try:
             dt = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now(timezone.utc)
+            now = datetime.now(
+                dt.tzinfo) if dt.tzinfo else datetime.now(
+                timezone.utc)
 
             diff = now - dt
             if diff.days > 0:
@@ -153,7 +165,7 @@ class SignalsDigestFormatter:
                 return f"({minutes}m ago)"
             else:
                 return "(just now)"
-        except:
+        except BaseException:
             return ""
 
     def _count_issues(self, signals: List[Dict[str, Any]]) -> Dict[str, int]:
@@ -161,7 +173,8 @@ class SignalsDigestFormatter:
         issue_counts: Dict[str, int] = {}
 
         for signal in signals:
-            issue_codes = self._parse_issue_codes(signal.get("issue_codes", []))
+            issue_codes = self._parse_issue_codes(
+                signal.get("issue_codes", []))
 
             for issue in issue_codes:
                 issue_counts[issue] = issue_counts.get(issue, 0) + 1
@@ -179,15 +192,19 @@ class SignalsDigestFormatter:
                     import ast
 
                     result = ast.literal_eval(issue_codes)
-                    return result if isinstance(result, list) else [str(result)]
+                    return result if isinstance(
+                        result, list) else [str(result)]
                 else:
                     return [issue_codes]
-            except:
+            except BaseException:
                 return []
         else:
             return []
 
-    def should_send_mini_digest(self, channel_id: str, hours_back: int = 4) -> bool:
+    def should_send_mini_digest(
+            self,
+            channel_id: str,
+            hours_back: int = 4) -> bool:
         """Check if mini digest should be sent based on thresholds."""
         signals = self.signals_db.get_recent_signals(hours_back, limit=20)
 
@@ -196,7 +213,9 @@ class SignalsDigestFormatter:
             return False
 
         # Check for high-priority signals
-        high_priority = [s for s in signals if s.get("priority_score", 0) > 5.0]
+        high_priority = [
+            s for s in signals if s.get(
+                "priority_score", 0) > 5.0]
         if len(high_priority) > 0:
             return True
 
@@ -226,10 +245,10 @@ class SignalsDigestFormatter:
             # Add enhanced metadata
             enhanced_signal = signal.copy()
             enhanced_signal["watchlist_hit"] = watchlist_hit
-            enhanced_signal["signal_type"] = self._determine_signal_type(signal)
+            enhanced_signal["signal_type"] = self._determine_signal_type(
+                signal)
             enhanced_signal["time_until_event"] = self._calculate_time_until_event(
-                signal
-            )
+                signal)
 
             processed.append(enhanced_signal)
 
@@ -282,7 +301,8 @@ class SignalsDigestFormatter:
         else:
             return "notice"
 
-    def _calculate_time_until_event(self, signal: Dict[str, Any]) -> Optional[int]:
+    def _calculate_time_until_event(
+            self, signal: Dict[str, Any]) -> Optional[int]:
         """Calculate hours until event (for upcoming events)."""
         # This would parse event times from the signal
         # For now, return None
@@ -297,9 +317,15 @@ class SignalsDigestFormatter:
         for signal in signals:
             if signal.get("signal_type") == "hearing":
                 upcoming.append(signal)
-        return sorted(upcoming, key=lambda x: x.get("priority_score", 0), reverse=True)
+        return sorted(
+            upcoming,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
-    def _get_docket_surges(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _get_docket_surges(
+            self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Get docket signals with comment surges."""
         surges = []
         for signal in signals:
@@ -307,15 +333,26 @@ class SignalsDigestFormatter:
                 metric_json = signal.get("metric_json", {})
                 if metric_json.get("comment_surge", False):
                     surges.append(signal)
-        return sorted(surges, key=lambda x: x.get("priority_score", 0), reverse=True)
+        return sorted(
+            surges,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
-    def _get_bill_actions(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _get_bill_actions(
+            self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Get bill-related signals grouped by bill."""
         bills = []
         for signal in signals:
             if signal.get("signal_type") == "bill":
                 bills.append(signal)
-        return sorted(bills, key=lambda x: x.get("priority_score", 0), reverse=True)
+        return sorted(
+            bills,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
     def _group_signals_by_bill(
         self, signals: List[Dict[str, Any]]
@@ -355,8 +392,11 @@ class SignalsDigestFormatter:
             grouped_bills.append(best_signal)
 
         return sorted(
-            grouped_bills, key=lambda x: x.get("priority_score", 0), reverse=True
-        )
+            grouped_bills,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
     def _group_signals_by_docket(
         self, signals: List[Dict[str, Any]]
@@ -397,8 +437,11 @@ class SignalsDigestFormatter:
             grouped_dockets.append(best_signal)
 
         return sorted(
-            grouped_dockets, key=lambda x: x.get("priority_score", 0), reverse=True
-        )
+            grouped_dockets,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
     def _group_signals_by_agency(
         self, signals: List[Dict[str, Any]]
@@ -423,10 +466,12 @@ class SignalsDigestFormatter:
                 agency_groups[agency]["total_count"] += 1
 
                 # Collect issue codes
-                issue_codes = self._parse_issue_codes(signal.get("issue_codes", []))
+                issue_codes = self._parse_issue_codes(
+                    signal.get("issue_codes", []))
                 agency_groups[agency]["issues"].update(issue_codes)
 
-        # Create bundled signals for agencies with multiple low-priority notices
+        # Create bundled signals for agencies with multiple low-priority
+        # notices
         bundled_signals = []
         for agency, group in agency_groups.items():
             if group["total_count"] >= 3:  # Bundle if 3+ notices
@@ -445,8 +490,11 @@ class SignalsDigestFormatter:
                 bundled_signals.extend(group["signals"])
 
         return sorted(
-            bundled_signals, key=lambda x: x.get("priority_score", 0), reverse=True
-        )
+            bundled_signals,
+            key=lambda x: x.get(
+                "priority_score",
+                0),
+            reverse=True)
 
     def _format_watchlist_signal(self, signal: Dict[str, Any]) -> str:
         """Format a watchlist signal."""

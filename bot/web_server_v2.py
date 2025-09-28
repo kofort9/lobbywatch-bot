@@ -1,10 +1,10 @@
 """Web server v2 for handling Slack events and slash commands with v2 system."""
 
-import json
+# import json  # Unused import
 import logging
 from typing import Any, Dict, Optional
 
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, request
 
 from bot.run_v2 import run_daily_digest, run_mini_digest
 from bot.signals_database_v2 import SignalsDatabaseV2
@@ -108,7 +108,8 @@ def create_web_server_v2() -> Flask:
             elif digest_type == "mini":
                 digest = run_mini_digest(hours_back, channel_id)
                 if not digest:
-                    return jsonify({"message": "Mini-digest thresholds not met"})
+                    return jsonify(
+                        {"message": "Mini-digest thresholds not met"})
             else:
                 return jsonify({"error": "Invalid digest type"})
 
@@ -143,9 +144,12 @@ def create_web_server_v2() -> Flask:
         elif command == "/threshold":
             return handle_threshold_command(text, channel_id)
         else:
-            return {"response_type": "ephemeral", "text": f"Unknown command: {command}"}
+            return {
+                "response_type": "ephemeral",
+                "text": f"Unknown command: {command}"}
 
-    def handle_lobbypulse_command(text: str, channel_id: str) -> Dict[str, Any]:
+    def handle_lobbypulse_command(
+            text: str, channel_id: str) -> Dict[str, Any]:
         """Handle /lobbypulse command."""
         if text == "help":
             return {
@@ -207,15 +211,13 @@ def create_web_server_v2() -> Flask:
             # Get system stats
             stats = database.get_signal_stats()
             return {
-                "response_type": "in_channel",
-                "text": f"🔍 **LobbyLens v2 Status**\n\n"
+                "response_type": "in_channel", "text": f"🔍 **LobbyLens v2 Status**\n\n"
                 f"**Database Stats:**\n"
                 f"• Total signals: {stats['total_signals']}\n"
                 f"• High priority: {stats['high_priority']}\n"
                 f"• Watchlist hits: {stats['watchlist_hits']}\n\n"
                 f"**Sources:** {', '.join(stats['by_source'].keys())}\n"
-                f"**Industries:** {', '.join(list(stats['by_industry'].keys())[:5])}",
-            }
+                f"**Industries:** {', '.join(list(stats['by_industry'].keys())[:5])}", }
 
     def handle_watchlist_command(text: str, channel_id: str) -> Dict[str, Any]:
         """Handle /watchlist command."""

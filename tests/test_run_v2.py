@@ -2,17 +2,17 @@
 Tests for bot/run_v2.py
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
 
 from bot.run_v2 import (
+    main,
     run_daily_digest,
     run_mini_digest,
-    run_test_scenarios,
     run_quarterly_lda_ingest,
+    run_test_scenarios,
     run_web_server,
-    main,
 )
 
 
@@ -53,7 +53,8 @@ class TestRunV2:
         mock_database_class.assert_called_once()
         mock_collector.collect_all_signals.assert_called_once_with(24)
         mock_database.get_watchlist.assert_called_once_with("test_channel")
-        mock_formatter.format_daily_digest.assert_called_once_with(mock_signals, 24)
+        mock_formatter.format_daily_digest.assert_called_once_with(
+            mock_signals, 24)
         assert result == mock_digest
 
     @patch("bot.run_v2.DailySignalsCollectorV2")
@@ -214,7 +215,8 @@ class TestRunV2:
 
     @patch("bot.web_server_v2.create_web_server_v2")
     @patch("bot.run_v2.os.environ.get")
-    def test_run_web_server_default_port(self, mock_env_get, mock_create_server):
+    def test_run_web_server_default_port(
+            self, mock_env_get, mock_create_server):
         """Test web server with default port"""
         # Mock environment
         mock_env_get.return_value = "8080"
@@ -229,7 +231,8 @@ class TestRunV2:
         # Verify
         mock_env_get.assert_any_call("PORT", 8000)
         mock_create_server.assert_called_once()
-        mock_app.run.assert_called_once_with(host="0.0.0.0", port=8080, debug=False)
+        mock_app.run.assert_called_once_with(
+            host="0.0.0.0", port=8080, debug=False)
 
     @patch("bot.web_server_v2.create_web_server_v2")
     def test_run_web_server_custom_port(self, mock_create_server):
@@ -243,7 +246,8 @@ class TestRunV2:
 
         # Verify
         mock_create_server.assert_called_once()
-        mock_app.run.assert_called_once_with(host="0.0.0.0", port=9000, debug=False)
+        mock_app.run.assert_called_once_with(
+            host="0.0.0.0", port=9000, debug=False)
 
     @patch("bot.run_v2.run_daily_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
@@ -428,8 +432,9 @@ class TestRunV2:
 
     def test_main_argument_parser_setup(self):
         """Test that argument parser is set up correctly"""
-        from bot.run_v2 import main
         import argparse
+
+        from bot.run_v2 import main
 
         # This test verifies the argument parser configuration
         # by checking that the main function can be called without errors
@@ -451,8 +456,7 @@ class TestRunV2:
 
                 # Verify parser was created with correct description
                 mock_parser_class.assert_called_once_with(
-                    description="LobbyLens v2 - Enhanced Government Signals Bot"
-                )
+                    description="LobbyLens v2 - Enhanced Government Signals Bot")
 
                 # Verify arguments were added
                 assert mock_parser.add_argument.call_count >= 5  # At least 5 arguments

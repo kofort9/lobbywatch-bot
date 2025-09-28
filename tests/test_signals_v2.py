@@ -1,16 +1,16 @@
 """Tests for bot/signals_v2.py - Enhanced signal model and rules engine."""
 
-import json
+# import json  # Unused import
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+# from unittest.mock import patch  # Unused import
 
-import pytest
+# import pytest  # Unused import
 
 from bot.signals_v2 import (
     SignalDeduplicator,
+    SignalsRulesEngine,
     SignalType,
     SignalV2,
-    SignalsRulesEngine,
     Urgency,
 )
 
@@ -472,7 +472,8 @@ class TestSignalsRulesEngine:
         signal.urgency = Urgency.HIGH
 
         score = engine._calculate_priority_score(signal)
-        # Base (2.0) + High urgency (1.0) + Surge (2.0) + Near deadline (0.8) = 5.8
+        # Base (2.0) + High urgency (1.0) + Surge (2.0) + Near deadline (0.8) =
+        # 5.8
         assert score == 5.8
 
     def test_assign_industry_tag_from_issue_codes(self):
@@ -840,5 +841,6 @@ class TestSignalDeduplicator:
 
         grouped = deduplicator.group_dockets(signals)
         assert len(grouped) == 1
-        # The logic splits on "-" and takes the first part, so "EPA-2023-001" becomes "EPA"
+        # The logic splits on "-" and takes the first part, so "EPA-2023-001"
+        # becomes "EPA"
         assert len(grouped["EPA"]) == 1

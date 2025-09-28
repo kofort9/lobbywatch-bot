@@ -164,7 +164,11 @@ class TestDigestComputer:
         assert computer._format_percentage(10.0) == "∞"  # Represents infinity
 
     @patch("bot.digest.datetime")
-    def test_compute_digest_success(self, mock_datetime, populated_db, temp_state_dir):
+    def test_compute_digest_success(
+            self,
+            mock_datetime,
+            populated_db,
+            temp_state_dir):
         """Test successful digest computation."""
         # Mock current time
         fixed_now = datetime(2023, 10, 15, 12, 0, 0)

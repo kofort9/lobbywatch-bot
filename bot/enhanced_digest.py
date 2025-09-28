@@ -58,7 +58,10 @@ class EnhancedDigestComputer:
 
         return matches
 
-    def _get_filing_issues(self, filing_id: int, conn: sqlite3.Connection) -> List[int]:
+    def _get_filing_issues(
+            self,
+            filing_id: int,
+            conn: sqlite3.Connection) -> List[int]:
         """Get issue IDs for a filing."""
         cursor = conn.execute(
             """
@@ -121,7 +124,7 @@ class EnhancedDigestComputer:
     ) -> Tuple[List[sqlite3.Row], List[bool]]:
         """Get new filings with watchlist status."""
         query = """
-        SELECT 
+        SELECT
             f.id, f.filing_date, f.created_at,
             e1.name as client_name, e1.id as client_id,
             e2.name as registrant_name, e2.id as registrant_id,
@@ -131,13 +134,14 @@ class EnhancedDigestComputer:
         LEFT JOIN entity e1 ON e1.id = f.client_id
         LEFT JOIN entity e2 ON e2.id = f.registrant_id
         WHERE f.filing_date >= ? OR f.created_at >= ?
-        ORDER BY 
+        ORDER BY
             COALESCE(f.filing_date, f.created_at) DESC,
             f.created_at DESC
         LIMIT ?
         """
 
-        cursor = conn.execute(query, (since.isoformat(), since.isoformat(), limit))
+        cursor = conn.execute(
+            query, (since.isoformat(), since.isoformat(), limit))
         filings = cursor.fetchall()
 
         # Check watchlist status
@@ -158,11 +162,11 @@ class EnhancedDigestComputer:
     ) -> List[Dict[str, Any]]:
         """Get top registrants with enhanced context."""
         query = """
-        SELECT 
+        SELECT
             e.id, e.name,
             COUNT(f.id) as filing_count,
             SUM(COALESCE(f.amount, 0)) as total_amount
-        FROM filing f 
+        FROM filing f
         JOIN entity e ON e.id = f.registrant_id
         WHERE f.created_at >= ?
         GROUP BY e.id, e.name
@@ -181,14 +185,14 @@ class EnhancedDigestComputer:
         for reg in registrants:
             # Get example client and issue
             example_query = """
-            SELECT 
+            SELECT
                 ec.name as client_name,
                 f.description,
                 i.code as issue_code,
                 i.description as issue_description,
                 f.amount
             FROM filing f
-            JOIN entity ec ON ec.id = f.client_id  
+            JOIN entity ec ON ec.id = f.client_id
             LEFT JOIN filing_issue fi ON fi.filing_id = f.id
             LEFT JOIN issue i ON i.id = fi.issue_id
             WHERE f.registrant_id = ? AND f.created_at >= ?
@@ -196,7 +200,8 @@ class EnhancedDigestComputer:
             LIMIT 1
             """
 
-            example_cursor = conn.execute(example_query, (reg["id"], since.isoformat()))
+            example_cursor = conn.execute(
+                example_query, (reg["id"], since.isoformat()))
             example = example_cursor.fetchone()
 
             enhanced_reg = {
@@ -225,7 +230,7 @@ class EnhancedDigestComputer:
         """Get enhanced issue activity with context."""
         query = """
         WITH last_week AS (
-            SELECT 
+            SELECT
                 i.id, i.code, i.description,
                 COUNT(*) as count_current
             FROM filing_issue fi
@@ -235,7 +240,7 @@ class EnhancedDigestComputer:
             GROUP BY i.id, i.code, i.description
         ),
         prev_week AS (
-            SELECT 
+            SELECT
                 i.id, i.code,
                 COUNT(*) as count_previous
             FROM filing_issue fi
@@ -244,14 +249,14 @@ class EnhancedDigestComputer:
             WHERE f.created_at >= ? AND f.created_at < ?
             GROUP BY i.id, i.code
         )
-        SELECT 
+        SELECT
             lw.id, lw.code, lw.description,
             COALESCE(pw.count_previous, 0) as count_previous,
             lw.count_current,
-            CASE 
-                WHEN COALESCE(pw.count_previous, 0) = 0 THEN 
+            CASE
+                WHEN COALESCE(pw.count_previous, 0) = 0 THEN
                     CASE WHEN lw.count_current > 0 THEN 999.0 ELSE 0.0 END
-                ELSE 
+                ELSE
                     (1.0 * lw.count_current / pw.count_previous - 1.0)
             END as pct_change
         FROM last_week lw
@@ -314,7 +319,8 @@ class EnhancedDigestComputer:
 
         if digest_type == "mini":
             # Mini digest - since last daily run
-            last_daily = self.db_manager.get_last_digest_run(channel_id, "daily")
+            last_daily = self.db_manager.get_last_digest_run(
+                channel_id, "daily")
             if last_daily:
                 since = datetime.fromisoformat(last_daily["run_time"])
             else:
@@ -331,8 +337,7 @@ class EnhancedDigestComputer:
             with self._get_connection() as conn:
                 # Get enhanced data
                 new_filings, watchlist_statuses = self._get_enhanced_new_filings(
-                    conn, since, channel_id, limit=15
-                )
+                    conn, since, channel_id, limit=15)
 
                 top_registrants = self._get_enhanced_top_registrants(
                     conn, week_start, channel_id, limit=5
@@ -429,8 +434,7 @@ class EnhancedDigestComputer:
                 lines.append(f"\n*💰 Top registrants (7d):*")
                 for reg in top_registrants:
                     name_display = (
-                        f"**{reg['name']}**" if reg["is_watchlist"] else reg["name"]
-                    )
+                        f"**{reg['name']}**" if reg["is_watchlist"] else reg["name"])
                     amount = self._format_amount(reg["total_amount"])
                     count = reg["filing_count"]
 
@@ -439,7 +443,8 @@ class EnhancedDigestComputer:
                     # Add context if available
                     context_parts = []
                     if reg["example_client"]:
-                        context_parts.append(f"client: {reg['example_client']}")
+                        context_parts.append(
+                            f"client: {reg['example_client']}")
                     if reg["example_issue"]:
                         context_parts.append(f"issue: {reg['example_issue']}")
 
@@ -492,7 +497,8 @@ class EnhancedDigestComputer:
             f"Generated {digest_type} digest with {len(lines)} lines for channel {channel_id}"
         )
 
-        return result if len(lines) > 2 else "*No fresh lobbying activity detected.*"
+        return result if len(
+            lines) > 2 else "*No fresh lobbying activity detected.*"
 
     def should_send_mini_digest(self, channel_id: str) -> bool:
         """Determine if mini-digest should be sent based on thresholds."""
@@ -535,7 +541,8 @@ class EnhancedDigestComputer:
                         ",".join(map(str, watchlist_entities["registrant"])) or "0",
                     )
 
-                    cursor = conn.execute(watchlist_query, (since_daily.isoformat(),))
+                    cursor = conn.execute(
+                        watchlist_query, (since_daily.isoformat(),))
                     watchlist_matches = cursor.fetchone()["count"]
 
                     if watchlist_matches > 0:

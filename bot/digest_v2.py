@@ -4,11 +4,11 @@ Implements the comprehensive digest format with character budgets and mobile-fri
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import pytz
 
-from bot.signals_v2 import SignalDeduplicator, SignalType, SignalV2, Urgency
+from bot.signals_v2 import SignalDeduplicator, SignalType, SignalV2
 
 
 class DigestV2Formatter:
@@ -19,7 +19,10 @@ class DigestV2Formatter:
         self.deduplicator = SignalDeduplicator()
         self.pt_tz = pytz.timezone("America/Los_Angeles")
 
-    def format_daily_digest(self, signals: List[SignalV2], hours_back: int = 24) -> str:
+    def format_daily_digest(
+            self,
+            signals: List[SignalV2],
+            hours_back: int = 24) -> str:
         """Format daily digest with v2 features"""
         if not signals:
             return self._format_empty_digest()
@@ -43,7 +46,8 @@ class DigestV2Formatter:
 
         # Sections with limits
         if watchlist_signals:
-            lines.append(f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
+            lines.append(
+                f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
             for signal in watchlist_signals[:5]:  # Max 5
                 lines.append(self._format_watchlist_signal(signal))
 
@@ -53,7 +57,8 @@ class DigestV2Formatter:
                 lines.append(self._format_what_changed_signal(signal))
 
         if industry_snapshots:
-            lines.append(f"\n🏭 **Industry Snapshots** ({len(industry_snapshots)}):")
+            lines.append(
+                f"\n🏭 **Industry Snapshots** ({len(industry_snapshots)}):")
             for signal in industry_snapshots[:12]:  # Max 12 lines total
                 lines.append(self._format_industry_signal(signal))
 
@@ -96,7 +101,8 @@ class DigestV2Formatter:
         processed_signals = self._process_signals(signals)
 
         # Get high-priority signals
-        high_priority = [s for s in processed_signals if s.priority_score >= 5.0]
+        high_priority = [
+            s for s in processed_signals if s.priority_score >= 5.0]
         high_priority = sorted(
             high_priority, key=lambda x: x.priority_score, reverse=True
         )[:3]
@@ -122,17 +128,23 @@ class DigestV2Formatter:
         deduplicated = self.deduplicator.deduplicate_signals(signals)
 
         # Sort by priority score
-        return sorted(deduplicated, key=lambda x: x.priority_score, reverse=True)
+        return sorted(
+            deduplicated,
+            key=lambda x: x.priority_score,
+            reverse=True)
 
-    def _get_watchlist_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+    def _get_watchlist_signals(
+            self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get watchlist hit signals"""
         return [s for s in signals if s.watchlist_hit]
 
-    def _get_what_changed_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+    def _get_what_changed_signals(
+            self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get high-priority signals for What Changed section"""
         return [s for s in signals if s.priority_score >= 3.0]
 
-    def _get_industry_snapshots(self, signals: List[SignalV2]) -> List[SignalV2]:
+    def _get_industry_snapshots(
+            self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get top 1-2 signals per industry (max 12 lines total)"""
         industry_groups: Dict[str, List[SignalV2]] = {}
         for signal in signals:
@@ -150,7 +162,10 @@ class DigestV2Formatter:
             snapshots.extend(industry_signals[:2])  # Top 2 per industry
 
         # Sort by priority and limit to 12 lines
-        snapshots = sorted(snapshots, key=lambda x: x.priority_score, reverse=True)
+        snapshots = sorted(
+            snapshots,
+            key=lambda x: x.priority_score,
+            reverse=True)
         return snapshots[:12]
 
     def _get_deadline_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
@@ -166,10 +181,12 @@ class DigestV2Formatter:
 
         return sorted(
             deadline_signals,
-            key=lambda x: x.deadline or datetime.min.replace(tzinfo=timezone.utc),
+            key=lambda x: x.deadline or datetime.min.replace(
+                tzinfo=timezone.utc),
         )
 
-    def _get_docket_surge_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+    def _get_docket_surge_signals(
+            self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get docket signals with surge activity"""
         surge_signals = []
 
@@ -182,12 +199,14 @@ class DigestV2Formatter:
         return sorted(
             surge_signals,
             key=lambda x: (
-                x.metric_json.get("comments_24h_delta_pct", 0) if x.metric_json else 0
-            ),
+                x.metric_json.get(
+                    "comments_24h_delta_pct",
+                    0) if x.metric_json else 0),
             reverse=True,
         )
 
-    def _get_bill_action_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+    def _get_bill_action_signals(
+            self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get bill action signals, grouped by bill_id"""
         bill_groups = self.deduplicator.group_bills(signals)
         bill_actions = []
@@ -197,7 +216,10 @@ class DigestV2Formatter:
             latest_signal = max(bill_signals, key=lambda x: x.timestamp)
             bill_actions.append(latest_signal)
 
-        return sorted(bill_actions, key=lambda x: x.priority_score, reverse=True)
+        return sorted(
+            bill_actions,
+            key=lambda x: x.priority_score,
+            reverse=True)
 
     def _should_send_mini_digest(self, signals: List[SignalV2]) -> bool:
         """Check if mini-digest thresholds are met"""
@@ -229,9 +251,11 @@ class DigestV2Formatter:
         date_str = now.strftime("%Y-%m-%d")
 
         # Count signals by type
-        bills_count = len([s for s in signals if s.signal_type == SignalType.BILL])
+        bills_count = len(
+            [s for s in signals if s.signal_type == SignalType.BILL])
         fr_count = len([s for s in signals if s.source == "federal_register"])
-        dockets_count = len([s for s in signals if s.signal_type == SignalType.DOCKET])
+        dockets_count = len(
+            [s for s in signals if s.signal_type == SignalType.DOCKET])
         watchlist_hits = len([s for s in signals if s.watchlist_hit])
 
         return f"🔍 **LobbyLens — Daily Signals** ({date_str}) · {hours_back}h\nMini-stats: Bills {bills_count} · FR {fr_count} · Dockets {dockets_count} · Watchlist hits {watchlist_hits}"
@@ -240,9 +264,6 @@ class DigestV2Formatter:
         """Format watchlist alert signal"""
         industry = f"[{signal.industry_tag}]" if signal.industry_tag else "[Government]"
         urgency = signal.urgency.value.title() if signal.urgency else "Medium"
-
-        # Format title with mobile-friendly line breaks
-        title = self._format_title_for_mobile(signal.title, 60)
 
         # Format summary
         summary = self._format_summary(signal.summary, 160)

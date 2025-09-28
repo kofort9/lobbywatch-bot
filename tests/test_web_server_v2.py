@@ -2,9 +2,9 @@
 Tests for bot/web_server_v2.py
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-import json
 
 from bot.web_server_v2 import create_web_server_v2
 
@@ -63,11 +63,14 @@ class TestWebServerV2:
 
     def test_handle_events_url_verification(self, client):
         """Test URL verification event handling"""
-        event_data = {"type": "url_verification", "challenge": "test_challenge_123"}
+        event_data = {
+            "type": "url_verification",
+            "challenge": "test_challenge_123"}
 
         response = client.post(
-            "/lobbylens/events", json=event_data, content_type="application/json"
-        )
+            "/lobbylens/events",
+            json=event_data,
+            content_type="application/json")
 
         assert response.status_code == 200
         assert response.get_data(as_text=True) == "test_challenge_123"
@@ -80,8 +83,9 @@ class TestWebServerV2:
         }
 
         response = client.post(
-            "/lobbylens/events", json=event_data, content_type="application/json"
-        )
+            "/lobbylens/events",
+            json=event_data,
+            content_type="application/json")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -91,8 +95,9 @@ class TestWebServerV2:
         """Test event handling with error"""
         # Send invalid JSON
         response = client.post(
-            "/lobbylens/events", data="invalid json", content_type="application/json"
-        )
+            "/lobbylens/events",
+            data="invalid json",
+            content_type="application/json")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -198,7 +203,8 @@ class TestWebServerV2:
         assert "/watchlist" in data["text"]
 
     @patch("bot.web_server_v2.run_daily_digest")
-    def test_handle_slash_command_lobbypulse_daily(self, mock_run_daily, client):
+    def test_handle_slash_command_lobbypulse_daily(
+            self, mock_run_daily, client):
         """Test /lobbypulse daily command"""
         mock_run_daily.return_value = "Test Daily Digest"
 
@@ -220,7 +226,8 @@ class TestWebServerV2:
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
-    def test_handle_slash_command_lobbypulse_mini_success(self, mock_run_mini, client):
+    def test_handle_slash_command_lobbypulse_mini_success(
+            self, mock_run_mini, client):
         """Test /lobbypulse mini command with success"""
         mock_run_mini.return_value = "Test Mini Digest"
 
@@ -264,7 +271,8 @@ class TestWebServerV2:
         assert data["text"] == "No mini-digest - thresholds not met"
 
     @patch("bot.web_server_v2.run_daily_digest")
-    def test_handle_slash_command_lobbypulse_error(self, mock_run_daily, client):
+    def test_handle_slash_command_lobbypulse_error(
+            self, mock_run_daily, client):
         """Test /lobbypulse command with error"""
         mock_run_daily.side_effect = Exception("Test error")
 

@@ -2,11 +2,12 @@
 Tests for bot/test_fixtures_v2.py
 """
 
-import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
+import pytest
+
+from bot.signals_v2 import SignalType, Urgency
 from bot.test_fixtures_v2 import TestFixturesV2, TestValidator
-from bot.signals_v2 import SignalV2, SignalType, Urgency
 
 
 class TestTestFixturesV2:
@@ -257,7 +258,8 @@ Some content without proper sections"""
         result = validator.validate_digest_format(invalid_digest)
         assert result is True  # No errors, just warnings
         assert len(validator.warnings) > 0
-        assert any("Missing section" in warning for warning in validator.warnings)
+        assert any(
+            "Missing section" in warning for warning in validator.warnings)
 
     def test_validate_digest_format_character_limit(self, validator):
         """Test digest format validation with character limit warning"""
@@ -291,7 +293,8 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
         result = validator.validate_digest_format(long_digest)
         assert result is True  # No errors, just warnings
-        assert any("Slack message limits" in warning for warning in validator.warnings)
+        assert any(
+            "Slack message limits" in warning for warning in validator.warnings)
 
     def test_validate_digest_format_no_links(self, validator):
         """Test digest format validation with no links"""
@@ -387,7 +390,8 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
         result = validator.validate_mobile_formatting(digest_with_long_titles)
         assert result is True  # No errors, just warnings
-        assert any("long title lines" in warning for warning in validator.warnings)
+        assert any(
+            "long title lines" in warning for warning in validator.warnings)
 
     def test_validate_mobile_formatting_no_indentation(self, validator):
         """Test mobile formatting validation without indentation"""
@@ -398,11 +402,11 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 • Item 2
 • Item 3"""
 
-        result = validator.validate_mobile_formatting(digest_without_indentation)
+        result = validator.validate_mobile_formatting(
+            digest_without_indentation)
         assert result is True  # No errors, just warnings
         assert any(
-            "indented continuation lines" in warning for warning in validator.warnings
-        )
+            "indented continuation lines" in warning for warning in validator.warnings)
 
     def test_validate_timezone_handling_with_pt(self, validator):
         """Test timezone handling validation with PT timezone"""

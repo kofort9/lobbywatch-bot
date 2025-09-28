@@ -119,7 +119,7 @@ class FuzzyMatcher:
 
         # Search entities
         entity_query = """
-        SELECT id, name, type FROM entity 
+        SELECT id, name, type FROM entity
         WHERE 1=1
         """
         params = []
@@ -170,8 +170,7 @@ class FuzzyMatcher:
                             "description": issue["description"],
                             "score": score,
                             "source": "database",
-                        }
-                    )
+                        })
 
         # Sort by score descending and limit results
         matches.sort(key=lambda x: x["score"], reverse=True)
@@ -253,8 +252,7 @@ class FuzzyMatcher:
             for i, match in enumerate(candidates, 1):
                 message += f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
             message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                len(candidates)
-            )
+                len(candidates))
             return message, candidates
 
         # Low confidence or no matches
@@ -333,7 +331,10 @@ class MatchingService:
 
             elif not candidates:
                 # No matches found
-                return {"status": "no_match", "message": message, "candidates": []}
+                return {
+                    "status": "no_match",
+                    "message": message,
+                    "candidates": []}
 
             else:
                 # Need user confirmation

@@ -6,8 +6,8 @@ Integrates the complete v2 system with rules engine, database, and digest format
 import argparse
 import logging
 import os
-from datetime import datetime, timezone
-from typing import List, Optional
+# from datetime import datetime, timezone  # Unused imports
+# from typing import List  # Unused imports, Optional
 
 from bot.config import settings
 from bot.daily_signals_v2 import DailySignalsCollectorV2
@@ -17,22 +17,24 @@ from bot.test_fixtures_v2 import TestFixturesV2, TestValidator
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> str:
+def run_daily_digest(
+        hours_back: int = 24,
+        channel_id: str = "test_channel") -> str:
     """Run daily digest collection and formatting"""
     logger.info(f"Running daily digest for last {hours_back} hours")
 
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    database = SignalsDatabaseV2()
+    # database = SignalsDatabaseV2()  # Unused variable
 
     # Get watchlist for channel
-    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -53,10 +55,10 @@ def run_mini_digest(
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    database = SignalsDatabaseV2()
+    # database = SignalsDatabaseV2()  # Unused variable
 
     # Get watchlist for channel
-    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -92,7 +94,9 @@ def run_test_scenarios() -> None:
         from bot.signals_v2 import SignalsRulesEngine
 
         # Set up watchlist for watchlist hit scenario
-        watchlist = ["google", "microsoft"] if "Watchlist" in scenario_name else []
+        watchlist = [
+            "google",
+            "microsoft"] if "Watchlist" in scenario_name else []
         rules_engine = SignalsRulesEngine(watchlist)
 
         processed_signals = []
@@ -113,7 +117,7 @@ def run_test_scenarios() -> None:
         # Print results
         print(f"\n=== {scenario_name} ===")
         print(digest)
-        print(f"\nValidation Report:")
+        print("\nValidation Report:")
         print(validator.get_validation_report())
         print("\n" + "=" * 50 + "\n")
 
@@ -157,7 +161,11 @@ def main() -> None:
     parser.add_argument(
         "--channel", type=str, default="test_channel", help="Slack channel ID"
     )
-    parser.add_argument("--port", type=int, default=8000, help="Web server port")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Web server port")
     parser.add_argument(
         "--dry-run", action="store_true", help="Dry run (no Slack posting)"
     )

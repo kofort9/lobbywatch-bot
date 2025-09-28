@@ -24,14 +24,15 @@ class PostgresManager(DatabaseManager):
             database_url: PostgreSQL connection URL
         """
         self.database_url = database_url
-        self.db_path = Path(database_url)  # For compatibility with parent class
+        # For compatibility with parent class
+        self.db_path = Path(database_url)
 
     def get_connection(self) -> Any:
         """Get PostgreSQL connection with proper settings."""
         try:
             conn = psycopg2.connect(
-                self.database_url, cursor_factory=psycopg2.extras.RealDictCursor
-            )
+                self.database_url,
+                cursor_factory=psycopg2.extras.RealDictCursor)
             conn.autocommit = False
             return conn
         except Exception as e:
@@ -55,7 +56,7 @@ class PostgresManager(DatabaseManager):
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-                
+
                 -- Per-channel watchlists
                 CREATE TABLE IF NOT EXISTS channel_watchlist (
                     id SERIAL PRIMARY KEY,
@@ -69,7 +70,7 @@ class PostgresManager(DatabaseManager):
                     FOREIGN KEY (channel_id) REFERENCES channel_settings(id),
                     UNIQUE(channel_id, entity_type, watch_name)
                 );
-                
+
                 -- Alias mapping for fast future matches
                 CREATE TABLE IF NOT EXISTS entity_aliases (
                     id SERIAL PRIMARY KEY,
@@ -83,7 +84,7 @@ class PostgresManager(DatabaseManager):
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(alias_name, entity_type)
                 );
-                
+
                 -- Digest run tracking per channel
                 CREATE TABLE IF NOT EXISTS digest_runs (
                     id SERIAL PRIMARY KEY,
@@ -95,7 +96,7 @@ class PostgresManager(DatabaseManager):
                     digest_content TEXT,
                     FOREIGN KEY (channel_id) REFERENCES channel_settings(id)
                 );
-                
+
                 -- Enhanced filing tracking
                 CREATE TABLE IF NOT EXISTS filing_tracking (
                     filing_id INTEGER PRIMARY KEY,
@@ -103,7 +104,7 @@ class PostgresManager(DatabaseManager):
                     digest_sent_to TEXT,
                     watchlist_matches TEXT
                 );
-                
+
                 -- Create indexes for performance
                 CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
                 CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
@@ -116,7 +117,8 @@ class PostgresManager(DatabaseManager):
                 logger.info("Enhanced PostgreSQL schema ensured")
 
 
-def create_database_manager(database_url: Optional[str] = None) -> DatabaseManager:
+def create_database_manager(
+        database_url: Optional[str] = None) -> DatabaseManager:
     """Factory function to create appropriate database manager."""
 
     # Use DATABASE_URL if provided (Railway/Heroku style)

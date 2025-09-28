@@ -18,7 +18,9 @@ console = Console()
 
 
 # V2 System Functions
-def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> str:
+def run_daily_digest(
+        hours_back: int = 24,
+        channel_id: str = "test_channel") -> str:
     """Run daily digest collection and formatting using v2 system"""
     import logging
     from datetime import datetime, timezone
@@ -37,7 +39,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -70,7 +72,7 @@ def run_mini_digest(
     database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -116,7 +118,8 @@ def fetch_data() -> tuple[int, int]:
     """
     # Note: Legacy data fetching removed due to API changes.
     # The v2 system now uses direct government API calls instead of
-    # the lobbywatch package which relied on deprecated OpenSecrets/ProPublica APIs.
+    # the lobbywatch package which relied on deprecated OpenSecrets/ProPublica
+    # APIs.
     logger.info("Legacy data fetching disabled - using v2 system for fresh data")
     return 0, 0
 
@@ -180,7 +183,8 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
         try:
             successful_fetches, failed_fetches = fetch_data()
             if failed_fetches > 0:
-                errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
+                errors.append(
+                    f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
                 f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
             )
@@ -198,9 +202,8 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
 
         if errors:
             # Append error summary to digest
-            error_summary = "\\n⚠️ *Errors during processing:*\\n" + "\\n".join(
-                f"• {err}" for err in errors
-            )
+            error_summary = "\\n⚠️ *Errors during processing:*\\n" + \
+                "\\n".join(f"• {err}" for err in errors)
             digest_text += error_summary
 
     except DigestError as e:

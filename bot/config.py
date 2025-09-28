@@ -17,11 +17,14 @@ class Settings(BaseSettings):
     )  # Postgres for production
 
     # API Keys (Legacy - no longer available)
-    opensecrets_api_key: Optional[str] = Field(default=None, env="OPENSECRETS_API_KEY")
-    propublica_api_key: Optional[str] = Field(default=None, env="PROPUBLICA_API_KEY")
+    opensecrets_api_key: Optional[str] = Field(
+        default=None, env="OPENSECRETS_API_KEY")
+    propublica_api_key: Optional[str] = Field(
+        default=None, env="PROPUBLICA_API_KEY")
 
     # Daily Signals API Keys
-    congress_api_key: Optional[str] = Field(default=None, env="CONGRESS_API_KEY")
+    congress_api_key: Optional[str] = Field(
+        default=None, env="CONGRESS_API_KEY")
     federal_register_api_key: Optional[str] = Field(
         default=None, env="FEDERAL_REGISTER_API_KEY"
     )
@@ -73,8 +76,7 @@ class Settings(BaseSettings):
         if not self.notifier_type and not self.slack_bot_token:
             raise ValueError(
                 "No Slack configuration found. Set SLACK_WEBHOOK_URL for basic mode or "
-                "SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET for enhanced features"
-            )
+                "SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET for enhanced features")
 
     def has_enhanced_features(self) -> bool:
         """Check if enhanced Slack app features are available."""
@@ -88,7 +90,8 @@ class Settings(BaseSettings):
         """Get list of admin user IDs."""
         if not self.admin_users:
             return []
-        return [user.strip() for user in self.admin_users.split(",") if user.strip()]
+        return [user.strip()
+                for user in self.admin_users.split(",") if user.strip()]
 
 
 # Global settings instance

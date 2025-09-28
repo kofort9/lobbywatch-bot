@@ -28,9 +28,8 @@ def setup_logging(level: str) -> None:
 
 
 @click.command()
-@click.option(
-    "--hours-back", default=24, type=int, help="Hours back to collect signals from"
-)
+@click.option("--hours-back", default=24, type=int,
+              help="Hours back to collect signals from")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -49,7 +48,11 @@ def setup_logging(level: str) -> None:
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
     help="Set logging level",
 )
-def main(hours_back: int, dry_run: bool, format_digest: bool, log_level: str) -> None:
+def main(
+        hours_back: int,
+        dry_run: bool,
+        format_digest: bool,
+        log_level: str) -> None:
     """Collect and process daily government signals."""
 
     setup_logging(log_level)
@@ -98,9 +101,11 @@ def main(hours_back: int, dry_run: bool, format_digest: bool, log_level: str) ->
             console.print("=" * 60 + "\n")
         else:
             # Display raw signals
-            console.print(f"\n[yellow]Collected {len(signals)} signals:[/yellow]")
+            console.print(
+                f"\n[yellow]Collected {len(signals)} signals:[/yellow]")
             for i, signal in enumerate(signals[:10], 1):  # Show top 10
-                console.print(f"{i}. [{signal.priority_score:.1f}] {signal.title}")
+                console.print(
+                    f"{i}. [{signal.priority_score:.1f}] {signal.title}")
                 console.print(
                     f"   Source: {signal.source} | Issues: {signal.issue_codes}"
                 )

@@ -104,8 +104,8 @@ class SignalsDatabase:
             try:
                 conn.execute(
                     """
-                    INSERT OR REPLACE INTO signal_event 
-                    (source, source_id, timestamp, title, link, agency, committee, 
+                    INSERT OR REPLACE INTO signal_event
+                    (source, source_id, timestamp, title, link, agency, committee,
                      bill_id, rin, docket_id, issue_codes, metric_json, priority_score)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -120,8 +120,10 @@ class SignalsDatabase:
                         signal.bill_id,
                         signal.rin,
                         signal.docket_id,
-                        str(signal.issue_codes),  # Convert list to string for storage
-                        str(signal.metric_json),  # Convert dict to string for storage
+                        str(signal.issue_codes),
+                        # Convert list to string for storage
+                        str(signal.metric_json),
+                        # Convert dict to string for storage
                         signal.priority_score,
                     ),
                 )
@@ -145,9 +147,9 @@ class SignalsDatabase:
 
         cursor = conn.execute(
             """
-            SELECT * FROM signal_event 
-            WHERE timestamp >= ? 
-            ORDER BY priority_score DESC, timestamp DESC 
+            SELECT * FROM signal_event
+            WHERE timestamp >= ?
+            ORDER BY priority_score DESC, timestamp DESC
             LIMIT ?
         """,
             (since_time, limit),
@@ -164,7 +166,7 @@ class SignalsDatabase:
                 signal["metric_json"] = (
                     eval(signal["metric_json"]) if signal["metric_json"] else {}
                 )
-            except:
+            except BaseException:
                 signal["issue_codes"] = []
                 signal["metric_json"] = {}
 
@@ -184,7 +186,7 @@ class SignalsDatabase:
 
         cursor = conn.execute(
             """
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE timestamp >= ? AND issue_codes LIKE ?
             ORDER BY priority_score DESC, timestamp DESC
         """,
@@ -201,7 +203,7 @@ class SignalsDatabase:
                 signal["metric_json"] = (
                     eval(signal["metric_json"]) if signal["metric_json"] else {}
                 )
-            except:
+            except BaseException:
                 signal["issue_codes"] = []
                 signal["metric_json"] = {}
 
@@ -219,7 +221,7 @@ class SignalsDatabase:
 
         cursor = conn.execute(
             """
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE timestamp >= ? AND metric_json LIKE '%comment_surge%'
             ORDER BY priority_score DESC, timestamp DESC
         """,
@@ -236,7 +238,7 @@ class SignalsDatabase:
                 signal["metric_json"] = (
                     eval(signal["metric_json"]) if signal["metric_json"] else {}
                 )
-            except:
+            except BaseException:
                 signal["issue_codes"] = []
                 signal["metric_json"] = {}
 
@@ -245,8 +247,11 @@ class SignalsDatabase:
         return signals
 
     def add_entity_alias(
-        self, entity_id: int, alias_text: str, source: str, confidence: float = 1.0
-    ) -> bool:
+            self,
+            entity_id: int,
+            alias_text: str,
+            source: str,
+            confidence: float = 1.0) -> bool:
         """Add an entity alias for fuzzy matching."""
         conn = self.db_manager.get_connection()
 
@@ -270,7 +275,7 @@ class SignalsDatabase:
 
         cursor = conn.execute(
             """
-            SELECT ea.*, e.name, e.type 
+            SELECT ea.*, e.name, e.type
             FROM entity_alias ea
             JOIN entity e ON e.id = ea.entity_id
             WHERE ea.alias_text LIKE ?

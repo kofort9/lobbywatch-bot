@@ -4,9 +4,9 @@ Implements the test fixtures specified in the requirements.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+# from typing import Any, Dict  # Unused imports, List
 
-from bot.signals_v2 import SignalType, SignalV2, Urgency
+from bot.signals_v2 import SignalV2
 
 
 class TestFixturesV2:
@@ -309,7 +309,8 @@ class TestValidator:
 
         # Check for ellipses (should be avoided)
         if any("..." in line for line in lines):
-            self.warnings.append("Found ellipses - should use line breaks instead")
+            self.warnings.append(
+                "Found ellipses - should use line breaks instead")
 
         # Check for proper line breaks in long titles
         long_title_lines = [

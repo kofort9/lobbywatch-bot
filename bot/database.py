@@ -39,7 +39,7 @@ class DatabaseManager:
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
-            
+
             -- Per-channel watchlists
             CREATE TABLE IF NOT EXISTS channel_watchlist (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +53,7 @@ class DatabaseManager:
                 FOREIGN KEY (channel_id) REFERENCES channel_settings(id),
                 UNIQUE(channel_id, entity_type, watch_name)
             );
-            
+
             -- Alias mapping for fast future matches
             CREATE TABLE IF NOT EXISTS entity_aliases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +67,7 @@ class DatabaseManager:
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(alias_name, entity_type)
             );
-            
+
             -- Digest run tracking per channel
             CREATE TABLE IF NOT EXISTS digest_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +79,7 @@ class DatabaseManager:
                 digest_content TEXT,
                 FOREIGN KEY (channel_id) REFERENCES channel_settings(id)
             );
-            
+
             -- Enhanced filing tracking
             CREATE TABLE IF NOT EXISTS filing_tracking (
                 filing_id INTEGER PRIMARY KEY,
@@ -88,7 +88,7 @@ class DatabaseManager:
                 watchlist_matches TEXT,    -- JSON of matches per channel
                 FOREIGN KEY (filing_id) REFERENCES filing(id)
             );
-            
+
             -- Create indexes for performance
             CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
             CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
@@ -119,7 +119,7 @@ class DatabaseManager:
 
                 conn.execute(
                     """
-                    INSERT INTO channel_settings 
+                    INSERT INTO channel_settings
                     (id, threshold_filings, threshold_amount, show_descriptions, created_at)
                     VALUES (?, ?, ?, ?, ?)
                 """,
@@ -136,7 +136,11 @@ class DatabaseManager:
 
             return dict(result)
 
-    def update_channel_setting(self, channel_id: str, key: str, value: Any) -> None:
+    def update_channel_setting(
+            self,
+            channel_id: str,
+            key: str,
+            value: Any) -> None:
         """Update a specific channel setting."""
         with self.get_connection() as conn:
             # Ensure channel exists
@@ -144,7 +148,7 @@ class DatabaseManager:
 
             conn.execute(
                 f"""
-                UPDATE channel_settings 
+                UPDATE channel_settings
                 SET {key} = ?, updated_at = ?
                 WHERE id = ?
             """,
@@ -156,7 +160,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT * FROM channel_watchlist 
+                SELECT * FROM channel_watchlist
                 WHERE channel_id = ?
                 ORDER BY created_at DESC
             """,
@@ -203,7 +207,7 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.execute(
                     """
-                    DELETE FROM channel_watchlist 
+                    DELETE FROM channel_watchlist
                     WHERE channel_id = ? AND (watch_name = ? OR display_name = ?)
                 """,
                     (channel_id, watch_name, watch_name),
@@ -272,7 +276,7 @@ class DatabaseManager:
                 INSERT OR REPLACE INTO entity_aliases
                 (alias_name, canonical_name, entity_type, entity_id, confidence_score, updated_at, usage_count)
                 VALUES (?, ?, ?, ?, ?, ?, COALESCE((
-                    SELECT usage_count + 1 FROM entity_aliases 
+                    SELECT usage_count + 1 FROM entity_aliases
                     WHERE alias_name = ? AND entity_type = ?
                 ), 1))
             """,

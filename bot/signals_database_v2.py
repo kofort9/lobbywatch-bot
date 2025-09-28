@@ -3,12 +3,12 @@ LobbyLens Signals Database v2 - Enhanced schema for v2 signals
 Supports the new signal model with priority scoring, urgency, and industry tagging.
 """
 
-import json
+# import json  # Unused import
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from bot.signals_v2 import SignalType, SignalV2, Urgency
+from bot.signals_v2 import SignalV2
 
 
 class SignalsDatabaseV2:
@@ -180,8 +180,8 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM signals_v2 
-            WHERE timestamp >= ? 
+            SELECT * FROM signals_v2
+            WHERE timestamp >= ?
             ORDER BY priority_score DESC, timestamp DESC
         """,
             (since_time,),
@@ -203,15 +203,16 @@ class SignalsDatabaseV2:
 
         return signals
 
-    def get_high_priority_signals(self, threshold: float = 5.0) -> List[SignalV2]:
+    def get_high_priority_signals(
+            self, threshold: float = 5.0) -> List[SignalV2]:
         """Get signals above priority threshold"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
 
         cur.execute(
             """
-            SELECT * FROM signals_v2 
-            WHERE priority_score >= ? 
+            SELECT * FROM signals_v2
+            WHERE priority_score >= ?
             ORDER BY priority_score DESC, timestamp DESC
         """,
             (threshold,),
@@ -240,7 +241,7 @@ class SignalsDatabaseV2:
         # Get watchlist items for channel
         cur.execute(
             """
-            SELECT entity_name FROM watchlist_v2 
+            SELECT entity_name FROM watchlist_v2
             WHERE channel_id = ?
         """,
             (channel_id,),
@@ -257,22 +258,25 @@ class SignalsDatabaseV2:
         for item in watchlist_items:
             cur.execute(
                 """
-                SELECT * FROM signals_v2 
+                SELECT * FROM signals_v2
                 WHERE (title LIKE ? OR summary LIKE ? OR agency LIKE ?)
                 AND timestamp >= ?
                 ORDER BY priority_score DESC
             """,
-                (
-                    f"%{item}%",
-                    f"%{item}%",
-                    f"%{item}%",
-                    (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(),
-                ),
+                (f"%{item}%",
+                 f"%{item}%",
+                 f"%{item}%",
+                 (datetime.now(
+                     timezone.utc) -
+                     timedelta(
+                     days=7)).isoformat(),
+                 ),
             )
 
             rows = cur.fetchall()
             for row in rows:
-                signal_data = dict(zip([col[0] for col in cur.description], row))
+                signal_data = dict(
+                    zip([col[0] for col in cur.description], row))
                 try:
                     signal = SignalV2.from_dict(signal_data)
                     signal.watchlist_hit = True
@@ -291,8 +295,8 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM signals_v2 
-            WHERE signal_type = 'docket' 
+            SELECT * FROM signals_v2
+            WHERE signal_type = 'docket'
             AND metric_json IS NOT NULL
             AND json_extract(metric_json, '$.comments_24h_delta_pct') >= ?
             ORDER BY json_extract(metric_json, '$.comments_24h_delta_pct') DESC
@@ -325,9 +329,9 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM signals_v2 
-            WHERE deadline IS NOT NULL 
-            AND deadline >= ? 
+            SELECT * FROM signals_v2
+            WHERE deadline IS NOT NULL
+            AND deadline >= ?
             AND deadline <= ?
             ORDER BY deadline ASC
         """,
@@ -349,15 +353,18 @@ class SignalsDatabaseV2:
 
         return signals
 
-    def get_industry_signals(self, industry: str, limit: int = 2) -> List[SignalV2]:
+    def get_industry_signals(
+            self,
+            industry: str,
+            limit: int = 2) -> List[SignalV2]:
         """Get top signals for a specific industry"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
 
         cur.execute(
             """
-            SELECT * FROM signals_v2 
-            WHERE industry_tag = ? 
+            SELECT * FROM signals_v2
+            WHERE industry_tag = ?
             AND timestamp >= ?
             ORDER BY priority_score DESC
             LIMIT ?
@@ -416,7 +423,7 @@ class SignalsDatabaseV2:
         try:
             cur.execute(
                 """
-                DELETE FROM watchlist_v2 
+                DELETE FROM watchlist_v2
                 WHERE channel_id = ? AND entity_name = ?
             """,
                 (channel_id, entity_name),
@@ -437,7 +444,7 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT entity_name, entity_type FROM watchlist_v2 
+            SELECT entity_name, entity_type FROM watchlist_v2
             WHERE channel_id = ?
             ORDER BY created_at DESC
         """,
@@ -449,7 +456,11 @@ class SignalsDatabaseV2:
 
         return [{"name": row[0], "type": row[1]} for row in rows]
 
-    def update_channel_setting(self, channel_id: str, setting: str, value: Any) -> bool:
+    def update_channel_setting(
+            self,
+            channel_id: str,
+            setting: str,
+            value: Any) -> bool:
         """Update channel setting"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
@@ -467,7 +478,7 @@ class SignalsDatabaseV2:
             # Update setting
             cur.execute(
                 f"""
-                UPDATE channel_settings_v2 
+                UPDATE channel_settings_v2
                 SET {setting} = ?, updated_at = ?
                 WHERE channel_id = ?
             """,
@@ -489,7 +500,7 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM channel_settings_v2 
+            SELECT * FROM channel_settings_v2
             WHERE channel_id = ?
         """,
             (channel_id,),
@@ -521,7 +532,7 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            DELETE FROM signals_v2 
+            DELETE FROM signals_v2
             WHERE timestamp < ?
         """,
             (cutoff_time,),
@@ -545,7 +556,7 @@ class SignalsDatabaseV2:
         # Signals by source
         cur.execute(
             """
-            SELECT source, COUNT(*) FROM signals_v2 
+            SELECT source, COUNT(*) FROM signals_v2
             GROUP BY source
         """
         )
@@ -554,7 +565,7 @@ class SignalsDatabaseV2:
         # Signals by urgency
         cur.execute(
             """
-            SELECT urgency, COUNT(*) FROM signals_v2 
+            SELECT urgency, COUNT(*) FROM signals_v2
             WHERE urgency IS NOT NULL
             GROUP BY urgency
         """
@@ -564,7 +575,7 @@ class SignalsDatabaseV2:
         # Signals by industry
         cur.execute(
             """
-            SELECT industry_tag, COUNT(*) FROM signals_v2 
+            SELECT industry_tag, COUNT(*) FROM signals_v2
             WHERE industry_tag IS NOT NULL
             GROUP BY industry_tag
             ORDER BY COUNT(*) DESC
@@ -574,7 +585,8 @@ class SignalsDatabaseV2:
         by_industry = dict(cur.fetchall())
 
         # High priority signals
-        cur.execute("SELECT COUNT(*) FROM signals_v2 WHERE priority_score >= 5.0")
+        cur.execute(
+            "SELECT COUNT(*) FROM signals_v2 WHERE priority_score >= 5.0")
         high_priority = cur.fetchone()[0]
 
         # Watchlist hits
