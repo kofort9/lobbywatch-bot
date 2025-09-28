@@ -26,29 +26,31 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2
-    
+
     logger = logging.getLogger(__name__)
     logger.info(f"Running daily digest for last {hours_back} hours")
-    
+
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
     database = SignalsDatabaseV2()
-    
+
     # Get watchlist for channel
-    watchlist = [item['name'] for item in database.get_watchlist(channel_id)]
-    
+    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
     logger.info(f"Collected {len(signals)} signals")
-    
+
     # Format digest
     digest = formatter.format_daily_digest(signals, hours_back)
-    
+
     return digest
 
 
-def run_mini_digest(hours_back: int = 4, channel_id: str = "test_channel") -> Optional[str]:
+def run_mini_digest(
+    hours_back: int = 4, channel_id: str = "test_channel"
+) -> Optional[str]:
     """Run mini digest collection and formatting using v2 system"""
     import logging
     from datetime import datetime, timezone
@@ -56,28 +58,32 @@ def run_mini_digest(hours_back: int = 4, channel_id: str = "test_channel") -> Op
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2
-    
+
     logger = logging.getLogger(__name__)
     logger.info(f"Running mini digest for last {hours_back} hours")
-    
+
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
     database = SignalsDatabaseV2()
-    
+
     # Get watchlist for channel
-    watchlist = [item['name'] for item in database.get_watchlist(channel_id)]
-    
+    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
+
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
     logger.info(f"Collected {len(signals)} signals")
-    
+
     # Check mini-digest thresholds
     high_priority_signals = [s for s in signals if s.priority_score >= 5.0]
     watchlist_hits = [s for s in signals if s.watchlist_hit]
-    
+
     # Mini-digest criteria
-    if len(signals) >= 10 or len(high_priority_signals) >= 1 or len(watchlist_hits) >= 1:
+    if (
+        len(signals) >= 10
+        or len(high_priority_signals) >= 1
+        or len(watchlist_hits) >= 1
+    ):
         # Format mini digest
         digest = formatter.format_mini_digest(signals, hours_back)
         return digest

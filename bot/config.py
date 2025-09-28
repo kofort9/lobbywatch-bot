@@ -18,11 +18,15 @@ class Settings(BaseSettings):
     # API Keys (Legacy - no longer available)
     opensecrets_api_key: Optional[str] = Field(default=None, env="OPENSECRETS_API_KEY")
     propublica_api_key: Optional[str] = Field(default=None, env="PROPUBLICA_API_KEY")
-    
+
     # Daily Signals API Keys
     congress_api_key: Optional[str] = Field(default=None, env="CONGRESS_API_KEY")
-    federal_register_api_key: Optional[str] = Field(default=None, env="FEDERAL_REGISTER_API_KEY")
-    regulations_gov_api_key: Optional[str] = Field(default=None, env="REGULATIONS_GOV_API_KEY")
+    federal_register_api_key: Optional[str] = Field(
+        default=None, env="FEDERAL_REGISTER_API_KEY"
+    )
+    regulations_gov_api_key: Optional[str] = Field(
+        default=None, env="REGULATIONS_GOV_API_KEY"
+    )
 
     # Slack Configuration
     slack_webhook_url: Optional[str] = Field(

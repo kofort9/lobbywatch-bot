@@ -454,14 +454,18 @@ class SlackApp:
 
         # Generate and send digest
         try:
-            logger.info(f"Manual {digest_type} digest requested by {user_id} in {channel_id}")
-            
+            logger.info(
+                f"Manual {digest_type} digest requested by {user_id} in {channel_id}"
+            )
+
             # Generate digest
-            digest = self.digest_computer.compute_enhanced_digest(channel_id, digest_type)
-            
+            digest = self.digest_computer.compute_enhanced_digest(
+                channel_id, digest_type
+            )
+
             # Post to channel
             result = self.post_message(channel_id, digest)
-            
+
             if result.get("ok", False):
                 return {
                     "response_type": "in_channel",
@@ -472,7 +476,7 @@ class SlackApp:
                     "response_type": "ephemeral",
                     "text": f"❌ Failed to generate {digest_type} digest. Please try again.",
                 }
-                
+
         except Exception as e:
             logger.error(f"Error generating manual {digest_type} digest: {e}")
             return {

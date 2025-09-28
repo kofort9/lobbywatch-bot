@@ -13,22 +13,29 @@ def create_web_server(slack_app=None) -> Flask:
     """Create Flask web server for v2 Slack integration."""
 
     app = Flask(__name__)
-    
+
     # Import v2 components (will be consolidated)
     from bot.signals_database_v2 import SignalsDatabaseV2
     from bot.run import run_daily_digest, run_mini_digest
-    
+
     database = SignalsDatabaseV2()
 
     @app.route("/", methods=["GET"])
     def root():
         """Root endpoint."""
-        return jsonify({
-            "service": "lobbylens-v2", 
-            "status": "running",
-            "version": "2.0.0",
-            "features": ["industry_snapshots", "priority_scoring", "mobile_formatting", "watchlist_alerts"]
-        })
+        return jsonify(
+            {
+                "service": "lobbylens-v2",
+                "status": "running",
+                "version": "2.0.0",
+                "features": [
+                    "industry_snapshots",
+                    "priority_scoring",
+                    "mobile_formatting",
+                    "watchlist_alerts",
+                ],
+            }
+        )
 
     @app.route("/health", methods=["GET"])
     def health_check():
@@ -63,10 +70,12 @@ def create_web_server(slack_app=None) -> Flask:
 
         except Exception as e:
             logger.error(f"Error handling slash command: {e}")
-            return jsonify({
-                "response_type": "ephemeral",
-                "text": f"Error processing command: {str(e)}"
-            })
+            return jsonify(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"Error processing command: {str(e)}",
+                }
+            )
 
     @app.route("/lobbylens/events", methods=["POST"])
     def handle_events():
@@ -104,12 +113,14 @@ def create_web_server(slack_app=None) -> Flask:
             else:
                 return jsonify({"error": "Invalid digest type"})
 
-            return jsonify({
-                "digest": digest,
-                "type": digest_type,
-                "channel_id": channel_id,
-                "hours_back": hours_back
-            })
+            return jsonify(
+                {
+                    "digest": digest,
+                    "type": digest_type,
+                    "channel_id": channel_id,
+                    "hours_back": hours_back,
+                }
+            )
 
         except Exception as e:
             logger.error(f"Error generating manual digest: {e}")
@@ -130,10 +141,7 @@ def create_web_server(slack_app=None) -> Flask:
         elif command == "/threshold":
             return handle_threshold_command(text, channel_id)
         else:
-            return {
-                "response_type": "ephemeral",
-                "text": f"Unknown command: {command}"
-            }
+            return {"response_type": "ephemeral", "text": f"Unknown command: {command}"}
 
     def handle_lobbypulse_command(text: str, channel_id: str) -> Dict[str, Any]:
         """Handle /lobbypulse command."""
@@ -141,44 +149,38 @@ def create_web_server(slack_app=None) -> Flask:
             return {
                 "response_type": "in_channel",
                 "text": "🔍 **LobbyLens Commands**\n\n"
-                        "• `/lobbypulse` - Generate daily digest\n"
-                        "• `/lobbypulse mini` - Generate mini digest\n"
-                        "• `/lobbypulse help` - Show this help\n\n"
-                        "• `/watchlist add <entity>` - Add to watchlist\n"
-                        "• `/watchlist remove <entity>` - Remove from watchlist\n"
-                        "• `/watchlist list` - Show watchlist\n\n"
-                        "• `/threshold set <number>` - Set mini-digest threshold\n"
-                        "• `/lobbylens` - Show system status"
+                "• `/lobbypulse` - Generate daily digest\n"
+                "• `/lobbypulse mini` - Generate mini digest\n"
+                "• `/lobbypulse help` - Show this help\n\n"
+                "• `/watchlist add <entity>` - Add to watchlist\n"
+                "• `/watchlist remove <entity>` - Remove from watchlist\n"
+                "• `/watchlist list` - Show watchlist\n\n"
+                "• `/threshold set <number>` - Set mini-digest threshold\n"
+                "• `/lobbylens` - Show system status",
             }
         elif text == "mini":
             try:
                 digest = run_mini_digest(4, channel_id)
                 if digest:
-                    return {
-                        "response_type": "in_channel",
-                        "text": digest
-                    }
+                    return {"response_type": "in_channel", "text": digest}
                 else:
                     return {
                         "response_type": "ephemeral",
-                        "text": "No mini-digest - thresholds not met"
+                        "text": "No mini-digest - thresholds not met",
                     }
             except Exception as e:
                 return {
                     "response_type": "ephemeral",
-                    "text": f"Error generating mini digest: {str(e)}"
+                    "text": f"Error generating mini digest: {str(e)}",
                 }
         else:
             try:
                 digest = run_daily_digest(24, channel_id)
-                return {
-                    "response_type": "in_channel",
-                    "text": digest
-                }
+                return {"response_type": "in_channel", "text": digest}
             except Exception as e:
                 return {
                     "response_type": "ephemeral",
-                    "text": f"Error generating digest: {str(e)}"
+                    "text": f"Error generating digest: {str(e)}",
                 }
 
     def handle_lobbylens_command(text: str, channel_id: str) -> Dict[str, Any]:
@@ -187,17 +189,17 @@ def create_web_server(slack_app=None) -> Flask:
             return {
                 "response_type": "in_channel",
                 "text": "🔍 **LobbyLens v2 System Status**\n\n"
-                        "**Features:**\n"
-                        "• Daily government signals digest\n"
-                        "• Industry snapshots and priority scoring\n"
-                        "• Watchlist alerts and mini-digests\n"
-                        "• Mobile-friendly formatting\n\n"
-                        "**Commands:**\n"
-                        "• `/lobbypulse` - Daily digest\n"
-                        "• `/lobbypulse mini` - Mini digest\n"
-                        "• `/watchlist` - Watchlist management\n"
-                        "• `/threshold` - Threshold settings\n\n"
-                        "**Sources:** Congress, Federal Register, Regulations.gov"
+                "**Features:**\n"
+                "• Daily government signals digest\n"
+                "• Industry snapshots and priority scoring\n"
+                "• Watchlist alerts and mini-digests\n"
+                "• Mobile-friendly formatting\n\n"
+                "**Commands:**\n"
+                "• `/lobbypulse` - Daily digest\n"
+                "• `/lobbypulse mini` - Mini digest\n"
+                "• `/watchlist` - Watchlist management\n"
+                "• `/threshold` - Threshold settings\n\n"
+                "**Sources:** Congress, Federal Register, Regulations.gov",
             }
         else:
             # Get system stats
@@ -205,12 +207,12 @@ def create_web_server(slack_app=None) -> Flask:
             return {
                 "response_type": "in_channel",
                 "text": f"🔍 **LobbyLens v2 Status**\n\n"
-                        f"**Database Stats:**\n"
-                        f"• Total signals: {stats['total_signals']}\n"
-                        f"• High priority: {stats['high_priority']}\n"
-                        f"• Watchlist hits: {stats['watchlist_hits']}\n\n"
-                        f"**Sources:** {', '.join(stats['by_source'].keys())}\n"
-                        f"**Industries:** {', '.join(list(stats['by_industry'].keys())[:5])}"
+                f"**Database Stats:**\n"
+                f"• Total signals: {stats['total_signals']}\n"
+                f"• High priority: {stats['high_priority']}\n"
+                f"• Watchlist hits: {stats['watchlist_hits']}\n\n"
+                f"**Sources:** {', '.join(stats['by_source'].keys())}\n"
+                f"**Industries:** {', '.join(list(stats['by_industry'].keys())[:5])}",
             }
 
     def handle_watchlist_command(text: str, channel_id: str) -> Dict[str, Any]:
@@ -223,42 +225,44 @@ def create_web_server(slack_app=None) -> Flask:
             if database.add_watchlist_item(channel_id, entity):
                 return {
                     "response_type": "in_channel",
-                    "text": f"✅ Added '{entity}' to watchlist"
+                    "text": f"✅ Added '{entity}' to watchlist",
                 }
             else:
                 return {
                     "response_type": "ephemeral",
-                    "text": f"❌ Failed to add '{entity}' to watchlist"
+                    "text": f"❌ Failed to add '{entity}' to watchlist",
                 }
         elif action == "remove" and len(parts) > 1:
             entity = parts[1].strip()
             if database.remove_watchlist_item(channel_id, entity):
                 return {
                     "response_type": "in_channel",
-                    "text": f"✅ Removed '{entity}' from watchlist"
+                    "text": f"✅ Removed '{entity}' from watchlist",
                 }
             else:
                 return {
                     "response_type": "ephemeral",
-                    "text": f"❌ Failed to remove '{entity}' from watchlist"
+                    "text": f"❌ Failed to remove '{entity}' from watchlist",
                 }
         elif action == "list":
             watchlist = database.get_watchlist(channel_id)
             if watchlist:
-                items = "\n".join([f"• {item['name']} ({item['type']})" for item in watchlist])
+                items = "\n".join(
+                    [f"• {item['name']} ({item['type']})" for item in watchlist]
+                )
                 return {
                     "response_type": "in_channel",
-                    "text": f"📋 **Watchlist for #{channel_id}**\n\n{items}"
+                    "text": f"📋 **Watchlist for #{channel_id}**\n\n{items}",
                 }
             else:
                 return {
                     "response_type": "in_channel",
-                    "text": f"📋 **Watchlist for #{channel_id}**\n\nNo items in watchlist"
+                    "text": f"📋 **Watchlist for #{channel_id}**\n\nNo items in watchlist",
                 }
         else:
             return {
                 "response_type": "ephemeral",
-                "text": "Usage: `/watchlist add <entity>`, `/watchlist remove <entity>`, or `/watchlist list`"
+                "text": "Usage: `/watchlist add <entity>`, `/watchlist remove <entity>`, or `/watchlist list`",
             }
 
     def handle_threshold_command(text: str, channel_id: str) -> Dict[str, Any]:
@@ -269,30 +273,32 @@ def create_web_server(slack_app=None) -> Flask:
         if action == "set" and len(parts) > 1:
             try:
                 threshold = int(parts[1].strip())
-                if database.update_channel_setting(channel_id, "mini_digest_threshold", threshold):
+                if database.update_channel_setting(
+                    channel_id, "mini_digest_threshold", threshold
+                ):
                     return {
                         "response_type": "in_channel",
-                        "text": f"✅ Set mini-digest threshold to {threshold} signals"
+                        "text": f"✅ Set mini-digest threshold to {threshold} signals",
                     }
                 else:
                     return {
                         "response_type": "ephemeral",
-                        "text": "❌ Failed to update threshold"
+                        "text": "❌ Failed to update threshold",
                     }
             except ValueError:
                 return {
                     "response_type": "ephemeral",
-                    "text": "❌ Threshold must be a number"
+                    "text": "❌ Threshold must be a number",
                 }
         else:
             settings = database.get_channel_settings(channel_id)
             return {
                 "response_type": "in_channel",
                 "text": f"📊 **Threshold Settings for #{channel_id}**\n\n"
-                        f"• Mini-digest threshold: {settings['mini_digest_threshold']} signals\n"
-                        f"• High-priority threshold: {settings['high_priority_threshold']}\n"
-                        f"• Surge threshold: {settings['surge_threshold']}%\n\n"
-                        f"Usage: `/threshold set <number>`"
+                f"• Mini-digest threshold: {settings['mini_digest_threshold']} signals\n"
+                f"• High-priority threshold: {settings['high_priority_threshold']}\n"
+                f"• Surge threshold: {settings['surge_threshold']}%\n\n"
+                f"Usage: `/threshold set <number>`",
             }
 
     return app
