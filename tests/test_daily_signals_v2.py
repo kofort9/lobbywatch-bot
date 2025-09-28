@@ -11,6 +11,7 @@ import pytest
 from bot.daily_signals_v2 import DailySignalsCollectorV2
 from bot.signals_v2 import SignalV2
 
+
 class TestDailySignalsCollectorV2:
     """Test DailySignalsCollectorV2 class"""
 
@@ -202,9 +203,9 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_congress_signals_api_error(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_collect_congress_signals_api_error(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test Congress signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
@@ -277,9 +278,9 @@ class TestDailySignalsCollectorV2:
         assert signal is None
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_success(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_collect_federal_register_signals_success(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test successful Federal Register signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -311,9 +312,9 @@ class TestDailySignalsCollectorV2:
         assert signal.agency == "EPA"
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_api_error(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_collect_federal_register_signals_api_error(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test Federal Register signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
@@ -380,9 +381,9 @@ class TestDailySignalsCollectorV2:
         assert signal.summary == ""
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_success(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_collect_regulations_gov_signals_success(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test successful Regulations.gov signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -413,9 +414,9 @@ class TestDailySignalsCollectorV2:
         assert signal.agency == "EPA"
         assert signal.comment_count == 150
 
-    def test_collect_regulations_gov_signals_no_api_key(self,
-        config: Dict[str,
-        str]) -> None:
+    def test_collect_regulations_gov_signals_no_api_key(
+        self, config: Dict[str, str]
+    ) -> None:
         """Test Regulations.gov signals collection without API key"""
         config_no_key = config.copy()
         del config_no_key["REGULATIONS_GOV_API_KEY"]
@@ -425,9 +426,9 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_api_error(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_collect_regulations_gov_signals_api_error(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test Regulations.gov signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
@@ -524,9 +525,9 @@ class TestDailySignalsCollectorV2:
         assert "DEF" in issue_codes
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_recent_signals")
-    def test_get_signals_for_digest(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_get_signals_for_digest(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test getting signals for digest"""
         mock_signals = [Mock()]
         mock_get.return_value = mock_signals
@@ -537,9 +538,9 @@ class TestDailySignalsCollectorV2:
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_watchlist_signals")
-    def test_get_watchlist_signals(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_get_watchlist_signals(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test getting watchlist signals"""
         mock_signals = [Mock()]
         mock_get.return_value = mock_signals
@@ -550,9 +551,9 @@ class TestDailySignalsCollectorV2:
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_high_priority_signals")
-    def test_get_high_priority_signals(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_get_high_priority_signals(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test getting high-priority signals"""
         mock_signals = [Mock()]
         mock_get.return_value = mock_signals
@@ -563,9 +564,9 @@ class TestDailySignalsCollectorV2:
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_docket_surges")
-    def test_get_docket_surges(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_get_docket_surges(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test getting docket surge signals"""
         mock_signals = [Mock()]
         mock_get.return_value = mock_signals
@@ -576,9 +577,9 @@ class TestDailySignalsCollectorV2:
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_deadline_signals")
-    def test_get_deadline_signals(self,
-        mock_get: Any,
-        collector: DailySignalsCollectorV2) -> None:
+    def test_get_deadline_signals(
+        self, mock_get: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test getting deadline signals"""
         mock_signals = [Mock()]
         mock_get.return_value = mock_signals

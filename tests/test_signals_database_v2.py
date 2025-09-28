@@ -12,6 +12,7 @@ import pytest
 from bot.signals_database_v2 import SignalsDatabaseV2
 from bot.signals_v2 import SignalType, SignalV2, Urgency
 
+
 class TestSignalsDatabaseV2:
     """Tests for SignalsDatabaseV2."""
 

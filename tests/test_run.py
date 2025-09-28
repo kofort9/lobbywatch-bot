@@ -1,7 +1,7 @@
 """Tests for main runner functionality."""
 
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -9,6 +9,7 @@ from click.testing import CliRunner
 from bot.config import Settings
 from bot.notifiers.base import NotificationError
 from bot.run import create_notifier, fetch_data, main, setup_logging
+
 
 class TestFetchData:
     """Tests for data fetching functionality."""
@@ -41,6 +42,7 @@ class TestFetchData:
         assert successful == 0
         assert failed == 0
 
+
 class TestCreateNotifier:
     """Tests for notifier creation."""
 
@@ -60,6 +62,7 @@ class TestCreateNotifier:
         # The actual error handling is tested in integration tests
         pytest.skip("Settings class loads from .env file - tested in integration")
 
+
 class TestSetupLogging:
     """Tests for logging setup."""
 
@@ -77,6 +80,7 @@ class TestSetupLogging:
         # Python logging will handle invalid levels gracefully
         with pytest.raises(AttributeError):
             setup_logging("INVALID")
+
 
 class TestMainCommand:
     """Tests for main CLI command."""
@@ -96,8 +100,11 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_dry_run(
-        self, mock_settings: Any, mock_create_notifier: Any, mock_fetch_data:
-        Any, mock_compute_digest: Any
+        self,
+        mock_settings: Any,
+        mock_create_notifier: Any,
+        mock_fetch_data: Any,
+        mock_compute_digest: Any,
     ) -> None:
         """Test main command in dry-run mode."""
         mock_settings.database_file = "test.db"
@@ -122,8 +129,11 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_skip_fetch(
-        self, mock_settings: Any, mock_create_notifier: Any, mock_fetch_data:
-        Any, mock_compute_digest: Any
+        self,
+        mock_settings: Any,
+        mock_create_notifier: Any,
+        mock_fetch_data: Any,
+        mock_compute_digest: Any,
     ) -> None:
         """Test main command with skip-fetch option."""
         mock_settings.database_file = "test.db"
@@ -148,8 +158,11 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_send_notification(
-        self, mock_settings: Any, mock_create_notifier: Any, mock_fetch_data:
-        Any, mock_compute_digest: Any
+        self,
+        mock_settings: Any,
+        mock_create_notifier: Any,
+        mock_fetch_data: Any,
+        mock_compute_digest: Any,
     ) -> None:
         """Test main command sending notification."""
         mock_settings.database_file = "test.db"
@@ -173,8 +186,11 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_notification_error(
-        self, mock_settings: Any, mock_create_notifier: Any, mock_fetch_data:
-        Any, mock_compute_digest: Any
+        self,
+        mock_settings: Any,
+        mock_create_notifier: Any,
+        mock_fetch_data: Any,
+        mock_compute_digest: Any,
     ) -> None:
         """Test main command handling notification errors."""
         mock_settings.database_file = "test.db"
@@ -198,8 +214,11 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_with_fetch_errors(
-        self, mock_settings: Any, mock_create_notifier: Any, mock_fetch_data:
-        Any, mock_compute_digest: Any
+        self,
+        mock_settings: Any,
+        mock_create_notifier: Any,
+        mock_fetch_data: Any,
+        mock_compute_digest: Any,
     ) -> None:
         """Test main command with fetch errors."""
         mock_settings.database_file = "test.db"

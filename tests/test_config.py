@@ -1,16 +1,19 @@
 """Tests for configuration management."""
 
+import os
 from unittest.mock import patch
 
 import pytest
 
 from bot.config import Settings
 
+
 def test_settings_defaults() -> None:
     """Test default settings values."""
     # Skip this test since Settings loads from .env file
     # The actual defaults are tested in integration tests
     pytest.skip("Settings class loads from .env file - tested in integration")
+
 
 def test_settings_from_env() -> None:
     """Test settings loaded from environment variables."""
@@ -33,11 +36,13 @@ def test_settings_from_env() -> None:
         assert settings.log_level == "DEBUG"
         assert settings.dry_run is True
 
+
 def test_notifier_type_detection() -> None:
     """Test notifier type detection logic."""
     # Skip this test since Settings loads from .env file
     # The actual logic is tested in integration tests
     pytest.skip("Settings class loads from .env file - tested in integration")
+
 
 def test_validate_notifier_config() -> None:
     """Test notifier configuration validation."""
