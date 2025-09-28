@@ -10,7 +10,6 @@ from bot.signals_v2 import SignalType, SignalV2, Urgency
 # import pytest  # Unused import
 
 
-
 class TestDigestV2Formatter:
     """Tests for DigestV2Formatter."""
 

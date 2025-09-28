@@ -16,7 +16,6 @@ from bot.signals_v2 import (
 # import pytest  # Unused import
 
 
-
 class TestSignalV2:
     """Tests for SignalV2 data model."""
 
