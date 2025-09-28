@@ -388,17 +388,27 @@ class SignalsDigestFormatter:
         issues = self._format_issues(signal.get('issue_codes', []))
         link = signal.get('link', '')
         
-        # Truncate title to avoid ellipses
-        if len(title) > 80:
-            title = title[:77] + "..."
+        # Clean up title - remove "FR:" prefix
+        if title.startswith('FR: '):
+            title = title[4:]  # Remove "FR: " prefix
+        
+        # Format for mobile with line breaks
+        if len(title) > 60:
+            truncated_title = title[:60]
+            last_space = truncated_title.rfind(' ')
+            if last_space > 40:
+                truncated_title = title[:last_space]
+            title_lines = f"{truncated_title}\n  {title[last_space+1:] if last_space > 0 else title[60:]}"
+        else:
+            title_lines = title
         
         # Extract key info from title
         if 'hearing' in title.lower():
-            return f"• **{title}** • Issues: {issues} • <{link}|Agenda>"
+            return f"• **{title_lines}** • Issues: {issues} • <{link}|Agenda>"
         elif signal.get('bill_id'):
-            return f"• **{title}** • Issues: {issues} • <{link}|Bill>"
+            return f"• **{title_lines}** • Issues: {issues} • <{link}|Bill>"
         else:
-            return f"• **{title}** • Issues: {issues} • <{link}|View>"
+            return f"• **{title_lines}** • Issues: {issues} • <{link}|View>"
 
     def _format_change_signal(self, signal: Dict[str, Any]) -> str:
         """Format a change signal."""
@@ -406,9 +416,9 @@ class SignalsDigestFormatter:
         issues = self._format_issues(signal.get('issue_codes', []))
         link = signal.get('link', '')
         
-        # Truncate title to avoid ellipses
-        if len(title) > 80:
-            title = title[:77] + "..."
+        # Clean up title - remove "FR:" prefix and truncate for mobile
+        if title.startswith('FR: '):
+            title = title[4:]  # Remove "FR: " prefix
         
         # Add signal type prefix
         signal_type = signal.get('signal_type', '')
@@ -417,9 +427,18 @@ class SignalsDigestFormatter:
         elif signal_type == 'bill':
             prefix = "Bill Action"
         else:
-            prefix = "Update"
+            prefix = "Federal Register"
         
-        return f"• {prefix} — {title} • Issues: {issues} • <{link}|View>"
+        # Format for mobile with line breaks
+        if len(title) > 60:
+            # Split at a good breaking point
+            truncated_title = title[:60]
+            last_space = truncated_title.rfind(' ')
+            if last_space > 40:  # Don't break too early
+                truncated_title = title[:last_space]
+            return f"• {prefix} — {truncated_title}\n  {title[last_space+1:] if last_space > 0 else title[60:]} • Issues: {issues} • <{link}|View>"
+        else:
+            return f"• {prefix} — {title} • Issues: {issues} • <{link}|View>"
 
     def _format_upcoming_signal(self, signal: Dict[str, Any]) -> str:
         """Format an upcoming event signal."""
@@ -427,10 +446,24 @@ class SignalsDigestFormatter:
         issues = self._format_issues(signal.get('issue_codes', []))
         link = signal.get('link', '')
         
+        # Clean up title - remove "FR:" prefix
+        if title.startswith('FR: '):
+            title = title[4:]  # Remove "FR: " prefix
+        
         # Extract time if available
         time_str = self._format_timestamp(signal.get('timestamp', ''))
         
-        return f"• {title} {time_str} • Issues: {issues} • <{link}|Agenda>"
+        # Format for mobile with line breaks
+        if len(title) > 60:
+            truncated_title = title[:60]
+            last_space = truncated_title.rfind(' ')
+            if last_space > 40:
+                truncated_title = title[:last_space]
+            title_lines = f"{truncated_title}\n  {title[last_space+1:] if last_space > 0 else title[60:]}"
+        else:
+            title_lines = title
+        
+        return f"• {title_lines} {time_str} • Issues: {issues} • <{link}|Agenda>"
 
     def _format_surge_signal(self, signal: Dict[str, Any]) -> str:
         """Format a docket surge signal."""
