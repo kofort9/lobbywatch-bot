@@ -1,46 +1,144 @@
 # 🔍 LobbyLens
 
-A quarterly lobbying analysis bot with daily regulatory signals, providing comprehensive insights into U.S. lobbying activity and related government actions.
+A two-layer government monitoring system providing daily government activity signals and quarterly lobbying analysis.
 
-> **📋 Project Pivot Note (v2)**: Originally designed for real-time lobbying data, LobbyLens has evolved to work with the reality that official LDA data is quarterly and real-time APIs are no longer available. We now provide quarterly deep-dives on actual lobbying data plus daily signals from adjacent government sources (bills, hearings, regulations, etc.).
+## 🏗️ **Two-Layer Architecture**
+
+### **V2: Daily Activity Layer** (Currently Active)
+- **Data Source**: Government APIs (Congress, Federal Register, Regulations.gov)
+- **Purpose**: Track what the government is doing daily
+- **Content**: Bills, hearings, regulations, regulatory actions
+- **Deployment**: Railway (main.py) + Docker (updated)
+
+### **V1: Quarterly Money Layer** (Prepared for Future)
+- **Data Source**: Lobbying Disclosure Act (LDA) filings
+- **Purpose**: Track who's paying whom to lobby, how much, on which issues
+- **Content**: Lobbying filings, clients, registrants, amounts, issue codes
+- **Status**: Prepared for future LDA implementation
+
+> **📋 Architecture Note**: The system has evolved to separate daily government activity monitoring (V2) from quarterly lobbying analysis (V1). V2 is currently active and tracks government actions, while V1 is prepared for future LDA data integration.
 
 ![Tests](https://github.com/your-username/lobbylens/workflows/Tests%20and%20Code%20Quality/badge.svg)
 ![Daily Digest](https://github.com/your-username/lobbylens/workflows/LobbyLens%20Daily%20Digest/badge.svg)
 
 ## Features
 
-### Quarterly Analysis (LDA Data)
-- 📊 **Quarterly Reports**: Deep analysis of actual lobbying disclosure data
-- 🏢 **Client & Registrant Analysis**: Top spenders, new registrations, issue trends
-- 📈 **Trend Detection**: Quarter-over-quarter changes in lobbying activity
-- 📋 **CSV Exports**: Downloadable data for further analysis
-
-### Daily Signals (Adjacent Sources)
+### V2: Daily Government Activity (Currently Active)
 - 📰 **Daily Digest**: Bills, hearings, regulations, and regulatory actions
 - 🎯 **Smart Filtering**: Watchlist-based alerts and threshold triggers
 - 📊 **Priority Scoring**: Deterministic scoring based on source, timing, and relevance
 - 🔍 **Issue Mapping**: Automatic categorization using rule-based mappings
+- 📱 **Mobile Formatting**: Character budgets, line breaking, mobile-friendly design
+- 🏭 **Industry Snapshots**: Categorized view of government activity by industry
+
+### V1: Quarterly Lobbying Analysis (Prepared for Future)
+- 📊 **Quarterly Reports**: Deep analysis of actual lobbying disclosure data
+- 🏢 **Client & Registrant Analysis**: Top spenders, new registrations, issue trends
+- 📈 **Trend Detection**: Quarter-over-quarter changes in lobbying activity
+- 📋 **CSV Exports**: Downloadable data for further analysis
 
 ### Platform Features
 - 🚀 **Slack Integration**: Clean, formatted messages with direct links
 - ⚙️ **Automated Scheduling**: Quarterly reports + daily digests
 - 🔒 **Secure**: Environment-based configuration
 - 🧪 **Well Tested**: Comprehensive test suite with deterministic logic
+- 💬 **Interactive Commands**: Full Slack slash command support
 
 ## Data Sources & Cadence
 
-### Quarterly Data (LDA)
-- **Source**: Senate/House LDA bulk files (XML/CSV)
-- **Refresh**: Quarterly (when new data is published)
-- **Content**: Actual lobbying filings, clients, registrants, amounts, issue codes
-- **Output**: Comprehensive quarterly reports with CSV exports
-
-### Daily Signals (Adjacent Sources)
+### V2: Daily Government Activity (Active)
 - **Congress API**: Bills, votes, hearings, committee actions
 - **Federal Register API**: Rules, notices, regulatory actions by agency
 - **Regulations.gov API**: Dockets, comment counts, regulatory surges
 - **Refresh**: Daily (8 AM PT) + Mini (4 PM PT if thresholds hit)
 - **Content**: Government actions, regulatory changes, bill movements
+
+### V1: Quarterly Lobbying Data (Prepared)
+- **Source**: Senate/House LDA bulk files (XML/CSV)
+- **Refresh**: Quarterly (when new data is published)
+- **Content**: Actual lobbying filings, clients, registrants, amounts, issue codes
+- **Output**: Comprehensive quarterly reports with CSV exports
+
+## 💬 **Slack Commands**
+
+LobbyLens provides comprehensive Slack integration with interactive slash commands for digest generation, watchlist management, and system configuration.
+
+### **Digest Commands**
+- **`/lobbypulse`** - Generate daily digest (24h of government activity)
+- **`/lobbypulse mini`** - Generate mini digest (4h, when thresholds met)
+- **`/lobbypulse help`** - Show all available commands
+
+### **Watchlist Commands**
+- **`/watchlist add <entity>`** - Add entity to watchlist (e.g., `/watchlist add Google`)
+- **`/watchlist remove <entity>`** - Remove entity from watchlist
+- **`/watchlist list`** - Show current watchlist items
+
+### **Settings Commands**
+- **`/threshold set <number>`** - Set mini-digest threshold (e.g., `/threshold set 5`)
+- **`/threshold`** - Show current threshold settings
+
+### **System Commands**
+- **`/lobbylens`** - Show system status and database statistics
+- **`/lobbylens help`** - Show comprehensive system help and features
+
+### **Command Examples**
+```bash
+# Get daily digest
+/lobbypulse
+
+# Get mini digest
+/lobbypulse mini
+
+# Add entities to watchlist
+/watchlist add Google
+/watchlist add Microsoft
+/watchlist add "Federal Reserve"
+
+# Set mini-digest threshold
+/threshold set 5
+
+# Check system status
+/lobbylens
+
+# Get help
+/lobbypulse help
+```
+
+### **Digest Format**
+The daily digest includes:
+- **🔎 Watchlist Alerts** - Signals matching your watchlist entities
+- **📈 What Changed** - Recent government activity and regulatory changes
+- **🏭 Industry Snapshots** - Categorized view by industry (Tech, Health, Energy, etc.)
+- **⏰ Deadlines** - Upcoming deadlines and comment periods
+- **📊 Docket Surges** - Regulatory dockets with significant activity increases
+- **📜 New Bills & Actions** - Recent congressional activity
+
+## 🚀 **Recent Migration (September 2025)**
+
+### What Changed
+- **Unified Deployment**: Both Railway and Docker now use V2 system
+- **Cleaned Codebase**: Removed obsolete V1 files that were superseded by V2
+- **Two-Layer Architecture**: Separated daily government activity from quarterly lobbying analysis
+- **Simplified Maintenance**: Single active system (V2) with V1 prepared for future use
+
+### Files Removed
+- `bot/web_server_v2.py` - Redundant with `web_server.py`
+- `bot/run_v2.py` - Not used in deployment
+- `bot/digest.py` - Superseded by `digest_v2.py`
+- `bot/signals_database.py` - Superseded by `signals_database_v2.py`
+- `bot/daily_signals.py` - Superseded by `daily_signals_v2.py`
+- `bot/signals_digest.py` - Superseded by `digest_v2.py`
+- `bot/daily_signals_cli.py` - Superseded by main run modules
+- `README_V2.md` - Consolidated into main README
+- `lobbywatch.db` - V1 database file
+
+### Files Kept (V1 Money Layer)
+- `bot/enhanced_run.py` - V1 entry point for lobbying data
+- `bot/enhanced_digest.py` - V1 digest for lobbying data
+- `bot/slack_app.py` - V1 Slack integration
+- `bot/matching.py` - V1 fuzzy matching for lobbying entities
+- `bot/database.py` - V1 database for lobbying data
+- `bot/database_postgres.py` - V1 PostgreSQL support
 
 ### Issue Mapping (No AI)
 - **Agency → Issue Codes**: FCC→TEC, HHS→HCR, etc.
@@ -244,7 +342,7 @@ flake8 bot tests
 The test suite includes:
 
 - **Unit tests**: All modules with >90% coverage
-- **Integration tests**: End-to-end CLI testing  
+- **Integration tests**: End-to-end CLI testing
 - **Mock testing**: External API calls and notifications
 - **Snapshot testing**: Digest format validation
 

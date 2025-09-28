@@ -10,7 +10,8 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .config import settings
-from .digest import DigestError, compute_digest
+
+# Legacy digest imports removed - V2 system uses digest_v2.py
 from .notifiers.base import NotificationError
 from .notifiers.slack import SlackNotifier
 
@@ -21,9 +22,8 @@ console = Console()
 def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> str:
     """Run daily digest collection and formatting using v2 system"""
     import logging
-    from datetime import datetime, timezone
-    from typing import List, Optional
 
+    # Removed unused imports
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2
@@ -34,7 +34,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    database = SignalsDatabaseV2()
+    # database = SignalsDatabaseV2()  # Unused for now
 
     # Get watchlist for channel
     # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
@@ -54,9 +54,8 @@ def run_mini_digest(
 ) -> Optional[str]:
     """Run mini digest collection and formatting using v2 system"""
     import logging
-    from datetime import datetime, timezone
-    from typing import List, Optional
 
+    # Removed unused imports
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2
@@ -67,7 +66,7 @@ def run_mini_digest(
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    database = SignalsDatabaseV2()
+    # database = SignalsDatabaseV2()  # Unused for now
 
     # Get watchlist for channel
     # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
@@ -159,9 +158,9 @@ def create_notifier() -> SlackNotifier:
     help="Set logging level",
 )
 def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
-    """Run LobbyLens daily digest bot.
+    """Run LobbyLens daily digest bot using V2 system.
 
-    Fetches fresh lobbying data and sends daily digest via Slack.
+    Collects government signals and sends daily digest via Slack.
     """
     # Override config with CLI options
     if dry_run:
@@ -171,54 +170,21 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
 
     setup_logging(settings.log_level)
 
-    logger.info("🔍 Starting LobbyLens daily digest bot...")
+    logger.info("🔍 Starting LobbyLens V2 daily digest bot...")
 
-    # Track errors for summary
-    errors = []
-
-    # 1. Fetch fresh data (unless skipped)
-    if not skip_fetch:
-        try:
-            successful_fetches, failed_fetches = fetch_data()
-            if failed_fetches > 0:
-                errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
-            logger.info(
-                f"Data fetch complete: {successful_fetches} successful, "
-                f"{failed_fetches} failed"
-            )
-        except Exception as e:
-            error_msg = f"Critical error during data fetch: {e}"
-            logger.error(error_msg)
-            errors.append(error_msg)
-    else:
-        logger.info("Skipping data fetch (--skip-fetch specified)")
-
-    # 2. Compute digest
+    # Use V2 system for daily digest
     try:
-        logger.info("Computing daily digest...")
-        digest_text = compute_digest(settings.database_file)
+        logger.info("Generating V2 daily digest...")
+        digest_text = run_daily_digest(hours_back=24, channel_id="default")
 
-        if errors:
-            # Append error summary to digest
-            error_summary = "\\n⚠️ *Errors during processing:*\\n" + "\\n".join(
-                f"• {err}" for err in errors
-            )
-            digest_text += error_summary
+        if not digest_text:
+            digest_text = "No government activity detected in the last 24 hours."
 
-    except DigestError as e:
-        logger.error(f"Failed to compute digest: {e}")
-        # Send error notification instead
-        digest_text = (
-            f"🚨 *LobbyLens Digest Error*\\n\\nFailed to generate daily digest: {e}"
-        )
-        if errors:
-            digest_text += "\\n\\nAdditional errors:\\n" + "\\n".join(
-                f"• {err}" for err in errors
-            )
     except Exception as e:
-        logger.error(f"Unexpected error computing digest: {e}")
-        traceback.print_exc()
-        digest_text = f"🚨 *LobbyLens Critical Error*\\n\\nUnexpected error: {e}"
+        logger.error(f"Failed to generate V2 digest: {e}")
+        digest_text = (
+            f"🚨 *LobbyLens V2 Error*\\n\\nFailed to generate daily digest: {e}"
+        )
 
     # 3. Send notification
     if settings.dry_run:
@@ -233,7 +199,7 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
         logger.info("Sending digest notification...")
         notifier = create_notifier()
         notifier.send(digest_text)
-        logger.info("✅ Daily digest sent successfully")
+        logger.info("✅ V2 daily digest sent successfully")
 
     except NotificationError as e:
         logger.error(f"Failed to send notification: {e}")

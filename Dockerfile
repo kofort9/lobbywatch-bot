@@ -29,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE $PORT
 
 # Start command
-CMD ["python", "-m", "bot.enhanced_run", "--mode", "server", "--port", "$PORT"]
+CMD ["python", "main.py"]

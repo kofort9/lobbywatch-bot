@@ -8,7 +8,7 @@ LobbyLens now supports advanced interactive features including watchlists, smart
 
 **Basic Mode** (webhook only):
 - Daily digests via webhook
-- No interactivity 
+- No interactivity
 - Set `SLACK_WEBHOOK_URL`
 
 **Enhanced Mode** (full Slack app):
@@ -35,7 +35,7 @@ LobbyLens now supports advanced interactive features including watchlists, smart
    - Go to "Slash Commands"
    - Create these commands pointing to `https://yourdomain.com/slack/commands`:
      - `/watchlist` - Manage watchlist
-     - `/threshold` - Set alert thresholds  
+     - `/threshold` - Set alert thresholds
      - `/summary` - Toggle descriptions
      - `/lobbylens` - Manual actions
 
@@ -45,7 +45,7 @@ LobbyLens now supports advanced interactive features including watchlists, smart
    - Subscribe to: `message.channels`
 
 5. **Get Signing Secret**:
-   - Go to "Basic Information" 
+   - Go to "Basic Information"
    - Copy "Signing Secret"
 
 ### 3. Environment Configuration
@@ -111,7 +111,7 @@ New filings (last 24h):
 
 Each Slack channel has its own independent watchlist for:
 - **Clients**: Companies hiring lobbyists
-- **Registrants**: Lobbying firms  
+- **Registrants**: Lobbying firms
 - **Issues**: Policy areas (HCR, TAX, etc.)
 
 ### Adding Entities
@@ -123,7 +123,7 @@ Each Slack channel has its own independent watchlist for:
 **Smart Matching Process:**
 
 1. **Exact Match** → Auto-added
-2. **High Confidence** (95%+) → Auto-added  
+2. **High Confidence** (95%+) → Auto-added
 3. **Medium Confidence** (85-94%) → Confirmation prompt
 4. **Low Confidence** (<85%) → Shows alternatives
 
@@ -131,7 +131,7 @@ Each Slack channel has its own independent watchlist for:
 ```
 Possible matches for 'Google':
 1) Alphabet Inc. (Google) (92% match)
-2) Google Fiber Inc. (89% match) 
+2) Google Fiber Inc. (89% match)
 3) Google Cloud LLC (87% match)
 
 Reply with number (1-3), 'all', or 'q' to cancel.
@@ -150,7 +150,7 @@ LobbyLens learns from your confirmations:
 
 ```bash
 /watchlist list                    # Show current watchlist
-/watchlist add Apple              # Add entity with fuzzy matching  
+/watchlist add Apple              # Add entity with fuzzy matching
 /watchlist add "tax policy"       # Add issue/topic (use quotes for multi-word)
 /watchlist remove "Apple Inc"     # Remove entity
 ```
@@ -253,7 +253,7 @@ REGULATIONS_GOV_API_KEY=key
 
 # Enhanced Features
 SLACK_BOT_TOKEN=xoxb-token           # Required for enhanced mode
-SLACK_SIGNING_SECRET=secret          # Required for enhanced mode  
+SLACK_SIGNING_SECRET=secret          # Required for enhanced mode
 LOBBYLENS_CHANNELS=C123,C456         # Auto-digest channels
 SLACK_WEBHOOK_URL=webhook            # Fallback/legacy support
 
@@ -269,7 +269,7 @@ Enhanced features add these tables:
 -- Channel settings (thresholds, preferences)
 channel_settings(id, threshold_filings, threshold_amount, show_descriptions)
 
--- Per-channel watchlists  
+-- Per-channel watchlists
 channel_watchlist(channel_id, entity_type, watch_name, display_name, fuzzy_score)
 
 -- Learned aliases for fast matching
@@ -329,7 +329,7 @@ curl -X POST localhost:3000/slack/commands \
 Enhanced mode provides detailed logging:
 
 ```bash
-# Debug mode  
+# Debug mode
 LOG_LEVEL=DEBUG lobbylens-enhanced --mode server
 
 # Key log events
@@ -350,12 +350,12 @@ curl http://localhost:3000/health
 ### Database Queries
 
 Monitor watchlist usage:
-```sql  
+```sql
 SELECT channel_id, COUNT(*) as watchlist_size
-FROM channel_watchlist 
+FROM channel_watchlist
 GROUP BY channel_id;
 
-SELECT alias_name, usage_count  
+SELECT alias_name, usage_count
 FROM entity_aliases
 ORDER BY usage_count DESC LIMIT 10;
 ```
@@ -367,7 +367,7 @@ ORDER BY usage_count DESC LIMIT 10;
 1. **Keep existing webhook** (no disruption)
 2. **Add enhanced environment variables**
 3. **Deploy web server** alongside webhook
-4. **Test in one channel** 
+4. **Test in one channel**
 5. **Migrate channels one by one**
 
 ### Migration Script
@@ -383,7 +383,7 @@ pip install -e .
 # 3. Initialize enhanced schema (preserves existing data)
 python -c "
 from bot.database import DatabaseManager
-db = DatabaseManager('lobbywatch.db') 
+db = DatabaseManager('lobbywatch.db')
 db.ensure_enhanced_schema()
 print('✅ Enhanced schema ready')
 "
@@ -419,7 +419,7 @@ result = service.process_confirmation_response(
 
 ### EnhancedDigestComputer
 
-```python  
+```python
 from bot.enhanced_digest import EnhancedDigestComputer
 
 computer = EnhancedDigestComputer(db_manager)

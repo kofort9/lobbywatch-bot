@@ -1,10 +1,10 @@
 """Web server for handling Slack events and slash commands with v2 system."""
 
-import json
+# Removed unused import
 import logging
 from typing import Any, Dict, Optional
 
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, request
 
 logger = logging.getLogger(__name__)
 
@@ -153,14 +153,24 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             return {
                 "response_type": "in_channel",
                 "text": "🔍 **LobbyLens Commands**\n\n"
-                "• `/lobbypulse` - Generate daily digest\n"
-                "• `/lobbypulse mini` - Generate mini digest\n"
+                "**Digest Commands:**\n"
+                "• `/lobbypulse` - Generate daily digest (24h)\n"
+                "• `/lobbypulse mini` - Generate mini digest (4h)\n"
                 "• `/lobbypulse help` - Show this help\n\n"
-                "• `/watchlist add <entity>` - Add to watchlist\n"
-                "• `/watchlist remove <entity>` - Remove from watchlist\n"
-                "• `/watchlist list` - Show watchlist\n\n"
+                "**Watchlist Commands:**\n"
+                "• `/watchlist add <entity>` - Add entity to watchlist\n"
+                "• `/watchlist remove <entity>` - Remove entity from watchlist\n"
+                "• `/watchlist list` - Show current watchlist\n\n"
+                "**Settings Commands:**\n"
                 "• `/threshold set <number>` - Set mini-digest threshold\n"
-                "• `/lobbylens` - Show system status",
+                "• `/threshold` - Show current threshold settings\n\n"
+                "**System Commands:**\n"
+                "• `/lobbylens` - Show system status and stats\n"
+                "• `/lobbylens help` - Show system help\n\n"
+                "**Examples:**\n"
+                "• `/watchlist add Google`\n"
+                "• `/threshold set 5`\n"
+                "• `/lobbypulse mini`",
             }
         elif text == "mini":
             try:
@@ -192,18 +202,27 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
         if text == "help":
             return {
                 "response_type": "in_channel",
-                "text": "🔍 **LobbyLens v2 System Status**\n\n"
-                "**Features:**\n"
-                "• Daily government signals digest\n"
-                "• Industry snapshots and priority scoring\n"
-                "• Watchlist alerts and mini-digests\n"
-                "• Mobile-friendly formatting\n\n"
-                "**Commands:**\n"
-                "• `/lobbypulse` - Daily digest\n"
-                "• `/lobbypulse mini` - Mini digest\n"
-                "• `/watchlist` - Watchlist management\n"
-                "• `/threshold` - Threshold settings\n\n"
-                "**Sources:** Congress, Federal Register, Regulations.gov",
+                "text": "🔍 **LobbyLens v2 System Help**\n\n"
+                "**What is LobbyLens?**\n"
+                "LobbyLens monitors daily government activity and provides digestible signals about bills, regulations, hearings, and regulatory actions.\n\n"
+                "**Key Features:**\n"
+                "• 📰 Daily government signals digest (24h)\n"
+                "• ⚡ Mini digest alerts (4h, when thresholds met)\n"
+                "• 🎯 Watchlist alerts for specific entities\n"
+                "• 📊 Priority scoring and industry mapping\n"
+                "• 📱 Mobile-friendly formatting\n"
+                "• 🏭 Industry snapshots and trend analysis\n\n"
+                "**Data Sources:**\n"
+                "• Congress API (bills, hearings, votes)\n"
+                "• Federal Register (rules, regulations)\n"
+                "• Regulations.gov (dockets, comment periods)\n\n"
+                "**Quick Start:**\n"
+                "1. `/lobbypulse` - Get your first digest\n"
+                "2. `/watchlist add <entity>` - Add entities to watch\n"
+                "3. `/threshold set 5` - Set mini-digest threshold\n\n"
+                "**Need Help?**\n"
+                "• `/lobbypulse help` - Show all commands\n"
+                "• `/lobbylens` - Show system status",
             }
         else:
             # Get system stats

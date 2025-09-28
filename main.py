@@ -7,7 +7,8 @@ This starts the Flask web server v2 to handle Slack interactions.
 """
 
 import os
-import sys
+
+# Removed unused import
 
 
 def main() -> None:
