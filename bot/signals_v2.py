@@ -211,6 +211,10 @@ class SignalsRulesEngine:
         """Determine urgency based on deadlines and content"""
         now = datetime.now(timezone.utc)
         
+        # Ensure signal timestamp is timezone-aware
+        if signal.timestamp and signal.timestamp.tzinfo is None:
+            signal.timestamp = signal.timestamp.replace(tzinfo=timezone.utc)
+        
         # Critical: final rule effective ≤30 days
         if signal.signal_type == SignalType.FINAL_RULE and signal.deadline:
             # Ensure deadline is timezone-aware

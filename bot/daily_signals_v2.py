@@ -279,7 +279,18 @@ class DailySignalsCollectorV2:
             
             # Parse timestamp with timezone handling
             if publication_date:
-                timestamp = datetime.fromisoformat(publication_date.replace('Z', '+00:00'))
+                try:
+                    # Try to parse with timezone info
+                    if publication_date.endswith('Z'):
+                        timestamp = datetime.fromisoformat(publication_date.replace('Z', '+00:00'))
+                    elif '+' in publication_date or publication_date.endswith('Z'):
+                        timestamp = datetime.fromisoformat(publication_date)
+                    else:
+                        # Assume UTC if no timezone info
+                        timestamp = datetime.fromisoformat(publication_date).replace(tzinfo=timezone.utc)
+                except ValueError:
+                    # Fallback to current time if parsing fails
+                    timestamp = datetime.now(timezone.utc)
             else:
                 timestamp = datetime.now(timezone.utc)
             
