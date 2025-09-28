@@ -14,13 +14,13 @@ def main():
     """Start LobbyLens web server for Railway deployment."""
     print("Starting LobbyLens web server...")
 
-    # Import and run the enhanced server mode
-    from bot.enhanced_run import main as enhanced_main
+    # Import and run the v2 server mode
+    from bot.run_v2 import main as v2_main
 
     # Override sys.argv to pass server mode only (let Flask handle port from env)
     sys.argv = ["main.py", "--mode", "server"]
 
-    enhanced_main()
+    v2_main()
 
 
 if __name__ == "__main__":
