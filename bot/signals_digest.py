@@ -16,66 +16,70 @@ class SignalsDigestFormatter:
         self.signals_db = signals_db
 
     def format_daily_digest(self, channel_id: str, hours_back: int = 24) -> str:
-        """Format a daily signals digest."""
-        signals = self.signals_db.get_recent_signals(hours_back, limit=50)
+        """Format a comprehensive daily signals digest."""
+        signals = self.signals_db.get_recent_signals(hours_back, limit=100)
         
         if not signals:
             return self._format_empty_digest()
         
-        # Group signals by type
-        hearings = [s for s in signals if 'hearing' in s.get('title', '').lower()]
-        bills = [s for s in signals if s.get('bill_id')]
-        regulations = [s for s in signals if s.get('rin') or s.get('docket_id')]
-        surges = self.signals_db.get_comment_surges(hours_back)
+        # Get watchlist for this channel
+        watchlist = self._get_channel_watchlist(channel_id)
+        
+        # Group and process signals
+        processed_signals = self._process_signals(signals, watchlist)
+        
+        # Calculate mini stats
+        bills_count = len([s for s in signals if s.get('source') == 'congress'])
+        rules_count = len([s for s in signals if s.get('source') == 'federal_register'])
+        dockets_count = len([s for s in signals if s.get('source') == 'regulations_gov'])
+        watchlist_hits = len([s for s in processed_signals if s.get('watchlist_hit', False)])
         
         lines = []
-        lines.append(f"📰 **Daily Government Signals** — {datetime.now(timezone.utc).strftime('%Y-%m-%d')}")
+        lines.append(f"🔍 **LobbyLens — Daily Signals** ({datetime.now(timezone.utc).strftime('%Y-%m-%d')}) · {hours_back}h window")
+        lines.append(f"Mini stats: Bills: {bills_count} · Rules: {rules_count} · Dockets: {dockets_count} · Watchlist hits: {watchlist_hits}")
         
-        # Hearings section
-        if hearings:
-            lines.append(f"\n🎤 **Today's Hearings** ({len(hearings)}):")
-            for hearing in hearings[:5]:  # Top 5
-                time_str = self._format_timestamp(hearing['timestamp'])
-                lines.append(f"• {hearing['title']} {time_str}")
-                if hearing.get('link'):
-                    lines.append(f"  <{hearing['link']}|View Details>")
+        # A. Watchlist First (max 3)
+        watchlist_signals = [s for s in processed_signals if s.get('watchlist_hit', False)][:3]
+        if watchlist_signals:
+            lines.append(f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
+            for signal in watchlist_signals:
+                lines.append(self._format_watchlist_signal(signal))
         
-        # Bill movements section
-        if bills:
-            lines.append(f"\n📜 **Bill Activity** ({len(bills)}):")
-            for bill in bills[:5]:  # Top 5
-                bill_id = bill.get('bill_id', 'Unknown')
-                lines.append(f"• {bill['title']}")
-                if bill.get('link'):
-                    lines.append(f"  <{bill['link']}|{bill_id}>")
+        # B. What changed (max 5) - high priority signals
+        high_priority = sorted([s for s in processed_signals if s.get('priority_score', 0) >= 3.0], 
+                              key=lambda x: x.get('priority_score', 0), reverse=True)[:5]
+        if high_priority:
+            lines.append(f"\n📈 **What Changed** ({len(high_priority)}):")
+            for signal in high_priority:
+                lines.append(self._format_change_signal(signal))
         
-        # Regulatory actions section
-        if regulations:
-            lines.append(f"\n⚖️ **Regulatory Actions** ({len(regulations)}):")
-            for reg in regulations[:5]:  # Top 5
-                agency = reg.get('agency', 'Unknown Agency')
-                lines.append(f"• {agency}: {reg['title']}")
-                if reg.get('link'):
-                    lines.append(f"  <{reg['link']}|View Rule>")
+        # C. Today/Next 72h (max 5) - hearings and deadlines
+        upcoming = self._get_upcoming_events(processed_signals)[:5]
+        if upcoming:
+            lines.append(f"\n⏰ **Today/Next 72h** ({len(upcoming)}):")
+            for signal in upcoming:
+                lines.append(self._format_upcoming_signal(signal))
         
-        # Comment surges section
+        # D. Docket surges (max 3) - highest comment deltas
+        surges = self._get_docket_surges(processed_signals)[:3]
         if surges:
-            lines.append(f"\n📈 **Comment Surges** ({len(surges)}):")
-            for surge in surges[:3]:  # Top 3
-                comment_count = surge.get('metric_json', {}).get('comment_count', 0)
-                lines.append(f"• {surge['title']} ({comment_count} comments)")
-                if surge.get('link'):
-                    lines.append(f"  <{surge['link']}|View Docket>")
+            lines.append(f"\n📊 **Docket Surges** ({len(surges)}):")
+            for signal in surges:
+                lines.append(self._format_surge_signal(signal))
         
-        # Issue activity summary
-        issue_counts = self._count_issues(signals)
-        if issue_counts:
-            lines.append(f"\n🏷️ **Issue Activity:**")
-            for issue, count in sorted(issue_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
-                lines.append(f"• {issue}: {count} signals")
+        # E. New bills & actions (max 5) - grouped by bill
+        bill_actions = self._get_bill_actions(processed_signals)[:5]
+        if bill_actions:
+            lines.append(f"\n📜 **New Bills & Actions** ({len(bill_actions)}):")
+            for signal in bill_actions:
+                lines.append(self._format_bill_signal(signal))
         
         # Footer
-        lines.append(f"\n_Updated at {datetime.now(timezone.utc).strftime('%H:%M')} PT_")
+        total_items = len(processed_signals)
+        if total_items > 20:
+            lines.append(f"\n+ {total_items - 20} more items in thread · /lobbylens help · Updated {datetime.now(timezone.utc).strftime('%H:%M')} PT")
+        else:
+            lines.append(f"\n/lobbylens help · Updated {datetime.now(timezone.utc).strftime('%H:%M')} PT")
         
         return "\n".join(lines)
 
@@ -136,17 +140,28 @@ class SignalsDigestFormatter:
         issue_counts = {}
         
         for signal in signals:
-            issue_codes = signal.get('issue_codes', [])
-            if isinstance(issue_codes, str):
-                try:
-                    issue_codes = eval(issue_codes)
-                except:
-                    issue_codes = []
+            issue_codes = self._parse_issue_codes(signal.get('issue_codes', []))
             
             for issue in issue_codes:
                 issue_counts[issue] = issue_counts.get(issue, 0) + 1
         
         return issue_counts
+
+    def _parse_issue_codes(self, issue_codes) -> List[str]:
+        """Parse issue codes from various formats."""
+        if isinstance(issue_codes, list):
+            return issue_codes
+        elif isinstance(issue_codes, str):
+            try:
+                # Handle string representation of list
+                if issue_codes.startswith('[') and issue_codes.endswith(']'):
+                    return eval(issue_codes)
+                else:
+                    return [issue_codes]
+            except:
+                return []
+        else:
+            return []
 
     def should_send_mini_digest(self, channel_id: str, hours_back: int = 4) -> bool:
         """Check if mini digest should be sent based on thresholds."""
@@ -167,3 +182,161 @@ class SignalsDigestFormatter:
             return True
         
         return False
+
+    def _get_channel_watchlist(self, channel_id: str) -> List[Dict[str, Any]]:
+        """Get watchlist for a channel."""
+        # This would integrate with the database manager
+        # For now, return empty list
+        return []
+
+    def _process_signals(self, signals: List[Dict[str, Any]], watchlist: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process signals with watchlist matching and enhanced metadata."""
+        processed = []
+        
+        for signal in signals:
+            # Check for watchlist hits
+            watchlist_hit = self._check_watchlist_hit(signal, watchlist)
+            
+            # Add enhanced metadata
+            enhanced_signal = signal.copy()
+            enhanced_signal['watchlist_hit'] = watchlist_hit
+            enhanced_signal['signal_type'] = self._determine_signal_type(signal)
+            enhanced_signal['time_until_event'] = self._calculate_time_until_event(signal)
+            
+            processed.append(enhanced_signal)
+        
+        return processed
+
+    def _check_watchlist_hit(self, signal: Dict[str, Any], watchlist: List[Dict[str, Any]]) -> bool:
+        """Check if signal matches watchlist items."""
+        # Simple implementation - check if any watchlist terms appear in title
+        if not watchlist:
+            return False
+        
+        title_lower = signal.get('title', '').lower()
+        for item in watchlist:
+            if item.get('entity_name', '').lower() in title_lower:
+                return True
+        return False
+
+    def _determine_signal_type(self, signal: Dict[str, Any]) -> str:
+        """Determine the type of signal."""
+        title = signal.get('title', '').lower()
+        source = signal.get('source', '')
+        
+        if 'hearing' in title or 'markup' in title:
+            return 'hearing'
+        elif source == 'congress':
+            return 'bill'
+        elif source == 'federal_register':
+            if 'rule' in title or 'regulation' in title:
+                return 'regulation'
+            else:
+                return 'notice'
+        elif source == 'regulations_gov':
+            return 'docket'
+        else:
+            return 'notice'
+
+    def _calculate_time_until_event(self, signal: Dict[str, Any]) -> Optional[int]:
+        """Calculate hours until event (for upcoming events)."""
+        # This would parse event times from the signal
+        # For now, return None
+        return None
+
+    def _get_upcoming_events(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Get upcoming events (hearings, deadlines) in next 72h."""
+        # Filter for hearings and events with specific times
+        upcoming = []
+        for signal in signals:
+            if signal.get('signal_type') == 'hearing':
+                upcoming.append(signal)
+        return sorted(upcoming, key=lambda x: x.get('priority_score', 0), reverse=True)
+
+    def _get_docket_surges(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Get docket signals with comment surges."""
+        surges = []
+        for signal in signals:
+            if signal.get('signal_type') == 'docket':
+                metric_json = signal.get('metric_json', {})
+                if metric_json.get('comment_surge', False):
+                    surges.append(signal)
+        return sorted(surges, key=lambda x: x.get('priority_score', 0), reverse=True)
+
+    def _get_bill_actions(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Get bill-related signals grouped by bill."""
+        bills = []
+        for signal in signals:
+            if signal.get('signal_type') == 'bill':
+                bills.append(signal)
+        return sorted(bills, key=lambda x: x.get('priority_score', 0), reverse=True)
+
+    def _format_watchlist_signal(self, signal: Dict[str, Any]) -> str:
+        """Format a watchlist signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        
+        # Extract key info from title
+        if 'hearing' in title.lower():
+            return f"• **{title}** • Issues: {issues} • <{link}|Agenda>"
+        elif signal.get('bill_id'):
+            return f"• **{title}** • Issues: {issues} • <{link}|Bill>"
+        else:
+            return f"• **{title}** • Issues: {issues} • <{link}|View>"
+
+    def _format_change_signal(self, signal: Dict[str, Any]) -> str:
+        """Format a change signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        
+        # Add signal type prefix
+        signal_type = signal.get('signal_type', '')
+        if signal_type == 'regulation':
+            prefix = "*Final Rule*" if 'final' in title.lower() else "*Proposed Rule*"
+        elif signal_type == 'bill':
+            prefix = "Bill Action"
+        else:
+            prefix = "Update"
+        
+        return f"• {prefix} — {title} • Issues: {issues} • <{link}|View>"
+
+    def _format_upcoming_signal(self, signal: Dict[str, Any]) -> str:
+        """Format an upcoming event signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        
+        # Extract time if available
+        time_str = self._format_timestamp(signal.get('timestamp', ''))
+        
+        return f"• {title} {time_str} • Issues: {issues} • <{link}|Agenda>"
+
+    def _format_surge_signal(self, signal: Dict[str, Any]) -> str:
+        """Format a docket surge signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        
+        # Extract comment count
+        metric_json = signal.get('metric_json', {})
+        comment_count = metric_json.get('comment_count', 0)
+        
+        return f"• {title}: +{comment_count} comments (24h) • Issues: {issues} • <{link}|Regulations.gov>"
+
+    def _format_bill_signal(self, signal: Dict[str, Any]) -> str:
+        """Format a bill action signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        bill_id = signal.get('bill_id', '')
+        
+        return f"• {bill_id} — {title} • Issues: {issues} • <{link}|Congress>"
+
+    def _format_issues(self, issue_codes) -> str:
+        """Format issue codes for display."""
+        parsed_codes = self._parse_issue_codes(issue_codes)
+        if not parsed_codes:
+            return "None"
+        return "/".join(parsed_codes)

@@ -74,15 +74,68 @@ class DailySignalsCollector:
             'Agriculture': ['AGR'],
         }
         
+        # Keyword-based issue mapping
+        self.keyword_issue_mapping = {
+            'privacy': ['TEC'],
+            'data': ['TEC'],
+            'cybersecurity': ['TEC', 'DEF'],
+            'artificial intelligence': ['TEC'],
+            'ai': ['TEC'],
+            'climate': ['ENV'],
+            'carbon': ['ENV'],
+            'emissions': ['ENV'],
+            'renewable': ['ENE'],
+            'energy': ['ENE'],
+            'oil': ['ENE'],
+            'gas': ['ENE'],
+            'nuclear': ['ENE'],
+            'healthcare': ['HCR'],
+            'medicare': ['HCR'],
+            'medicaid': ['HCR'],
+            'drug': ['HCR'],
+            'pharmaceutical': ['HCR'],
+            'education': ['EDU'],
+            'student': ['EDU'],
+            'school': ['EDU'],
+            'university': ['EDU'],
+            'trade': ['TRD'],
+            'tariff': ['TRD'],
+            'import': ['TRD'],
+            'export': ['TRD'],
+            'immigration': ['CIV'],
+            'border': ['CIV'],
+            'voting': ['CIV'],
+            'election': ['CIV'],
+            'tax': ['FIN'],
+            'budget': ['FIN'],
+            'debt': ['FIN'],
+            'banking': ['FIN'],
+            'infrastructure': ['TRA'],
+            'transportation': ['TRA'],
+            'aviation': ['TRA'],
+            'automotive': ['TRA'],
+            'defense': ['DEF'],
+            'military': ['DEF'],
+            'veterans': ['HCR'],
+            'agriculture': ['AGR'],
+            'farming': ['AGR'],
+            'food': ['AGR', 'HCR'],
+            'safety': ['CIV'],
+            'regulation': ['GOV'],
+            'oversight': ['GOV'],
+            'accountability': ['GOV'],
+        }
+        
         # Priority scoring weights
         self.priority_weights = {
-            'hearing': 3.0,
-            'new_rule': 3.0,
-            'bill_action': 2.0,
-            'fr_notice': 1.0,
+            'hearing': 4.0,
+            'final_rule': 4.0,
+            'proposed_rule': 3.0,
+            'bill_action': 3.0,
+            'notice': 1.0,
             'comment_surge': 2.0,
-            'watchlist_hit': 1.5,
-            'time_proximity': 1.2,
+            'watchlist_hit': 3.0,
+            'time_proximity': 2.0,
         }
 
     def _create_session(self) -> requests.Session:
@@ -264,16 +317,17 @@ class DailySignalsCollector:
                 if committee.lower() in subject.lower():
                     issues.update(codes)
         
-        # Check title/keywords
+        # Check title keywords using enhanced mapping
         title = bill.get('title', '').lower()
-        if any(word in title for word in ['health', 'medical', 'healthcare']):
-            issues.add('HCR')
-        if any(word in title for word in ['tax', 'revenue', 'fiscal']):
-            issues.add('TAX')
-        if any(word in title for word in ['technology', 'tech', 'digital', 'internet']):
-            issues.add('TEC')
-        if any(word in title for word in ['environment', 'climate', 'energy']):
-            issues.add('ENV')
+        for keyword, codes in self.keyword_issue_mapping.items():
+            if keyword in title:
+                issues.update(codes)
+        
+        # Check summary keywords if available
+        summary = bill.get('summary', '').lower()
+        for keyword, codes in self.keyword_issue_mapping.items():
+            if keyword in summary:
+                issues.update(codes)
         
         return list(issues)
 
@@ -298,14 +352,11 @@ class DailySignalsCollector:
         if agency:
             issues.update(self._map_agency_to_issues(agency))
         
-        # Check title keywords
+        # Check title keywords using enhanced mapping
         title = docket.get('attributes', {}).get('title', '').lower()
-        if any(word in title for word in ['health', 'medical', 'healthcare']):
-            issues.add('HCR')
-        if any(word in title for word in ['tax', 'revenue', 'fiscal']):
-            issues.add('TAX')
-        if any(word in title for word in ['technology', 'tech', 'digital']):
-            issues.add('TEC')
+        for keyword, codes in self.keyword_issue_mapping.items():
+            if keyword in title:
+                issues.update(codes)
         
         return list(issues)
 
