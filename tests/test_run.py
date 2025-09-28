@@ -13,8 +13,6 @@ from bot.run import fetch_data, setup_logging
 # from click.testing import CliRunner
 
 
-
-
 class TestFetchData:
     """Tests for data fetching functionality."""
 
