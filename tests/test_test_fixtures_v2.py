@@ -15,25 +15,25 @@ class TestTestFixturesV2:
     def test_get_fixture_a_mixed_day(self):
         """Test fixture A - mixed day scenario"""
         signals = TestFixturesV2.get_fixture_a_mixed_day()
-        
+
         assert len(signals) == 7
-        
+
         # Check signal types and sources
         sources = [s.source for s in signals]
         assert "federal_register" in sources
         assert "congress" in sources
         assert "regulations_gov" in sources
-        
+
         # Check specific signals
         fr_signals = [s for s in signals if s.source == "federal_register"]
         assert len(fr_signals) == 3
-        
+
         congress_signals = [s for s in signals if s.source == "congress"]
         assert len(congress_signals) == 3
-        
+
         reg_gov_signals = [s for s in signals if s.source == "regulations_gov"]
         assert len(reg_gov_signals) == 1
-        
+
         # Check issue codes
         issue_codes = set()
         for signal in signals:
@@ -47,9 +47,9 @@ class TestTestFixturesV2:
     def test_get_fixture_b_watchlist_hit(self):
         """Test fixture B - watchlist hit scenario"""
         signals = TestFixturesV2.get_fixture_b_watchlist_hit()
-        
+
         assert len(signals) == 1
-        
+
         signal = signals[0]
         assert signal.source == "federal_register"
         assert "Google" in signal.title
@@ -59,22 +59,22 @@ class TestTestFixturesV2:
     def test_get_fixture_c_mini_digest_threshold(self):
         """Test fixture C - mini digest threshold scenario"""
         signals = TestFixturesV2.get_fixture_c_mini_digest_threshold()
-        
+
         assert len(signals) == 12
-        
+
         # Check that we have the right number of signals
         sources = [s.source for s in signals]
         congress_count = sources.count("congress")
         fr_count = sources.count("federal_register")
-        
+
         assert congress_count == 4  # Every 3rd signal
         assert fr_count == 8  # The rest
-        
+
         # Check priority scores
         priority_scores = [s.priority_score for s in signals]
         assert 6.0 in priority_scores  # One high-priority signal
         assert 2.0 in priority_scores  # Others are low-priority
-        
+
         # Check issue codes
         issue_codes = set()
         for signal in signals:
@@ -85,23 +85,23 @@ class TestTestFixturesV2:
     def test_get_fixture_d_character_budget_stress(self):
         """Test fixture D - character budget stress test"""
         signals = TestFixturesV2.get_fixture_d_character_budget_stress()
-        
+
         assert len(signals) == 45
-        
+
         # Check sources distribution
         sources = [s.source for s in signals]
         congress_count = sources.count("congress")
         fr_count = sources.count("federal_register")
         reg_gov_count = sources.count("regulations_gov")
-        
+
         assert congress_count == 12  # Every 4th signal
         assert fr_count == 11  # Every 4th + 1 signal
         assert reg_gov_count == 22  # The rest
-        
+
         # Check that titles are long (stress test)
         long_titles = [s for s in signals if len(s.title) > 50]
         assert len(long_titles) == 45  # All titles should be long
-        
+
         # Check issue codes variety
         issue_codes = set()
         for signal in signals:
@@ -115,15 +115,15 @@ class TestTestFixturesV2:
     def test_get_fixture_e_timezone_test(self):
         """Test fixture E - timezone handling test"""
         signals = TestFixturesV2.get_fixture_e_timezone_test()
-        
+
         assert len(signals) == 1
-        
+
         signal = signals[0]
         assert signal.source == "federal_register"
         assert signal.stable_id == "TZ-TEST-001"
         assert signal.title == "Timezone Test Signal"
         assert signal.issue_codes == ["TEC"]
-        
+
         # Check that deadline is in the future
         now = datetime.now(timezone.utc)
         assert signal.deadline > now
@@ -137,7 +137,7 @@ class TestTestFixturesV2:
             TestFixturesV2.get_fixture_d_character_budget_stress(),
             TestFixturesV2.get_fixture_e_timezone_test(),
         ]
-        
+
         for signals in fixtures:
             for signal in signals:
                 assert isinstance(signal.timestamp, datetime)
@@ -153,7 +153,7 @@ class TestTestFixturesV2:
             TestFixturesV2.get_fixture_d_character_budget_stress(),
             TestFixturesV2.get_fixture_e_timezone_test(),
         ]
-        
+
         for signals in fixtures:
             for signal in signals:
                 assert signal.url.startswith("https://")
@@ -168,15 +168,15 @@ class TestTestFixturesV2:
             TestFixturesV2.get_fixture_d_character_budget_stress(),
             TestFixturesV2.get_fixture_e_timezone_test(),
         ]
-        
+
         all_stable_ids = []
         for signals in fixtures:
             for signal in signals:
                 all_stable_ids.append(signal.stable_id)
-        
+
         # Check uniqueness
         assert len(all_stable_ids) == len(set(all_stable_ids))
-        
+
         # Check format
         for stable_id in all_stable_ids:
             assert len(stable_id) > 5
@@ -225,7 +225,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
   <https://congress.gov/hr8123|Congress>
 
 + 2 more items in thread · /lobbylens help · Updated 08:00 PT"""
-        
+
         result = validator.validate_digest_format(valid_digest)
         assert result is True
         assert len(validator.errors) == 0
@@ -233,7 +233,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
     def test_validate_digest_format_missing_header(self, validator):
         """Test digest format validation with missing header"""
         invalid_digest = "Some content without proper header"
-        
+
         result = validator.validate_digest_format(invalid_digest)
         assert result is False
         assert "Missing required header format" in validator.errors
@@ -242,7 +242,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         """Test digest format validation with missing mini-stats"""
         invalid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Some content without mini-stats"""
-        
+
         result = validator.validate_digest_format(invalid_digest)
         assert result is False
         assert "Missing mini-stats section" in validator.errors
@@ -253,7 +253,7 @@ Some content without mini-stats"""
 Mini-stats: Bills 0 · FR 0 · Dockets 0 · Watchlist hits 0
 
 Some content without proper sections"""
-        
+
         result = validator.validate_digest_format(invalid_digest)
         assert result is True  # No errors, just warnings
         assert len(validator.warnings) > 0
@@ -262,7 +262,8 @@ Some content without proper sections"""
     def test_validate_digest_format_character_limit(self, validator):
         """Test digest format validation with character limit warning"""
         # Create a very long digest with proper format
-        long_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
+        long_digest = (
+            """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
 🔎 **Watchlist Alerts**
@@ -284,8 +285,10 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 📜 **New Bills & Actions**
 • H.R. 8123 — AI Accountability Act: Introduced
 
-""" + "x" * 5000  # Add lots of content to exceed limit
-        
+"""
+            + "x" * 5000
+        )  # Add lots of content to exceed limit
+
         result = validator.validate_digest_format(long_digest)
         assert result is True  # No errors, just warnings
         assert any("Slack message limits" in warning for warning in validator.warnings)
@@ -296,10 +299,13 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 Mini-stats: Bills 0 · FR 0 · Dockets 0 · Watchlist hits 0
 
 Some content without links"""
-        
+
         result = validator.validate_digest_format(invalid_digest)
         assert result is True  # No errors, just warnings
-        assert any("No properly formatted links found" in warning for warning in validator.warnings)
+        assert any(
+            "No properly formatted links found" in warning
+            for warning in validator.warnings
+        )
 
     def test_validate_section_limits_valid(self, validator):
         """Test section limits validation with valid digest"""
@@ -328,7 +334,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 📜 **New Bills & Actions**
 • Item 1
 • Item 2"""
-        
+
         result = validator.validate_section_limits(valid_digest)
         assert result is True
         assert len(validator.errors) == 0
@@ -355,7 +361,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 • Item 6
 • Item 7
 • Item 8  # Exceeds limit of 7"""
-        
+
         result = validator.validate_section_limits(invalid_digest)
         assert result is False
         assert len(validator.errors) > 0
@@ -367,7 +373,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
 Some content with ellipses..."""
-        
+
         result = validator.validate_mobile_formatting(digest_with_ellipses)
         assert result is True  # No errors, just warnings
         assert any("ellipses" in warning for warning in validator.warnings)
@@ -378,7 +384,7 @@ Some content with ellipses..."""
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
 • This is a very long title that should trigger mobile formatting warnings because it exceeds the recommended length for mobile devices and should be broken into multiple lines for better readability"""
-        
+
         result = validator.validate_mobile_formatting(digest_with_long_titles)
         assert result is True  # No errors, just warnings
         assert any("long title lines" in warning for warning in validator.warnings)
@@ -391,10 +397,12 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 • Item 1
 • Item 2
 • Item 3"""
-        
+
         result = validator.validate_mobile_formatting(digest_without_indentation)
         assert result is True  # No errors, just warnings
-        assert any("indented continuation lines" in warning for warning in validator.warnings)
+        assert any(
+            "indented continuation lines" in warning for warning in validator.warnings
+        )
 
     def test_validate_timezone_handling_with_pt(self, validator):
         """Test timezone handling validation with PT timezone"""
@@ -404,7 +412,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 Some content
 
 + 2 more items in thread · /lobbylens help · Updated 08:00 PT"""
-        
+
         result = validator.validate_timezone_handling(digest_with_pt)
         assert result is True
         assert len(validator.warnings) == 0
@@ -417,7 +425,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 Some content
 
 + 2 more items in thread · /lobbylens help · Updated 08:00 UTC"""
-        
+
         result = validator.validate_timezone_handling(digest_without_pt)
         assert result is True  # No errors, just warnings
         assert any("PT timezone" in warning for warning in validator.warnings)
@@ -428,7 +436,7 @@ Some content
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
 
 Some content"""
-        
+
         result = validator.validate_timezone_handling(digest_without_date)
         assert result is True  # No errors, just warnings
         assert any("date format" in warning for warning in validator.warnings)
@@ -442,7 +450,7 @@ Some content"""
         """Test validation report with errors"""
         validator.errors = ["Test error 1", "Test error 2"]
         validator.warnings = ["Test warning 1"]
-        
+
         report = validator.get_validation_report()
         assert "❌ ERRORS:" in report
         assert "• Test error 1" in report
@@ -453,7 +461,7 @@ Some content"""
     def test_get_validation_report_with_warnings_only(self, validator):
         """Test validation report with warnings only"""
         validator.warnings = ["Test warning 1", "Test warning 2"]
-        
+
         report = validator.get_validation_report()
         assert "❌ ERRORS:" not in report
         assert "⚠️  WARNINGS:" in report
@@ -464,7 +472,7 @@ Some content"""
         """Test that validator can be reset"""
         validator.errors = ["Test error"]
         validator.warnings = ["Test warning"]
-        
+
         # Create new validator
         new_validator = TestValidator()
         assert new_validator.errors == []
@@ -513,7 +521,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
   <https://congress.gov/hr7891|Congress>
 
 + 1 more items in thread · /lobbylens help · Updated 08:00 PT"""
-        
+
         result = validator.validate_digest_format(realistic_digest)
         assert result is True
         assert len(validator.errors) == 0

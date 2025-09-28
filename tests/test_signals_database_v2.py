@@ -20,10 +20,10 @@ class TestSignalsDatabaseV2:
         """Create a temporary database for testing."""
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
-        
+
         db = SignalsDatabaseV2(db_path)
         yield db
-        
+
         # Cleanup
         Path(db_path).unlink(missing_ok=True)
 
@@ -32,24 +32,32 @@ class TestSignalsDatabaseV2:
         # Check that tables were created
         conn = sqlite3.connect(temp_db.db_path)
         cur = conn.cursor()
-        
+
         # Check signals_v2 table
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='signals_v2'")
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='signals_v2'"
+        )
         assert cur.fetchone() is not None
-        
+
         # Check watchlist_v2 table
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='watchlist_v2'")
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='watchlist_v2'"
+        )
         assert cur.fetchone() is not None
-        
+
         # Check channel_settings_v2 table
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='channel_settings_v2'")
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='channel_settings_v2'"
+        )
         assert cur.fetchone() is not None
-        
+
         # Check indexes were created
-        cur.execute("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_signals_%'")
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_signals_%'"
+        )
         indexes = [row[0] for row in cur.fetchall()]
         assert len(indexes) > 0
-        
+
         conn.close()
 
     def test_store_signal(self, temp_db):
@@ -100,7 +108,7 @@ class TestSignalsDatabaseV2:
             timestamp=now,
             priority_score=3.0,
         )
-        
+
         signal2 = SignalV2(
             source="congress",
             stable_id="bill-123",  # Same stable_id
@@ -147,7 +155,7 @@ class TestSignalsDatabaseV2:
     def test_get_recent_signals(self, temp_db):
         """Test getting recent signals."""
         now = datetime.now(timezone.utc)
-        
+
         # Create signals with different timestamps
         old_signal = SignalV2(
             source="congress",
@@ -158,7 +166,7 @@ class TestSignalsDatabaseV2:
             timestamp=now - timedelta(hours=25),  # 25 hours ago
             priority_score=3.0,
         )
-        
+
         recent_signal = SignalV2(
             source="congress",
             stable_id="recent-bill",
@@ -184,7 +192,7 @@ class TestSignalsDatabaseV2:
     def test_get_high_priority_signals(self, temp_db):
         """Test getting high priority signals."""
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -208,7 +216,7 @@ class TestSignalsDatabaseV2:
     def test_watchlist_operations(self, temp_db):
         """Test watchlist add/remove/get operations."""
         channel_id = "C1234567890"
-        
+
         # Add watchlist items
         assert temp_db.add_watchlist_item(channel_id, "Apple", "company") is True
         assert temp_db.add_watchlist_item(channel_id, "Google", "company") is True
@@ -223,7 +231,7 @@ class TestSignalsDatabaseV2:
 
         # Remove watchlist item
         assert temp_db.remove_watchlist_item(channel_id, "Google") is True
-        
+
         # Verify removal
         watchlist = temp_db.get_watchlist(channel_id)
         assert len(watchlist) == 2
@@ -233,7 +241,7 @@ class TestSignalsDatabaseV2:
         """Test getting signals that match watchlist."""
         channel_id = "C1234567890"
         now = datetime.now(timezone.utc)
-        
+
         # Add to watchlist
         temp_db.add_watchlist_item(channel_id, "Apple")
         temp_db.add_watchlist_item(channel_id, "privacy")
@@ -273,13 +281,15 @@ class TestSignalsDatabaseV2:
 
         # Get watchlist signals
         watchlist_signals = temp_db.get_watchlist_signals(channel_id)
-        assert len(watchlist_signals) == 3  # Apple, privacy, and Google matches (privacy matches both Apple and Google bills)
+        assert (
+            len(watchlist_signals) == 3
+        )  # Apple, privacy, and Google matches (privacy matches both Apple and Google bills)
         assert all(s.watchlist_hit for s in watchlist_signals)
 
     def test_get_docket_surges(self, temp_db):
         """Test getting docket signals with surge activity."""
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="regulations_gov",
@@ -322,7 +332,7 @@ class TestSignalsDatabaseV2:
     def test_get_deadline_signals(self, temp_db):
         """Test getting signals with deadlines."""
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -363,7 +373,7 @@ class TestSignalsDatabaseV2:
     def test_get_industry_signals(self, temp_db):
         """Test getting signals by industry."""
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -410,7 +420,7 @@ class TestSignalsDatabaseV2:
     def test_channel_settings(self, temp_db):
         """Test channel settings operations."""
         channel_id = "C1234567890"
-        
+
         # Get default settings
         settings = temp_db.get_channel_settings(channel_id)
         assert settings["channel_id"] == channel_id
@@ -420,9 +430,17 @@ class TestSignalsDatabaseV2:
         assert settings["show_summaries"] is True
 
         # Update settings
-        assert temp_db.update_channel_setting(channel_id, "mini_digest_threshold", 15) is True
-        assert temp_db.update_channel_setting(channel_id, "high_priority_threshold", 7.0) is True
-        assert temp_db.update_channel_setting(channel_id, "show_summaries", False) is True
+        assert (
+            temp_db.update_channel_setting(channel_id, "mini_digest_threshold", 15)
+            is True
+        )
+        assert (
+            temp_db.update_channel_setting(channel_id, "high_priority_threshold", 7.0)
+            is True
+        )
+        assert (
+            temp_db.update_channel_setting(channel_id, "show_summaries", False) is True
+        )
 
         # Get updated settings
         settings = temp_db.get_channel_settings(channel_id)
@@ -433,7 +451,7 @@ class TestSignalsDatabaseV2:
     def test_cleanup_old_signals(self, temp_db):
         """Test cleaning up old signals."""
         now = datetime.now(timezone.utc)
-        
+
         # Create old and recent signals
         old_signal = SignalV2(
             source="congress",
@@ -444,7 +462,7 @@ class TestSignalsDatabaseV2:
             timestamp=now - timedelta(days=35),  # 35 days old
             priority_score=3.0,
         )
-        
+
         recent_signal = SignalV2(
             source="congress",
             stable_id="recent-bill",
@@ -474,7 +492,7 @@ class TestSignalsDatabaseV2:
     def test_get_signal_stats(self, temp_db):
         """Test getting signal statistics."""
         now = datetime.now(timezone.utc)
-        
+
         # Create test signals
         signals = [
             SignalV2(
@@ -522,7 +540,7 @@ class TestSignalsDatabaseV2:
 
         # Get statistics
         stats = temp_db.get_signal_stats()
-        
+
         assert stats["total_signals"] == 3
         assert stats["by_source"]["congress"] == 1
         assert stats["by_source"]["federal_register"] == 1
@@ -566,7 +584,7 @@ class TestSignalsDatabaseV2:
         # Retrieve signal
         retrieved_signals = temp_db.get_recent_signals(24)
         assert len(retrieved_signals) == 1
-        
+
         retrieved_signal = retrieved_signals[0]
 
         # Compare all fields
@@ -601,5 +619,7 @@ class TestSignalsDatabaseV2:
         assert watchlist == []
 
         # Test removing non-existent watchlist item
-        result = temp_db.remove_watchlist_item("nonexistent-channel", "nonexistent-item")
+        result = temp_db.remove_watchlist_item(
+            "nonexistent-channel", "nonexistent-item"
+        )
         assert result is True  # Should succeed even if nothing to remove

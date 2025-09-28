@@ -20,7 +20,7 @@ class TestWebServerV2:
     @pytest.fixture
     def client(self, app):
         """Create test client"""
-        app.config['TESTING'] = True
+        app.config["TESTING"] = True
         return app.test_client()
 
     def test_create_web_server_v2(self):
@@ -33,7 +33,7 @@ class TestWebServerV2:
         """Test root endpoint"""
         response = client.get("/")
         assert response.status_code == 200
-        
+
         data = response.get_json()
         assert data["service"] == "lobbylens-v2"
         assert data["status"] == "running"
@@ -47,7 +47,7 @@ class TestWebServerV2:
         """Test health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
-        
+
         data = response.get_json()
         assert data["status"] == "healthy"
         assert data["service"] == "lobbylens-v2"
@@ -56,24 +56,19 @@ class TestWebServerV2:
         """Test LobbyLens specific health check endpoint"""
         response = client.get("/lobbylens/health")
         assert response.status_code == 200
-        
+
         data = response.get_json()
         assert data["status"] == "healthy"
         assert data["service"] == "lobbylens-v2"
 
     def test_handle_events_url_verification(self, client):
         """Test URL verification event handling"""
-        event_data = {
-            "type": "url_verification",
-            "challenge": "test_challenge_123"
-        }
-        
+        event_data = {"type": "url_verification", "challenge": "test_challenge_123"}
+
         response = client.post(
-            "/lobbylens/events",
-            json=event_data,
-            content_type="application/json"
+            "/lobbylens/events", json=event_data, content_type="application/json"
         )
-        
+
         assert response.status_code == 200
         assert response.get_data(as_text=True) == "test_challenge_123"
 
@@ -81,15 +76,13 @@ class TestWebServerV2:
         """Test handling other events"""
         event_data = {
             "type": "event_callback",
-            "event": {"type": "message", "text": "test"}
+            "event": {"type": "message", "text": "test"},
         }
-        
+
         response = client.post(
-            "/lobbylens/events",
-            json=event_data,
-            content_type="application/json"
+            "/lobbylens/events", json=event_data, content_type="application/json"
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["status"] == "ok"
@@ -98,11 +91,9 @@ class TestWebServerV2:
         """Test event handling with error"""
         # Send invalid JSON
         response = client.post(
-            "/lobbylens/events",
-            data="invalid json",
-            content_type="application/json"
+            "/lobbylens/events", data="invalid json", content_type="application/json"
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["status"] == "error"
@@ -111,51 +102,51 @@ class TestWebServerV2:
     def test_manual_digest_daily(self, mock_run_daily, client):
         """Test manual daily digest endpoint"""
         mock_run_daily.return_value = "Test Daily Digest"
-        
+
         response = client.post(
             "/lobbylens/digest/manual/test_channel",
             json={"type": "daily", "hours": 24},
-            content_type="application/json"
+            content_type="application/json",
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["digest"] == "Test Daily Digest"
         assert data["type"] == "daily"
         assert data["channel_id"] == "test_channel"
         assert data["hours_back"] == 24
-        
+
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
     def test_manual_digest_mini_success(self, mock_run_mini, client):
         """Test manual mini digest endpoint with success"""
         mock_run_mini.return_value = "Test Mini Digest"
-        
+
         response = client.post(
             "/lobbylens/digest/manual/test_channel",
             json={"type": "mini", "hours": 4},
-            content_type="application/json"
+            content_type="application/json",
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["digest"] == "Test Mini Digest"
         assert data["type"] == "mini"
-        
+
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
     def test_manual_digest_mini_no_digest(self, mock_run_mini, client):
         """Test manual mini digest endpoint when no digest is generated"""
         mock_run_mini.return_value = None
-        
+
         response = client.post(
             "/lobbylens/digest/manual/test_channel",
             json={"type": "mini", "hours": 4},
-            content_type="application/json"
+            content_type="application/json",
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["message"] == "Mini-digest thresholds not met"
@@ -165,9 +156,9 @@ class TestWebServerV2:
         response = client.post(
             "/lobbylens/digest/manual/test_channel",
             json={"type": "invalid", "hours": 24},
-            content_type="application/json"
+            content_type="application/json",
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["error"] == "Invalid digest type"
@@ -176,13 +167,13 @@ class TestWebServerV2:
     def test_manual_digest_error(self, mock_run_daily, client):
         """Test manual digest with error"""
         mock_run_daily.side_effect = Exception("Test error")
-        
+
         response = client.post(
             "/lobbylens/digest/manual/test_channel",
             json={"type": "daily", "hours": 24},
-            content_type="application/json"
+            content_type="application/json",
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["error"] == "Test error"
@@ -195,10 +186,10 @@ class TestWebServerV2:
                 "command": "/lobbypulse",
                 "text": "help",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -210,61 +201,63 @@ class TestWebServerV2:
     def test_handle_slash_command_lobbypulse_daily(self, mock_run_daily, client):
         """Test /lobbypulse daily command"""
         mock_run_daily.return_value = "Test Daily Digest"
-        
+
         response = client.post(
             "/lobbylens/commands",
             data={
                 "command": "/lobbypulse",
                 "text": "",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
         assert data["text"] == "Test Daily Digest"
-        
+
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
     def test_handle_slash_command_lobbypulse_mini_success(self, mock_run_mini, client):
         """Test /lobbypulse mini command with success"""
         mock_run_mini.return_value = "Test Mini Digest"
-        
+
         response = client.post(
             "/lobbylens/commands",
             data={
                 "command": "/lobbypulse",
                 "text": "mini",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
         assert data["text"] == "Test Mini Digest"
-        
+
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
-    def test_handle_slash_command_lobbypulse_mini_no_digest(self, mock_run_mini, client):
+    def test_handle_slash_command_lobbypulse_mini_no_digest(
+        self, mock_run_mini, client
+    ):
         """Test /lobbypulse mini command when no digest is generated"""
         mock_run_mini.return_value = None
-        
+
         response = client.post(
             "/lobbylens/commands",
             data={
                 "command": "/lobbypulse",
                 "text": "mini",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
@@ -274,17 +267,17 @@ class TestWebServerV2:
     def test_handle_slash_command_lobbypulse_error(self, mock_run_daily, client):
         """Test /lobbypulse command with error"""
         mock_run_daily.side_effect = Exception("Test error")
-        
+
         response = client.post(
             "/lobbylens/commands",
             data={
                 "command": "/lobbypulse",
                 "text": "",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
@@ -298,10 +291,10 @@ class TestWebServerV2:
                 "command": "/lobbylens",
                 "text": "help",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -316,10 +309,10 @@ class TestWebServerV2:
                 "command": "/lobbylens",
                 "text": "status",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -335,10 +328,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "add Google",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         # The actual response will depend on database state
@@ -353,10 +346,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "add Google",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         # The actual response will depend on database state
@@ -371,10 +364,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "remove Google",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         # The actual response will depend on database state
@@ -389,10 +382,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "list",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -406,10 +399,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "list",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -423,10 +416,10 @@ class TestWebServerV2:
                 "command": "/watchlist",
                 "text": "invalid",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
@@ -440,10 +433,10 @@ class TestWebServerV2:
                 "command": "/threshold",
                 "text": "set 10",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         # The actual response will depend on database state
@@ -458,10 +451,10 @@ class TestWebServerV2:
                 "command": "/threshold",
                 "text": "set 10",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         # The actual response will depend on database state
@@ -476,10 +469,10 @@ class TestWebServerV2:
                 "command": "/threshold",
                 "text": "set invalid",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
@@ -493,10 +486,10 @@ class TestWebServerV2:
                 "command": "/threshold",
                 "text": "",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "in_channel"
@@ -510,10 +503,10 @@ class TestWebServerV2:
                 "command": "/unknown",
                 "text": "",
                 "channel_id": "test_channel",
-                "user_id": "test_user"
-            }
+                "user_id": "test_user",
+            },
         )
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
@@ -522,13 +515,9 @@ class TestWebServerV2:
     def test_handle_slash_command_error(self, client):
         """Test slash command handling with error"""
         # Send request without required form data
-        response = client.post(
-            "/lobbylens/commands",
-            data={}
-        )
-        
+        response = client.post("/lobbylens/commands", data={})
+
         assert response.status_code == 200
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
         assert "Unknown command" in data["text"]
-

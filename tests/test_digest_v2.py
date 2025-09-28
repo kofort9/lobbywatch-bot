@@ -29,7 +29,7 @@ class TestDigestV2Formatter:
         """Test formatting empty daily digest."""
         formatter = DigestV2Formatter()
         result = formatter.format_daily_digest([])
-        
+
         assert "LobbyLens — Daily Signals" in result
         assert "No fresh government activity detected" in result
         assert "/lobbylens help" in result
@@ -38,7 +38,7 @@ class TestDigestV2Formatter:
         """Test formatting daily digest with signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -71,14 +71,14 @@ class TestDigestV2Formatter:
         ]
 
         result = formatter.format_daily_digest(signals)
-        
+
         # Check header
         assert "LobbyLens — Daily Signals" in result
         assert "Mini-stats:" in result
         assert "Bills 1" in result
         assert "FR 1" in result
         assert "Watchlist hits 1" in result
-        
+
         # Check sections
         assert "Watchlist Alerts" in result
         assert "What Changed" in result
@@ -88,7 +88,7 @@ class TestDigestV2Formatter:
         """Test mini-digest when thresholds are not met."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         # Low-priority signals that don't meet thresholds
         signals = [
             SignalV2(
@@ -114,7 +114,7 @@ class TestDigestV2Formatter:
         """Test mini-digest when thresholds are met."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         # High-priority signal that meets thresholds
         signals = [
             SignalV2(
@@ -134,7 +134,7 @@ class TestDigestV2Formatter:
         ]
 
         result = formatter.format_mini_digest(signals)
-        
+
         assert result is not None
         assert "Mini Signals Alert" in result
         assert "1 signals in last 4h" in result
@@ -145,7 +145,7 @@ class TestDigestV2Formatter:
         """Test mini-digest triggered by watchlist hit."""
         formatter = DigestV2Formatter(["Apple"])
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -172,7 +172,7 @@ class TestDigestV2Formatter:
         """Test mini-digest triggered by docket surge."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="regulations_gov",
@@ -199,7 +199,7 @@ class TestDigestV2Formatter:
         """Test getting watchlist hit signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -229,7 +229,7 @@ class TestDigestV2Formatter:
         """Test getting high-priority signals for What Changed section."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -259,7 +259,7 @@ class TestDigestV2Formatter:
         """Test getting industry snapshot signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -305,7 +305,7 @@ class TestDigestV2Formatter:
         """Test getting signals with deadlines in next 7 days."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -344,7 +344,7 @@ class TestDigestV2Formatter:
         """Test getting docket signals with surge activity."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="regulations_gov",
@@ -385,7 +385,7 @@ class TestDigestV2Formatter:
         """Test getting bill action signals grouped by bill_id."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signals = [
             SignalV2(
                 source="congress",
@@ -430,7 +430,7 @@ class TestDigestV2Formatter:
         """Test formatting watchlist alert signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signal = SignalV2(
             source="congress",
             stable_id="bill-1",
@@ -447,7 +447,7 @@ class TestDigestV2Formatter:
         )
 
         result = formatter._format_watchlist_signal(signal)
-        
+
         assert "[Tech]" in result
         assert "**Apple Privacy Bill**" in result
         assert "High" in result
@@ -459,7 +459,7 @@ class TestDigestV2Formatter:
         """Test formatting what changed signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signal = SignalV2(
             source="federal_register",
             stable_id="fr-1",
@@ -476,7 +476,7 @@ class TestDigestV2Formatter:
         )
 
         result = formatter._format_what_changed_signal(signal)
-        
+
         assert "[Tech]" in result
         assert "*Final Rule*" in result
         assert "Final Rule: Privacy Protection" in result
@@ -488,7 +488,7 @@ class TestDigestV2Formatter:
         """Test formatting docket surge signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signal = SignalV2(
             source="regulations_gov",
             stable_id="docket-1",
@@ -507,13 +507,15 @@ class TestDigestV2Formatter:
         )
 
         result = formatter._format_docket_surge_signal(signal)
-        
+
         assert "[Environment]" in result
         assert "Docket Surge" in result
         assert "Environmental Standards Docket" in result
         assert "High" in result
         assert "+250% / +500 (24h)" in result
-        assert "Deadline in 4d" in result  # The test uses now + 5 days, but by the time it's processed it might be 4 days
+        assert (
+            "Deadline in 4d" in result
+        )  # The test uses now + 5 days, but by the time it's processed it might be 4 days
         assert "Issues: ENV" in result
         assert "<https://example.com/docket-1|Regulations.gov>" in result
 
@@ -521,7 +523,7 @@ class TestDigestV2Formatter:
         """Test formatting bill action signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         signal = SignalV2(
             source="congress",
             stable_id="action-1",
@@ -539,7 +541,7 @@ class TestDigestV2Formatter:
         )
 
         result = formatter._format_bill_action_signal(signal)
-        
+
         assert "[Health]" in result
         assert "Bill Action" in result
         assert "Health Care Reform Act" in result
@@ -551,7 +553,7 @@ class TestDigestV2Formatter:
     def test_format_title_for_mobile_short(self):
         """Test mobile title formatting for short titles."""
         formatter = DigestV2Formatter()
-        
+
         title = "Short Title"
         result = formatter._format_title_for_mobile(title, 60)
         assert result == "Short Title"
@@ -559,10 +561,10 @@ class TestDigestV2Formatter:
     def test_format_title_for_mobile_long(self):
         """Test mobile title formatting for long titles."""
         formatter = DigestV2Formatter()
-        
+
         title = "This is a very long title that should be broken into multiple lines for better mobile readability"
         result = formatter._format_title_for_mobile(title, 60)
-        
+
         # Should be broken into multiple lines
         assert "\n" in result
         assert "This is a very long title that should be broken into" in result
@@ -571,7 +573,7 @@ class TestDigestV2Formatter:
     def test_format_summary_short(self):
         """Test summary formatting for short summaries."""
         formatter = DigestV2Formatter()
-        
+
         summary = "Short summary"
         result = formatter._format_summary(summary, 160)
         assert result == "Short summary"
@@ -579,10 +581,10 @@ class TestDigestV2Formatter:
     def test_format_summary_long(self):
         """Test summary formatting for long summaries."""
         formatter = DigestV2Formatter()
-        
+
         summary = "This is a very long summary that should be truncated to fit within the character limit for better readability and mobile display and this is even more text to make it longer than the limit"
         result = formatter._format_summary(summary, 160)
-        
+
         # Should be truncated
         assert len(result) <= 161  # Allow for space + ellipsis
         assert result.endswith("...")
@@ -590,15 +592,15 @@ class TestDigestV2Formatter:
     def test_format_issue_codes(self):
         """Test issue codes formatting."""
         formatter = DigestV2Formatter()
-        
+
         # Multiple issue codes
         result = formatter._format_issue_codes(["HCR", "TEC", "ENV"])
         assert result == "HCR/TEC/ENV"
-        
+
         # Single issue code
         result = formatter._format_issue_codes(["HCR"])
         assert result == "HCR"
-        
+
         # No issue codes
         result = formatter._format_issue_codes([])
         assert result == "None"
@@ -606,7 +608,7 @@ class TestDigestV2Formatter:
     def test_get_pt_time(self):
         """Test getting current time in PT."""
         formatter = DigestV2Formatter()
-        
+
         # Just test that it returns a valid time format
         result = formatter._get_pt_time()
         assert "PT" in result
@@ -616,7 +618,7 @@ class TestDigestV2Formatter:
         """Test formatting empty digest."""
         formatter = DigestV2Formatter()
         result = formatter._format_empty_digest()
-        
+
         assert "LobbyLens — Daily Signals" in result
         assert "No fresh government activity detected" in result
         assert "/lobbylens help" in result
@@ -625,7 +627,7 @@ class TestDigestV2Formatter:
         """Test that sections respect their limits."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         # Create many signals to test limits
         signals = []
         for i in range(30):  # More than the limits
@@ -646,12 +648,16 @@ class TestDigestV2Formatter:
             signals.append(signal)
 
         result = formatter.format_daily_digest(signals)
-        
+
         # Count occurrences of watchlist signals (first 10 are watchlist hits)
         # Count only in the watchlist section, not other sections
-        watchlist_section = result.split("🔎 **Watchlist Alerts**")[1].split("\n\n")[0] if "🔎 **Watchlist Alerts**" in result else ""
+        watchlist_section = (
+            result.split("🔎 **Watchlist Alerts**")[1].split("\n\n")[0]
+            if "🔎 **Watchlist Alerts**" in result
+            else ""
+        )
         watchlist_count = watchlist_section.count("• [Health]")
-        
+
         # Should respect limits - only first 10 signals are watchlist hits, max 5 shown
         assert watchlist_count <= 5  # Max 5 watchlist alerts
         # Note: what_changed section limit is tested by the formatter logic
@@ -660,7 +666,7 @@ class TestDigestV2Formatter:
         """Test threading footer when there are many items."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
-        
+
         # Create 25 signals (more than 20 threshold)
         signals = []
         for i in range(25):
@@ -681,7 +687,7 @@ class TestDigestV2Formatter:
             signals.append(signal)
 
         result = formatter.format_daily_digest(signals)
-        
+
         # Should have threading footer
         assert "+ 5 more items in thread" in result  # 25 - 20 = 5
         assert "/lobbylens help" in result

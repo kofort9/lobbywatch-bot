@@ -204,7 +204,9 @@ class SignalsRulesEngine:
         elif signal.source == "congress":
             if "markup" in combined_text:
                 return SignalType.MARKUP
-            elif any(term in combined_text for term in ["hearing", "hearing scheduled"]):
+            elif any(
+                term in combined_text for term in ["hearing", "hearing scheduled"]
+            ):
                 return SignalType.HEARING
             elif signal.action_type in ["floor_vote", "conference_action"]:
                 return SignalType.BILL  # Special handling in priority scoring
