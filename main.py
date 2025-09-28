@@ -18,14 +18,18 @@ def main():
     print("Features: industry_snapshots, priority_scoring, mobile_formatting, watchlist_alerts")
 
     try:
-        # Import and run the v2 server mode
-        from bot.run_v2 import main as v2_main
-        print("✅ v2_main imported successfully")
+        # Import and run the web server mode
+        from bot.web_server import create_web_server
+        print("✅ web_server imported successfully")
 
-        # Override sys.argv to pass server mode only (let Flask handle port from env)
-        sys.argv = ["main.py", "--mode", "server"]
-
-        v2_main()
+        # Create and run the web server
+        app = create_web_server()
+        
+        # Use Railway's dynamic port
+        port = int(os.environ.get("PORT", 8000))
+        print(f"✅ Starting server on port {port}")
+        
+        app.run(host="0.0.0.0", port=port, debug=False)
     except Exception as e:
         print(f"❌ Error importing v2_main: {e}")
         import traceback
