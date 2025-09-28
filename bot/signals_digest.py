@@ -1,7 +1,7 @@
 """Daily signals digest formatting."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 
 from .signals_database import SignalsDatabase
@@ -29,7 +29,7 @@ class SignalsDigestFormatter:
         surges = self.signals_db.get_comment_surges(hours_back)
         
         lines = []
-        lines.append(f"📰 **Daily Government Signals** — {datetime.now().strftime('%Y-%m-%d')}")
+        lines.append(f"📰 **Daily Government Signals** — {datetime.now(timezone.utc).strftime('%Y-%m-%d')}")
         
         # Hearings section
         if hearings:
@@ -75,7 +75,7 @@ class SignalsDigestFormatter:
                 lines.append(f"• {issue}: {count} signals")
         
         # Footer
-        lines.append(f"\n_Updated at {datetime.now().strftime('%H:%M')} PT_")
+        lines.append(f"\n_Updated at {datetime.now(timezone.utc).strftime('%H:%M')} PT_")
         
         return "\n".join(lines)
 
@@ -93,7 +93,7 @@ class SignalsDigestFormatter:
             return None
         
         lines = []
-        lines.append(f"⚡ **Mini Signals Alert** — {datetime.now().strftime('%H:%M')} PT")
+        lines.append(f"⚡ **Mini Signals Alert** — {datetime.now(timezone.utc).strftime('%H:%M')} PT")
         lines.append(f"_{len(signals)} signals in last {hours_back}h, {len(high_priority)} high-priority_")
         
         for signal in high_priority[:3]:
@@ -106,16 +106,16 @@ class SignalsDigestFormatter:
     def _format_empty_digest(self) -> str:
         """Format digest when no signals are available."""
         return (
-            f"📰 **Daily Government Signals** — {datetime.now().strftime('%Y-%m-%d')}\n\n"
+            f"📰 **Daily Government Signals** — {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n\n"
             "No significant government activity detected in the last 24 hours.\n\n"
-            f"_Updated at {datetime.now().strftime('%H:%M')} PT_"
+            f"_Updated at {datetime.now(timezone.utc).strftime('%H:%M')} PT_"
         )
 
     def _format_timestamp(self, timestamp_str: str) -> str:
         """Format timestamp for display."""
         try:
             dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now(timezone.utc)
             
             diff = now - dt
             if diff.days > 0:

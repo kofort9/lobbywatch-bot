@@ -2,7 +2,7 @@
 
 import sqlite3
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 
 from .daily_signals import SignalEvent
@@ -120,7 +120,7 @@ class SignalsDatabase:
         """Get recent signal events."""
         conn = self.db_manager.get_connection()
         
-        since_time = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+        since_time = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).isoformat()
         
         cursor = conn.execute("""
             SELECT * FROM signal_event 
@@ -148,7 +148,7 @@ class SignalsDatabase:
         """Get signals filtered by issue code."""
         conn = self.db_manager.get_connection()
         
-        since_time = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+        since_time = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).isoformat()
         
         cursor = conn.execute("""
             SELECT * FROM signal_event 
@@ -174,7 +174,7 @@ class SignalsDatabase:
         """Get signals with comment surges."""
         conn = self.db_manager.get_connection()
         
-        since_time = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+        since_time = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).isoformat()
         
         cursor = conn.execute("""
             SELECT * FROM signal_event 
@@ -229,7 +229,7 @@ class SignalsDatabase:
         """Clean up old signal events to prevent database bloat."""
         conn = self.db_manager.get_connection()
         
-        cutoff_time = (datetime.now() - timedelta(days=days_to_keep)).isoformat()
+        cutoff_time = (datetime.now(timezone.utc) - timedelta(days=days_to_keep)).isoformat()
         
         cursor = conn.execute("DELETE FROM signal_event WHERE timestamp < ?", (cutoff_time,))
         deleted_count = cursor.rowcount

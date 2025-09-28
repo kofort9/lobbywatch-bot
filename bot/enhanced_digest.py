@@ -3,7 +3,7 @@
 import json
 import logging
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Set, Any, Tuple
 
 from .database import DatabaseManager
@@ -260,7 +260,7 @@ class EnhancedDigestComputer:
             query,
             (
                 week_start.isoformat(),
-                datetime.now().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
                 prev_week_start.isoformat(),
                 week_start.isoformat(),
                 limit,
@@ -306,7 +306,7 @@ class EnhancedDigestComputer:
         settings = self.db_manager.get_channel_settings(channel_id)
 
         # Determine time range based on digest type and last run
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         if digest_type == "mini":
             # Mini digest - since last daily run

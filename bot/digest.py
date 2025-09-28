@@ -3,7 +3,7 @@
 import json
 import logging
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -158,7 +158,7 @@ class DigestComputer:
             query,
             (
                 week_start.isoformat(),
-                datetime.now().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
                 prev_week_start.isoformat(),
                 week_start.isoformat(),
                 limit,
@@ -225,7 +225,7 @@ class DigestComputer:
         Raises:
             DigestError: If digest computation fails
         """
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         # Get time boundaries
         last_run = self._get_last_run_time()

@@ -3,7 +3,7 @@
 import json
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
@@ -114,7 +114,7 @@ class DatabaseManager:
                     "threshold_filings": 10,
                     "threshold_amount": 100000,
                     "show_descriptions": True,
-                    "created_at": datetime.now().isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
                 }
 
                 conn.execute(
@@ -148,7 +148,7 @@ class DatabaseManager:
                 SET {key} = ?, updated_at = ?
                 WHERE id = ?
             """,
-                (value, datetime.now().isoformat(), channel_id),
+                (value, datetime.now(timezone.utc).isoformat(), channel_id),
             )
 
     def get_channel_watchlist(self, channel_id: str) -> List[Dict[str, Any]]:
@@ -232,7 +232,7 @@ class DatabaseManager:
                 (
                     channel_id,
                     run_type,
-                    datetime.now().isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                     filings_count,
                     last_filing_time,
                     digest_content,
@@ -282,7 +282,7 @@ class DatabaseManager:
                     entity_type,
                     entity_id,
                     confidence_score,
-                    datetime.now().isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                     alias_name.lower(),
                     entity_type,
                 ),

@@ -3,7 +3,7 @@
 import logging
 import os
 import sys
-from datetime import datetime, time as dt_time
+from datetime import datetime, timezone, time as dt_time
 from typing import Dict, List, Optional
 
 import click
@@ -85,7 +85,7 @@ def get_configured_channels() -> List[str]:
 
 def is_time_for_digest(digest_type: str) -> bool:
     """Check if it's time for a specific digest type."""
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     current_time = now.time()
 
     if digest_type == "daily":

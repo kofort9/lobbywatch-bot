@@ -3,7 +3,7 @@
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
@@ -142,7 +142,7 @@ class DailySignalsCollector:
         api_key = self.config['congress_api_key']
         
         # Get recent bills
-        since_date = (datetime.now() - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
+        since_date = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
         
         # Recent bills
         bills_url = f"https://api.congress.gov/v3/bill?format=json&api_key={api_key}&updateDate={since_date}"
@@ -173,7 +173,7 @@ class DailySignalsCollector:
         """Collect signals from Federal Register API."""
         signals = []
         
-        since_date = (datetime.now() - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
+        since_date = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
         
         # Recent documents (no API key needed)
         docs_url = f"https://www.federalregister.gov/api/v1/documents.json?publication_date[gte]={since_date}"
@@ -206,25 +206,41 @@ class DailySignalsCollector:
         signals = []
         api_key = self.config['regulations_gov_api_key']
         
-        since_date = (datetime.now() - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
+        since_date = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).strftime('%Y-%m-%dT%H:%M:%SZ')
         
-        # Recent dockets
-        dockets_url = f"https://api.regulations.gov/v4/dockets?api_key={api_key}&filter[lastModifiedDate][gte]={since_date}"
+        # Recent dockets (use X-Api-Key header as per API docs)
+        # Try a simpler query first - just get recent dockets without date filter
+        dockets_url = f"https://api.regulations.gov/v4/dockets?sort=-lastModifiedDate&page[size]=20"
         
         try:
-            response = self.session.get(dockets_url, timeout=30)
+            headers = {'X-Api-Key': api_key}
+            logger.debug(f"Regulations.gov URL: {dockets_url}")
+            logger.debug(f"Regulations.gov headers: {headers}")
+            response = self.session.get(dockets_url, headers=headers, timeout=30)
+            logger.debug(f"Regulations.gov response status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
+            logger.debug(f"Regulations.gov response data keys: {list(data.keys())}")
             
             for docket in data.get('data', []):
                 # Check for comment surge
                 comment_count = docket.get('attributes', {}).get('totalComments', 0)
                 comment_surge = self._detect_comment_surge(docket.get('id', ''), comment_count)
                 
+                # Parse timestamp safely
+                last_modified = docket.get('attributes', {}).get('lastModifiedDate', '')
+                if last_modified:
+                    # Handle timezone-aware datetime
+                    if last_modified.endswith('Z'):
+                        last_modified = last_modified.replace('Z', '+00:00')
+                    timestamp = datetime.fromisoformat(last_modified)
+                else:
+                    timestamp = datetime.now(timezone.utc)
+                
                 signal = SignalEvent(
                     source='regulations_gov',
                     source_id=docket.get('id', ''),
-                    timestamp=datetime.fromisoformat(docket.get('attributes', {}).get('lastModifiedDate', '').replace('Z', '+00:00')),
+                    timestamp=timestamp,
                     title=f"Docket: {docket.get('attributes', {}).get('title', '')}",
                     link=f"https://www.regulations.gov/docket/{docket.get('id', '')}",
                     docket_id=docket.get('id', ''),
@@ -317,7 +333,10 @@ class DailySignalsCollector:
                 score += self.priority_weights.get('comment_surge', 2.0)
             
             # Time proximity bonus (recent events get higher scores)
-            hours_ago = (datetime.now() - signal.timestamp).total_seconds() / 3600
+            # Ensure timestamp is timezone-aware
+            if signal.timestamp.tzinfo is None:
+                signal.timestamp = signal.timestamp.replace(tzinfo=timezone.utc)
+            hours_ago = (datetime.now(timezone.utc) - signal.timestamp).total_seconds() / 3600
             if hours_ago < 24:
                 score += self.priority_weights.get('time_proximity', 1.2)
             
