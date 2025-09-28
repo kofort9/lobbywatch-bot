@@ -81,13 +81,8 @@ class TestDailySignalsCollectorV2:
     @patch("bot.daily_signals_v2.SignalsRulesEngine.process_signal")
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.store_signals")
     def test_collect_all_signals_success(
-            self,
-            mock_store,
-            mock_process,
-            mock_reg_gov,
-            mock_fr,
-            mock_congress,
-            collector):
+        self, mock_store, mock_process, mock_reg_gov, mock_fr, mock_congress, collector
+    ):
         """Test successful collection of all signals"""
         # Mock signal data
         mock_signal = SignalV2(
@@ -258,8 +253,7 @@ class TestDailySignalsCollectorV2:
         assert signal is None
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_success(
-            self, mock_get, collector):
+    def test_collect_federal_register_signals_success(self, mock_get, collector):
         """Test successful Federal Register signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -274,7 +268,9 @@ class TestDailySignalsCollectorV2:
                     "agency_names": ["EPA"],
                     "type": "final_rule",
                     "html_url": "https://federalregister.gov/document/2024-001",
-                }]}
+                }
+            ]
+        }
         mock_get.return_value = mock_response
 
         # Test collection
@@ -289,8 +285,7 @@ class TestDailySignalsCollectorV2:
         assert signal.agency == "EPA"
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_api_error(
-            self, mock_get, collector):
+    def test_collect_federal_register_signals_api_error(self, mock_get, collector):
         """Test Federal Register signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
@@ -317,8 +312,7 @@ class TestDailySignalsCollectorV2:
         assert signal.title == "Test Rule"
         assert signal.agency == "EPA"
 
-    def test_create_federal_register_signal_with_comment_deadline(
-            self, collector):
+    def test_create_federal_register_signal_with_comment_deadline(self, collector):
         """Test creating Federal Register signal with comment deadline"""
         doc = {
             "document_number": "2024-001",
@@ -352,8 +346,7 @@ class TestDailySignalsCollectorV2:
         assert signal.summary == ""
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_success(
-            self, mock_get, collector):
+    def test_collect_regulations_gov_signals_success(self, mock_get, collector):
         """Test successful Regulations.gov signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -394,8 +387,7 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_api_error(
-            self, mock_get, collector):
+    def test_collect_regulations_gov_signals_api_error(self, mock_get, collector):
         """Test Regulations.gov signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
@@ -506,8 +498,7 @@ class TestDailySignalsCollectorV2:
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_high_priority_signals")
-    def test_get_high_priority_signals(
-            self, mock_get_high_priority, collector):
+    def test_get_high_priority_signals(self, mock_get_high_priority, collector):
         """Test getting high-priority signals"""
         mock_signals = [Mock()]
         mock_get_high_priority.return_value = mock_signals

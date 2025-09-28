@@ -56,8 +56,9 @@ class DigestComputer:
         self.state_file.parent.mkdir(exist_ok=True)
 
         with open(self.state_file, "w") as f:
-            json.dump({"last_run_at": run_time.isoformat(),
-                       "version": "1.0"}, f, indent=2)
+            json.dump(
+                {"last_run_at": run_time.isoformat(), "version": "1.0"}, f, indent=2
+            )
 
     def _get_new_filings(
         self, conn: sqlite3.Connection, since: datetime, limit: int = 10
@@ -164,10 +165,7 @@ class DigestComputer:
             ),
         ).fetchall()
 
-    def _expand_issue_code(
-            self,
-            code: str,
-            description: Optional[str] = None) -> str:
+    def _expand_issue_code(self, code: str, description: Optional[str] = None) -> str:
         """Expand issue code abbreviations to full names."""
         # Common lobbying issue code expansions
         expansions = {
@@ -242,17 +240,14 @@ class DigestComputer:
                 # Get data components
                 new_filings = self._get_new_filings(conn, since)
                 top_registrants = self._get_top_registrants(conn, week_start)
-                issue_surges = self._get_issue_surges(
-                    conn, week_start, prev_week_start)
+                issue_surges = self._get_issue_surges(conn, week_start, prev_week_start)
 
         except sqlite3.Error as e:
-            raise DigestError(
-                f"Database error during digest computation: {e}") from e
+            raise DigestError(f"Database error during digest computation: {e}") from e
 
         # Format the message
         lines = []
-        lines.append(
-            f"*🔍 LobbyLens Daily Digest* — {now.strftime('%Y-%m-%d')}")
+        lines.append(f"*🔍 LobbyLens Daily Digest* — {now.strftime('%Y-%m-%d')}")
 
         # New filings section
         if new_filings:
@@ -269,8 +264,7 @@ class DigestComputer:
                 lines.append(line)
 
             if len(new_filings) > 10:
-                lines.append(
-                    f"• _...and {len(new_filings) - 10} more filings_")
+                lines.append(f"• _...and {len(new_filings) - 10} more filings_")
         else:
             lines.append(f"\n*📋 New filings:* None found")
 
@@ -314,8 +308,7 @@ class DigestComputer:
         result = "\n".join(lines)
         logger.info(f"Generated digest with {len(lines)} lines")
 
-        return result if len(
-            lines) > 2 else "*No fresh lobbying activity detected.*"
+        return result if len(lines) > 2 else "*No fresh lobbying activity detected.*"
 
 
 def compute_digest(db_path: str) -> str:

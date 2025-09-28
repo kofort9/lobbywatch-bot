@@ -4,6 +4,7 @@ Implements deterministic signal classification, urgency, priority scoring, and i
 """
 
 import json
+
 # import re  # Unused import
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -70,15 +71,13 @@ class SignalV2:
             "summary": self.summary,
             "url": self.url,
             "timestamp": self.timestamp.isoformat(),
-            "issue_codes": json.dumps(
-                self.issue_codes),
+            "issue_codes": json.dumps(self.issue_codes),
             "bill_id": self.bill_id,
             "action_type": self.action_type,
             "agency": self.agency,
             "comment_count": self.comment_count,
             "deadline": self.deadline.isoformat() if self.deadline else None,
-            "metric_json": json.dumps(
-                self.metric_json) if self.metric_json else None,
+            "metric_json": json.dumps(self.metric_json) if self.metric_json else None,
             "signal_type": self.signal_type.value if self.signal_type else None,
             "urgency": self.urgency.value if self.urgency else None,
             "priority_score": self.priority_score,
@@ -90,12 +89,10 @@ class SignalV2:
     def from_dict(cls, data: Dict[str, Any]) -> "SignalV2":
         """Create from dictionary (database load)"""
         # Parse timestamps
-        timestamp = datetime.fromisoformat(
-            data["timestamp"].replace("Z", "+00:00"))
+        timestamp = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
         deadline = None
         if data.get("deadline"):
-            deadline = datetime.fromisoformat(
-                data["deadline"].replace("Z", "+00:00"))
+            deadline = datetime.fromisoformat(data["deadline"].replace("Z", "+00:00"))
 
         # Parse JSON fields
         issue_codes = json.loads(data.get("issue_codes", "[]"))
@@ -120,17 +117,12 @@ class SignalV2:
             deadline=deadline,
             metric_json=metric_json,
             signal_type=(
-                SignalType(
-                    data["signal_type"]) if data.get("signal_type") else None),
-            urgency=Urgency(
-                data["urgency"]) if data.get("urgency") else None,
-            priority_score=data.get(
-                    "priority_score",
-                    0.0),
+                SignalType(data["signal_type"]) if data.get("signal_type") else None
+            ),
+            urgency=Urgency(data["urgency"]) if data.get("urgency") else None,
+            priority_score=data.get("priority_score", 0.0),
             industry_tag=data.get("industry_tag"),
-            watchlist_hit=data.get(
-                "watchlist_hit",
-                False),
+            watchlist_hit=data.get("watchlist_hit", False),
         )
 
 
@@ -277,8 +269,7 @@ class SignalsRulesEngine:
             if signal.deadline:
                 # Ensure deadline is timezone-aware
                 if signal.deadline.tzinfo is None:
-                    signal.deadline = signal.deadline.replace(
-                        tzinfo=timezone.utc)
+                    signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
                 days_until_deadline = (signal.deadline - now).days
                 if days_until_deadline <= 7:
                     high_urgency_conditions.append(True)
@@ -484,8 +475,7 @@ class SignalDeduplicator:
 
         return deduplicated
 
-    def group_bills(self, signals: List[SignalV2]
-                    ) -> Dict[str, List[SignalV2]]:
+    def group_bills(self, signals: List[SignalV2]) -> Dict[str, List[SignalV2]]:
         """Group signals by bill_id"""
         bills: Dict[str, List[SignalV2]] = {}
         for signal in signals:
@@ -495,8 +485,7 @@ class SignalDeduplicator:
                 bills[signal.bill_id].append(signal)
         return bills
 
-    def group_dockets(
-            self, signals: List[SignalV2]) -> Dict[str, List[SignalV2]]:
+    def group_dockets(self, signals: List[SignalV2]) -> Dict[str, List[SignalV2]]:
         """Group signals by docket_id (extracted from stable_id)"""
         dockets: Dict[str, List[SignalV2]] = {}
         for signal in signals:

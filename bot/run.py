@@ -18,9 +18,7 @@ console = Console()
 
 
 # V2 System Functions
-def run_daily_digest(
-        hours_back: int = 24,
-        channel_id: str = "test_channel") -> str:
+def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> str:
     """Run daily digest collection and formatting using v2 system"""
     import logging
     from datetime import datetime, timezone
@@ -183,8 +181,7 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
         try:
             successful_fetches, failed_fetches = fetch_data()
             if failed_fetches > 0:
-                errors.append(
-                    f"Data fetch errors: {failed_fetches} source(s) failed")
+                errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
                 f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
             )
@@ -202,8 +199,9 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
 
         if errors:
             # Append error summary to digest
-            error_summary = "\\n⚠️ *Errors during processing:*\\n" + \
-                "\\n".join(f"• {err}" for err in errors)
+            error_summary = "\\n⚠️ *Errors during processing:*\\n" + "\\n".join(
+                f"• {err}" for err in errors
+            )
             digest_text += error_summary
 
     except DigestError as e:

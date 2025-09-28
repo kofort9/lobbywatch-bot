@@ -247,11 +247,8 @@ class SignalsDatabase:
         return signals
 
     def add_entity_alias(
-            self,
-            entity_id: int,
-            alias_text: str,
-            source: str,
-            confidence: float = 1.0) -> bool:
+        self, entity_id: int, alias_text: str, source: str, confidence: float = 1.0
+    ) -> bool:
         """Add an entity alias for fuzzy matching."""
         conn = self.db_manager.get_connection()
 

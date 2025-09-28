@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 class DailySignalsCollectorV2:
     """Enhanced daily signals collector with v2 features"""
 
-    def __init__(self, config: Dict[str, Any],
-                 watchlist: Optional[List[str]] = None):
+    def __init__(self, config: Dict[str, Any], watchlist: Optional[List[str]] = None):
         self.config = config
         self.watchlist = watchlist or []
         self.session = requests.Session()
@@ -107,16 +106,14 @@ class DailySignalsCollectorV2:
         try:
             congress_signals = self._collect_congress_signals(hours_back)
             all_signals.extend(congress_signals)
-            logger.info(
-                f"Collected {len(congress_signals)} signals from Congress API")
+            logger.info(f"Collected {len(congress_signals)} signals from Congress API")
         except Exception as e:
             logger.error(f"Failed to collect Congress signals: {e}")
 
         try:
             fr_signals = self._collect_federal_register_signals(hours_back)
             all_signals.extend(fr_signals)
-            logger.info(
-                f"Collected {len(fr_signals)} signals from Federal Register")
+            logger.info(f"Collected {len(fr_signals)} signals from Federal Register")
         except Exception as e:
             logger.error(f"Failed to collect Federal Register signals: {e}")
 
@@ -136,8 +133,7 @@ class DailySignalsCollectorV2:
                 processed_signal = self.rules_engine.process_signal(signal)
                 processed_signals.append(processed_signal)
             except Exception as e:
-                logger.error(
-                    f"Failed to process signal {signal.stable_id}: {e}")
+                logger.error(f"Failed to process signal {signal.stable_id}: {e}")
 
         # Store in database
         stored_count = self.database.store_signals(processed_signals)
@@ -158,10 +154,7 @@ class DailySignalsCollectorV2:
 
         # Get recent bills
         bills_url = "https://api.congress.gov/v3/bill/118"
-        params = {
-            "api_key": self.congress_api_key,
-            "format": "json",
-            "limit": 50}
+        params = {"api_key": self.congress_api_key, "format": "json", "limit": 50}
 
         try:
             response = self.session.get(bills_url, params=params, timeout=30)
@@ -225,8 +218,7 @@ class DailySignalsCollectorV2:
             url = f"https://www.congress.gov/bill/118th-congress/{bill_id.lower()}"
 
             # Parse timestamp
-            timestamp = datetime.fromisoformat(
-                action_date.replace("Z", "+00:00"))
+            timestamp = datetime.fromisoformat(action_date.replace("Z", "+00:00"))
 
             return SignalV2(
                 source="congress",
@@ -244,8 +236,7 @@ class DailySignalsCollectorV2:
             logger.error(f"Error creating Congress signal: {e}")
             return None
 
-    def _collect_federal_register_signals(
-            self, hours_back: int) -> List[SignalV2]:
+    def _collect_federal_register_signals(self, hours_back: int) -> List[SignalV2]:
         """Collect signals from Federal Register API"""
         signals = []
         since_date = (
@@ -308,8 +299,9 @@ class DailySignalsCollectorV2:
                         timestamp = datetime.fromisoformat(publication_date)
                     else:
                         # Assume UTC if no timezone info
-                        timestamp = datetime.fromisoformat(
-                            publication_date).replace(tzinfo=timezone.utc)
+                        timestamp = datetime.fromisoformat(publication_date).replace(
+                            tzinfo=timezone.utc
+                        )
                 except ValueError:
                     # Fallback to current time if parsing fails
                     timestamp = datetime.now(timezone.utc)
@@ -339,8 +331,7 @@ class DailySignalsCollectorV2:
             logger.error(f"Error creating Federal Register signal: {e}")
             return None
 
-    def _collect_regulations_gov_signals(
-            self, hours_back: int) -> List[SignalV2]:
+    def _collect_regulations_gov_signals(self, hours_back: int) -> List[SignalV2]:
         """Collect signals from Regulations.gov API"""
         if not self.regulations_gov_api_key:
             logger.warning("No Regulations.gov API key provided")
@@ -398,8 +389,7 @@ class DailySignalsCollectorV2:
             url = f"https://www.regulations.gov/docket/{docket_id}"
 
             # Parse timestamp
-            timestamp = datetime.fromisoformat(
-                last_modified.replace("Z", "+00:00"))
+            timestamp = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
 
             # Get comment count and surge data
             comment_count = docket.get("totalCommentCount", 0)
@@ -463,8 +453,7 @@ class DailySignalsCollectorV2:
         issue_codes = []
 
         # Get docket text for keyword analysis
-        docket_text = f"{docket.get('title', '')} {docket.get('summary', '')}".lower(
-        )
+        docket_text = f"{docket.get('title', '')} {docket.get('summary', '')}".lower()
 
         # Apply keyword mapping
         for keyword, codes in self.keyword_issue_mapping.items():
@@ -482,8 +471,7 @@ class DailySignalsCollectorV2:
         """Get signals that match channel watchlist"""
         return self.database.get_watchlist_signals(channel_id)
 
-    def get_high_priority_signals(
-            self, threshold: float = 5.0) -> List[SignalV2]:
+    def get_high_priority_signals(self, threshold: float = 5.0) -> List[SignalV2]:
         """Get high-priority signals"""
         return self.database.get_high_priority_signals(threshold)
 

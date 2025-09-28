@@ -31,8 +31,8 @@ class PostgresManager(DatabaseManager):
         """Get PostgreSQL connection with proper settings."""
         try:
             conn = psycopg2.connect(
-                self.database_url,
-                cursor_factory=psycopg2.extras.RealDictCursor)
+                self.database_url, cursor_factory=psycopg2.extras.RealDictCursor
+            )
             conn.autocommit = False
             return conn
         except Exception as e:
@@ -117,8 +117,7 @@ class PostgresManager(DatabaseManager):
                 logger.info("Enhanced PostgreSQL schema ensured")
 
 
-def create_database_manager(
-        database_url: Optional[str] = None) -> DatabaseManager:
+def create_database_manager(database_url: Optional[str] = None) -> DatabaseManager:
     """Factory function to create appropriate database manager."""
 
     # Use DATABASE_URL if provided (Railway/Heroku style)

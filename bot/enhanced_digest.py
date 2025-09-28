@@ -58,10 +58,7 @@ class EnhancedDigestComputer:
 
         return matches
 
-    def _get_filing_issues(
-            self,
-            filing_id: int,
-            conn: sqlite3.Connection) -> List[int]:
+    def _get_filing_issues(self, filing_id: int, conn: sqlite3.Connection) -> List[int]:
         """Get issue IDs for a filing."""
         cursor = conn.execute(
             """
@@ -140,8 +137,7 @@ class EnhancedDigestComputer:
         LIMIT ?
         """
 
-        cursor = conn.execute(
-            query, (since.isoformat(), since.isoformat(), limit))
+        cursor = conn.execute(query, (since.isoformat(), since.isoformat(), limit))
         filings = cursor.fetchall()
 
         # Check watchlist status
@@ -200,8 +196,7 @@ class EnhancedDigestComputer:
             LIMIT 1
             """
 
-            example_cursor = conn.execute(
-                example_query, (reg["id"], since.isoformat()))
+            example_cursor = conn.execute(example_query, (reg["id"], since.isoformat()))
             example = example_cursor.fetchone()
 
             enhanced_reg = {
@@ -319,8 +314,7 @@ class EnhancedDigestComputer:
 
         if digest_type == "mini":
             # Mini digest - since last daily run
-            last_daily = self.db_manager.get_last_digest_run(
-                channel_id, "daily")
+            last_daily = self.db_manager.get_last_digest_run(channel_id, "daily")
             if last_daily:
                 since = datetime.fromisoformat(last_daily["run_time"])
             else:
@@ -337,7 +331,8 @@ class EnhancedDigestComputer:
             with self._get_connection() as conn:
                 # Get enhanced data
                 new_filings, watchlist_statuses = self._get_enhanced_new_filings(
-                    conn, since, channel_id, limit=15)
+                    conn, since, channel_id, limit=15
+                )
 
                 top_registrants = self._get_enhanced_top_registrants(
                     conn, week_start, channel_id, limit=5
@@ -434,7 +429,8 @@ class EnhancedDigestComputer:
                 lines.append(f"\n*💰 Top registrants (7d):*")
                 for reg in top_registrants:
                     name_display = (
-                        f"**{reg['name']}**" if reg["is_watchlist"] else reg["name"])
+                        f"**{reg['name']}**" if reg["is_watchlist"] else reg["name"]
+                    )
                     amount = self._format_amount(reg["total_amount"])
                     count = reg["filing_count"]
 
@@ -443,8 +439,7 @@ class EnhancedDigestComputer:
                     # Add context if available
                     context_parts = []
                     if reg["example_client"]:
-                        context_parts.append(
-                            f"client: {reg['example_client']}")
+                        context_parts.append(f"client: {reg['example_client']}")
                     if reg["example_issue"]:
                         context_parts.append(f"issue: {reg['example_issue']}")
 
@@ -497,8 +492,7 @@ class EnhancedDigestComputer:
             f"Generated {digest_type} digest with {len(lines)} lines for channel {channel_id}"
         )
 
-        return result if len(
-            lines) > 2 else "*No fresh lobbying activity detected.*"
+        return result if len(lines) > 2 else "*No fresh lobbying activity detected.*"
 
     def should_send_mini_digest(self, channel_id: str) -> bool:
         """Determine if mini-digest should be sent based on thresholds."""
@@ -541,8 +535,7 @@ class EnhancedDigestComputer:
                         ",".join(map(str, watchlist_entities["registrant"])) or "0",
                     )
 
-                    cursor = conn.execute(
-                        watchlist_query, (since_daily.isoformat(),))
+                    cursor = conn.execute(watchlist_query, (since_daily.isoformat(),))
                     watchlist_matches = cursor.fetchone()["count"]
 
                     if watchlist_matches > 0:

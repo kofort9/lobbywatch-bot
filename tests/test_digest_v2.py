@@ -1,6 +1,7 @@
 """Tests for bot/digest_v2.py - Enhanced digest formatting with v2 features."""
 
 from datetime import datetime, timedelta, timezone
+
 # from unittest.mock import patch  # Unused import
 
 # import pytest  # Unused import
@@ -354,8 +355,7 @@ class TestDigestV2Formatter:
                 url="https://example.com/docket-1",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
-                metric_json={
-                    "comments_24h_delta_pct": 100.0},
+                metric_json={"comments_24h_delta_pct": 100.0},
                 # Below threshold
             ),
             SignalV2(
@@ -366,8 +366,7 @@ class TestDigestV2Formatter:
                 url="https://example.com/docket-2",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
-                metric_json={
-                    "comments_24h_delta_pct": 300.0},
+                metric_json={"comments_24h_delta_pct": 300.0},
                 # Above threshold
             ),
             SignalV2(
@@ -506,12 +505,8 @@ class TestDigestV2Formatter:
             priority_score=6.5,
             industry_tag="Environment",
             watchlist_hit=False,
-            deadline=now +
-            timedelta(
-                days=5),
-            metric_json={
-                "comments_24h_delta_pct": 250.0,
-                "comments_24h_delta": 500},
+            deadline=now + timedelta(days=5),
+            metric_json={"comments_24h_delta_pct": 250.0, "comments_24h_delta": 500},
         )
 
         result = formatter._format_docket_surge_signal(signal)
@@ -523,7 +518,7 @@ class TestDigestV2Formatter:
         assert "+250% / +500 (24h)" in result
         # The test uses now + 5 days, but by the time it's processed it might
         # be 4 days
-        assert ("Deadline in 4d" in result)
+        assert "Deadline in 4d" in result
         assert "Issues: ENV" in result
         assert "<https://example.com/docket-1|Regulations.gov>" in result
 

@@ -309,8 +309,7 @@ class TestValidator:
 
         # Check for ellipses (should be avoided)
         if any("..." in line for line in lines):
-            self.warnings.append(
-                "Found ellipses - should use line breaks instead")
+            self.warnings.append("Found ellipses - should use line breaks instead")
 
         # Check for proper line breaks in long titles
         long_title_lines = [

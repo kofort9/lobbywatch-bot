@@ -67,11 +67,11 @@ class SlackApp:
         # Create signature
         sig_basestring = f"v0:{timestamp}:{body}"
         expected_signature = (
-            "v0=" +
-            hmac.new(
-                self.signing_secret.encode(),
-                sig_basestring.encode(),
-                hashlib.sha256).hexdigest())
+            "v0="
+            + hmac.new(
+                self.signing_secret.encode(), sig_basestring.encode(), hashlib.sha256
+            ).hexdigest()
+        )
 
         is_valid = hmac.compare_digest(expected_signature, signature)
         if not is_valid:
@@ -104,8 +104,7 @@ class SlackApp:
             payload["thread_ts"] = thread_ts
 
         try:
-            response = requests.post(
-                url, headers=headers, json=payload, timeout=30)
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
             result = response.json()
             return (
                 result
@@ -116,8 +115,7 @@ class SlackApp:
             logger.error(f"Failed to post Slack message: {e}")
             return {"ok": False, "error": str(e)}
 
-    def handle_slash_command(
-            self, command_data: Dict[str, Any]) -> Dict[str, str]:
+    def handle_slash_command(self, command_data: Dict[str, Any]) -> Dict[str, str]:
         """Handle slash command from Slack."""
         command = command_data.get("command", "")
         text = command_data.get("text", "").strip()
@@ -139,9 +137,7 @@ class SlackApp:
         elif command == "/lobbypulse":
             return self._handle_lobbypulse_command(text, channel_id, user_id)
         else:
-            return {
-                "response_type": "ephemeral",
-                "text": f"Unknown command: {command}"}
+            return {"response_type": "ephemeral", "text": f"Unknown command: {command}"}
 
     def _handle_watchlist_command(
         self, text: str, channel_id: str, user_id: str
@@ -205,8 +201,7 @@ class SlackApp:
         self, search_term: str, channel_id: str, user_id: str
     ) -> Dict[str, str]:
         """Handle watchlist add command."""
-        result = self.matching_service.process_watchlist_add(
-            channel_id, search_term)
+        result = self.matching_service.process_watchlist_add(channel_id, search_term)
 
         if result["status"] == "success":
             return {"response_type": "in_channel", "text": result["message"]}
@@ -224,8 +219,7 @@ class SlackApp:
             }
 
             # Post message asking for confirmation
-            message = result["message"] + \
-                f"\n\n_Confirmation key: {confirmation_key}_"
+            message = result["message"] + f"\n\n_Confirmation key: {confirmation_key}_"
 
             return {"response_type": "ephemeral", "text": message}
         else:
@@ -235,8 +229,7 @@ class SlackApp:
         self, search_term: str, channel_id: str
     ) -> Dict[str, str]:
         """Handle watchlist remove command."""
-        success = self.db_manager.remove_from_watchlist(
-            channel_id, search_term)
+        success = self.db_manager.remove_from_watchlist(channel_id, search_term)
 
         if success:
             return {
@@ -449,12 +442,14 @@ class SlackApp:
                 digest_type = text_lower
             elif text_lower in ["help", "?"]:
                 return {
-                    "response_type": "ephemeral", "text": "💓 **LobbyPulse Commands:**\n"
+                    "response_type": "ephemeral",
+                    "text": "💓 **LobbyPulse Commands:**\n"
                     "• `/lobbypulse` - Generate daily digest\n"
                     "• `/lobbypulse daily` - Generate daily digest\n"
                     "• `/lobbypulse mini` - Generate mini digest\n"
                     "• `/lobbypulse help` - Show this help\n\n"
-                    "_This won't affect your scheduled morning/afternoon digests._", }
+                    "_This won't affect your scheduled morning/afternoon digests._",
+                }
             else:
                 return {
                     "response_type": "ephemeral",
@@ -503,8 +498,7 @@ class SlackApp:
             result = self.post_message(channel_id, digest)
             return bool(result.get("ok", False))
         except Exception as e:
-            logger.error(
-                f"Failed to send {digest_type} digest to {channel_id}: {e}")
+            logger.error(f"Failed to send {digest_type} digest to {channel_id}: {e}")
             return False
 
     def send_alert(self, channel_id: str, message: str) -> bool:

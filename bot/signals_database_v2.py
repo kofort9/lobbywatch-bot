@@ -203,8 +203,7 @@ class SignalsDatabaseV2:
 
         return signals
 
-    def get_high_priority_signals(
-            self, threshold: float = 5.0) -> List[SignalV2]:
+    def get_high_priority_signals(self, threshold: float = 5.0) -> List[SignalV2]:
         """Get signals above priority threshold"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
@@ -263,20 +262,17 @@ class SignalsDatabaseV2:
                 AND timestamp >= ?
                 ORDER BY priority_score DESC
             """,
-                (f"%{item}%",
-                 f"%{item}%",
-                 f"%{item}%",
-                 (datetime.now(
-                     timezone.utc) -
-                     timedelta(
-                     days=7)).isoformat(),
-                 ),
+                (
+                    f"%{item}%",
+                    f"%{item}%",
+                    f"%{item}%",
+                    (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(),
+                ),
             )
 
             rows = cur.fetchall()
             for row in rows:
-                signal_data = dict(
-                    zip([col[0] for col in cur.description], row))
+                signal_data = dict(zip([col[0] for col in cur.description], row))
                 try:
                     signal = SignalV2.from_dict(signal_data)
                     signal.watchlist_hit = True
@@ -353,10 +349,7 @@ class SignalsDatabaseV2:
 
         return signals
 
-    def get_industry_signals(
-            self,
-            industry: str,
-            limit: int = 2) -> List[SignalV2]:
+    def get_industry_signals(self, industry: str, limit: int = 2) -> List[SignalV2]:
         """Get top signals for a specific industry"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
@@ -456,11 +449,7 @@ class SignalsDatabaseV2:
 
         return [{"name": row[0], "type": row[1]} for row in rows]
 
-    def update_channel_setting(
-            self,
-            channel_id: str,
-            setting: str,
-            value: Any) -> bool:
+    def update_channel_setting(self, channel_id: str, setting: str, value: Any) -> bool:
         """Update channel setting"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
@@ -585,8 +574,7 @@ class SignalsDatabaseV2:
         by_industry = dict(cur.fetchall())
 
         # High priority signals
-        cur.execute(
-            "SELECT COUNT(*) FROM signals_v2 WHERE priority_score >= 5.0")
+        cur.execute("SELECT COUNT(*) FROM signals_v2 WHERE priority_score >= 5.0")
         high_priority = cur.fetchone()[0]
 
         # Watchlist hits

@@ -136,11 +136,7 @@ class DatabaseManager:
 
             return dict(result)
 
-    def update_channel_setting(
-            self,
-            channel_id: str,
-            key: str,
-            value: Any) -> None:
+    def update_channel_setting(self, channel_id: str, key: str, value: Any) -> None:
         """Update a specific channel setting."""
         with self.get_connection() as conn:
             # Ensure channel exists

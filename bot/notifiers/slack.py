@@ -48,8 +48,7 @@ class SlackNotifier:
             response.raise_for_status()
 
             if response.text.strip() != "ok":
-                raise NotificationError(
-                    f"Slack webhook returned: {response.text}")
+                raise NotificationError(f"Slack webhook returned: {response.text}")
 
             logger.info("Successfully sent Slack notification")
 

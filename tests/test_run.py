@@ -60,8 +60,7 @@ class TestCreateNotifier:
         """Test error when no notifier is configured."""
         # Skip this test since Settings loads from .env file
         # The actual error handling is tested in integration tests
-        pytest.skip(
-            "Settings class loads from .env file - tested in integration")
+        pytest.skip("Settings class loads from .env file - tested in integration")
 
 
 class TestSetupLogging:
@@ -101,11 +100,8 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_dry_run(
-            self,
-            mock_settings,
-            mock_create_notifier,
-            mock_fetch_data,
-            mock_compute_digest):
+        self, mock_settings, mock_create_notifier, mock_fetch_data, mock_compute_digest
+    ):
         """Test main command in dry-run mode."""
         mock_settings.database_file = "test.db"
         mock_settings.log_level = "INFO"
@@ -129,11 +125,8 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_skip_fetch(
-            self,
-            mock_settings,
-            mock_create_notifier,
-            mock_fetch_data,
-            mock_compute_digest):
+        self, mock_settings, mock_create_notifier, mock_fetch_data, mock_compute_digest
+    ):
         """Test main command with skip-fetch option."""
         mock_settings.database_file = "test.db"
         mock_settings.log_level = "INFO"
@@ -157,11 +150,8 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_send_notification(
-            self,
-            mock_settings,
-            mock_create_notifier,
-            mock_fetch_data,
-            mock_compute_digest):
+        self, mock_settings, mock_create_notifier, mock_fetch_data, mock_compute_digest
+    ):
         """Test main command sending notification."""
         mock_settings.database_file = "test.db"
         mock_settings.log_level = "INFO"
@@ -184,11 +174,8 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_notification_error(
-            self,
-            mock_settings,
-            mock_create_notifier,
-            mock_fetch_data,
-            mock_compute_digest):
+        self, mock_settings, mock_create_notifier, mock_fetch_data, mock_compute_digest
+    ):
         """Test main command handling notification errors."""
         mock_settings.database_file = "test.db"
         mock_settings.log_level = "INFO"
@@ -211,11 +198,8 @@ class TestMainCommand:
     @patch("bot.run.create_notifier")
     @patch("bot.run.settings")
     def test_main_with_fetch_errors(
-            self,
-            mock_settings,
-            mock_create_notifier,
-            mock_fetch_data,
-            mock_compute_digest):
+        self, mock_settings, mock_create_notifier, mock_fetch_data, mock_compute_digest
+    ):
         """Test main command with fetch errors."""
         mock_settings.database_file = "test.db"
         mock_settings.log_level = "INFO"
@@ -236,4 +220,5 @@ class TestMainCommand:
         # Digest should include error information
         sent_message = mock_notifier.send.call_args[0][0]
         assert (
-            "Errors during processing" in sent_message or "Test digest" in sent_message)
+            "Errors during processing" in sent_message or "Test digest" in sent_message
+        )

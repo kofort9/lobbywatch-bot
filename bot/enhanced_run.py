@@ -84,8 +84,7 @@ def run_scheduled_digests(
 
     for channel_id in channels:
         try:
-            logger.info(
-                f"Generating {digest_type} digest for channel {channel_id}")
+            logger.info(f"Generating {digest_type} digest for channel {channel_id}")
 
             # Check if mini-digest should be sent
             if digest_type == "mini":
@@ -102,15 +101,12 @@ def run_scheduled_digests(
             results[channel_id] = success
 
             if success:
-                logger.info(
-                    f"✅ {digest_type.title()} digest sent to {channel_id}")
+                logger.info(f"✅ {digest_type.title()} digest sent to {channel_id}")
             else:
-                logger.error(
-                    f"❌ Failed to send {digest_type} digest to {channel_id}")
+                logger.error(f"❌ Failed to send {digest_type} digest to {channel_id}")
 
         except Exception as e:
-            logger.error(
-                f"Error generating {digest_type} digest for {channel_id}: {e}")
+            logger.error(f"Error generating {digest_type} digest for {channel_id}: {e}")
             results[channel_id] = False
 
     return results
@@ -123,8 +119,7 @@ def run_scheduled_digests(
     default="daily",
     help="Run mode: daily digest, mini digest, or web server",
 )
-@click.option("--channel",
-              help="Specific channel to send digest to (overrides config)")
+@click.option("--channel", help="Specific channel to send digest to (overrides config)")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -150,12 +145,8 @@ def run_scheduled_digests(
     help="Port for web server mode (defaults to Railway PORT or 8000)",
 )
 def main(
-        mode: str,
-        channel: str,
-        dry_run: bool,
-        skip_fetch: bool,
-        log_level: str,
-        port: int) -> None:
+    mode: str, channel: str, dry_run: bool, skip_fetch: bool, log_level: str, port: int
+) -> None:
     """Enhanced LobbyLens with interactive features and dual cadence."""
 
     # Override config with CLI options
@@ -215,8 +206,7 @@ def main(
         try:
             successful_fetches, failed_fetches = fetch_data()
             if failed_fetches > 0:
-                errors.append(
-                    f"Data fetch errors: {failed_fetches} source(s) failed")
+                errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
                 f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
             )
@@ -229,8 +219,7 @@ def main(
 
     # 2. Run digests
     if settings.dry_run:
-        logger.info(
-            "DRY RUN MODE - Would send digests but not actually posting")
+        logger.info("DRY RUN MODE - Would send digests but not actually posting")
 
         # Generate sample digest for first configured channel or specified
         # channel
@@ -262,8 +251,7 @@ def main(
     try:
         if channel:
             # Single channel mode
-            logger.info(
-                f"Sending {mode} digest to specific channel: {channel}")
+            logger.info(f"Sending {mode} digest to specific channel: {channel}")
             success = slack_app.send_digest(channel, mode)
 
             if success:
@@ -278,12 +266,10 @@ def main(
             successful = sum(1 for success in results.values() if success)
             total = len(results)
 
-            logger.info(
-                f"📊 Digest summary: {successful}/{total} channels successful")
+            logger.info(f"📊 Digest summary: {successful}/{total} channels successful")
 
             if successful < total:
-                failed_channels = [
-                    ch for ch, success in results.items() if not success]
+                failed_channels = [ch for ch, success in results.items() if not success]
                 logger.error(f"Failed channels: {', '.join(failed_channels)}")
                 sys.exit(1)
 
