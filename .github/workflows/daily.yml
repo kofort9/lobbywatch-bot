@@ -1,0 +1,50 @@
+name: LobbyLens Daily Digest
+
+on:
+  schedule:
+    - cron: "0 15 * * *"  # 15:00 UTC = 08:00 PT daily
+  workflow_dispatch: {}  # Allow manual triggering
+
+jobs:
+  run-digest:
+    name: Generate and Send Daily Digest
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          
+      - name: Install lobbywatch dependency
+        run: |
+          # Try to install lobbywatch from a local submodule or pip
+          # This step may fail if lobbywatch isn't available, but the bot will continue
+          pip install lobbywatch || echo "lobbywatch package not available, continuing with existing data"
+          
+      - name: Run LobbyLens bot
+        env:
+          OPENSECRETS_API_KEY: ${{ secrets.OPENSECRETS_API_KEY }}
+          PROPUBLICA_API_KEY: ${{ secrets.PROPUBLICA_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DATABASE_FILE: "lobbywatch.db"
+          LOG_LEVEL: "INFO"
+        run: |
+          lobbylens
+          
+      - name: Upload database as artifact (for debugging)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lobbywatch-database
+          path: "*.db"
+          retention-days: 7
