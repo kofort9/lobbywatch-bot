@@ -11,8 +11,8 @@ import sys
 
 
 def main():
-    """Start LobbyLens web server for Railway deployment."""
-    print("Starting LobbyLens web server...")
+    """Start LobbyLens v2 web server for Railway deployment."""
+    print("Starting LobbyLens v2 web server...")
 
     # Import and run the v2 server mode
     from bot.run_v2 import main as v2_main
