@@ -25,7 +25,11 @@ class EnhancedDigestComputer:
         """Get watchlist entity IDs by type for a channel."""
         watchlist = self.db_manager.get_channel_watchlist(channel_id)
 
-        entities_by_type: Dict[str, set] = {"client": set(), "registrant": set(), "issue": set()}
+        entities_by_type: Dict[str, set] = {
+            "client": set(),
+            "registrant": set(),
+            "issue": set(),
+        }
 
         for item in watchlist:
             if item["entity_id"] and item["entity_type"] in entities_by_type:

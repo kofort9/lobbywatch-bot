@@ -177,6 +177,7 @@ class SignalsDigestFormatter:
                 # Handle string representation of list
                 if issue_codes.startswith("[") and issue_codes.endswith("]"):
                     import ast
+
                     result = ast.literal_eval(issue_codes)
                     return result if isinstance(result, list) else [str(result)]
                 else:

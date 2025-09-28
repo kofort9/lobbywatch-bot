@@ -106,7 +106,11 @@ class SlackApp:
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             result = response.json()
-            return result if isinstance(result, dict) else {"ok": False, "error": "invalid_response"}
+            return (
+                result
+                if isinstance(result, dict)
+                else {"ok": False, "error": "invalid_response"}
+            )
         except Exception as e:
             logger.error(f"Failed to post Slack message: {e}")
             return {"ok": False, "error": str(e)}
