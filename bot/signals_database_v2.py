@@ -60,16 +60,19 @@ class SignalsDatabaseV2:
             "CREATE INDEX IF NOT EXISTS idx_signals_timestamp ON signals_v2(timestamp)"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_signals_priority ON signals_v2(priority_score)"
+            "CREATE INDEX IF NOT EXISTS idx_signals_priority "
+            "ON signals_v2(priority_score)"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_signals_urgency ON signals_v2(urgency)"
+            "CREATE INDEX IF NOT EXISTS idx_signals_urgency " "ON signals_v2(urgency)"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_signals_industry ON signals_v2(industry_tag)"
+            "CREATE INDEX IF NOT EXISTS idx_signals_industry "
+            "ON signals_v2(industry_tag)"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_signals_watchlist ON signals_v2(watchlist_hit)"
+            "CREATE INDEX IF NOT EXISTS idx_signals_watchlist "
+            "ON signals_v2(watchlist_hit)"
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_signals_bill_id ON signals_v2(bill_id)"
@@ -394,7 +397,8 @@ class SignalsDatabaseV2:
         try:
             cur.execute(
                 """
-                INSERT OR IGNORE INTO watchlist_v2 (channel_id, entity_name, entity_type)
+                INSERT OR IGNORE INTO watchlist_v2
+                (channel_id, entity_name, entity_type)
                 VALUES (?, ?, ?)
             """,
                 (channel_id, entity_name, entity_type),

@@ -271,7 +271,8 @@ class FuzzyMatcher:
 
         # No matches at all
         return (
-            f"No matches found for '{search_term}'. Try a more complete name (e.g., 'Alphabet Inc.' instead of 'Google').",
+            f"No matches found for '{search_term}'. "
+            f"Try a more complete name (e.g., 'Alphabet Inc.' instead of 'Google').",
             [],
         )
 
@@ -415,13 +416,19 @@ class MatchingService:
                 else:
                     return {
                         "status": "error",
-                        "message": f"Invalid choice. Please reply 1-{len(candidates)}, 'all', or 'q'.",
+                        "message": (
+                            f"Invalid choice. Please reply 1-{len(candidates)}, "
+                            f"'all', or 'q'."
+                        ),
                         "added": [],
                     }
             except ValueError:
                 return {
                     "status": "error",
-                    "message": f"Invalid response. Please reply 1-{len(candidates)}, 'all', or 'q'.",
+                    "message": (
+                        f"Invalid response. Please reply 1-{len(candidates)}, "
+                        f"'all', or 'q'."
+                    ),
                     "added": [],
                 }
 

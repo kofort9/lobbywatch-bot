@@ -2,10 +2,12 @@
 
 import hashlib
 import hmac
+
 # import json  # Unused for now
 import logging
 import os
 import time
+
 # import urllib.parse  # Unused for now
 from typing import Any, Dict, List, Optional
 
@@ -146,7 +148,10 @@ class SlackApp:
         if not text:
             return {
                 "response_type": "ephemeral",
-                "text": "Usage: `/watchlist add [name]`, `/watchlist remove [name]`, or `/watchlist list`",
+                "text": (
+                    "Usage: `/watchlist add [name]`, `/watchlist remove [name]`, "
+                    "or `/watchlist list`"
+                ),
             }
 
         parts = text.split(" ", 1)
@@ -161,7 +166,10 @@ class SlackApp:
         else:
             return {
                 "response_type": "ephemeral",
-                "text": "Usage: `/watchlist add [name]`, `/watchlist remove [name]`, or `/watchlist list`",
+                "text": (
+                    "Usage: `/watchlist add [name]`, `/watchlist remove [name]`, "
+                    "or `/watchlist list`"
+                ),
             }
 
     def _handle_watchlist_list(self, channel_id: str) -> Dict[str, str]:
@@ -171,7 +179,9 @@ class SlackApp:
         if not watchlist:
             return {
                 "response_type": "ephemeral",
-                "text": "📝 Watchlist is empty. Use `/watchlist add [name]` to add entities.",
+                "text": (
+                    "📝 Watchlist is empty. Use `/watchlist add [name]` to add entities."
+                ),
             }
 
         lines = ["📝 **Current Watchlist:**"]
@@ -257,21 +267,32 @@ class SlackApp:
         if text and not self._is_admin_user(user_id):
             return {
                 "response_type": "ephemeral",
-                "text": "❌ Only admins can modify thresholds. Contact your channel admin.",
+                "text": (
+                    "❌ Only admins can modify thresholds. "
+                    "Contact your channel admin."
+                ),
             }
 
         if not text:
             settings = self.db_manager.get_channel_settings(channel_id)
             return {
                 "response_type": "ephemeral",
-                "text": f"Current thresholds:\n• Filings: {settings['threshold_filings']}\n• Amount: ${settings['threshold_amount']:,}\n\nUsage: `/threshold set filings [number]` or `/threshold set amount [number]`",
+                "text": (
+                    f"Current thresholds:\n• Filings: {settings['threshold_filings']}\n"
+                    f"• Amount: ${settings['threshold_amount']:,}\n\n"
+                    f"Usage: `/threshold set filings [number]` or "
+                    f"`/threshold set amount [number]`"
+                ),
             }
 
         parts = text.split()
         if len(parts) != 3 or parts[0] != "set":
             return {
                 "response_type": "ephemeral",
-                "text": "Usage: `/threshold set filings [number]` or `/threshold set amount [number]`",
+                "text": (
+                    "Usage: `/threshold set filings [number]` or "
+                    "`/threshold set amount [number]`"
+                ),
             }
 
         threshold_type = parts[1].lower()
@@ -313,7 +334,10 @@ class SlackApp:
         if text and not self._is_admin_user(user_id):
             return {
                 "response_type": "ephemeral",
-                "text": "❌ Only admins can modify summary settings. Contact your channel admin.",
+                "text": (
+                    "❌ Only admins can modify summary settings. "
+                    "Contact your channel admin."
+                ),
             }
 
         if not text or text.lower() not in ["on", "off"]:
@@ -321,7 +345,10 @@ class SlackApp:
             status = "ON" if settings["show_descriptions"] else "OFF"
             return {
                 "response_type": "ephemeral",
-                "text": f"Filing descriptions are currently **{status}**.\n\nUsage: `/summary on` or `/summary off`",
+                "text": (
+                    f"Filing descriptions are currently **{status}**.\n\n"
+                    f"Usage: `/summary on` or `/summary off`"
+                ),
             }
 
         show_descriptions = text.lower() == "on"
@@ -357,7 +384,10 @@ class SlackApp:
                 else:
                     return {
                         "response_type": "ephemeral",
-                        "text": f"❌ Failed to post digest: {result.get('error', 'Unknown error')}",
+                        "text": (
+                            f"❌ Failed to post digest: "
+                            f"{result.get('error', 'Unknown error')}"
+                        ),
                     }
             except Exception as e:
                 logger.error(f"Manual digest generation failed: {e}")
@@ -474,12 +504,18 @@ class SlackApp:
             if result.get("ok", False):
                 return {
                     "response_type": "in_channel",
-                    "text": f"💓 **LobbyPulse {digest_type.title()} Digest** generated successfully!",
+                    "text": (
+                        f"💓 **LobbyPulse {digest_type.title()} Digest** "
+                        f"generated successfully!"
+                    ),
                 }
             else:
                 return {
                     "response_type": "ephemeral",
-                    "text": f"❌ Failed to generate {digest_type} digest. Please try again.",
+                    "text": (
+                        f"❌ Failed to generate {digest_type} digest. "
+                        f"Please try again."
+                    ),
                 }
 
         except Exception as e:

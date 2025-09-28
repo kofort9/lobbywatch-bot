@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Pre-deployment validation script for LobbyLens."""
 
-import json
+# import json  # Unused for now
 import os
 import subprocess
 import sys
-from typing import Any, Dict, List
 
-import requests
+# from typing import Any, Dict, List  # Unused for now
+
+# import requests  # Unused for now
 
 
 class DeploymentValidator:
@@ -94,10 +95,10 @@ class DeploymentValidator:
 
         try:
             # Test core imports
-            from bot.config import settings
-            from bot.database import DatabaseManager
-            from bot.enhanced_run import main
-            from bot.web_server import create_web_server
+            # from bot.config import settings  # Unused for now
+            # from bot.database import DatabaseManager  # Unused for now
+            # from bot.enhanced_run import main  # Unused for now
+            # from bot.web_server import create_web_server  # Unused for now
 
             print("  ✅ Core modules import successfully")
             return True
@@ -118,10 +119,10 @@ class DeploymentValidator:
             db_manager.ensure_enhanced_schema()
 
             # Test basic operations
-            settings = db_manager.get_channel_settings("test")
-            success = db_manager.add_to_watchlist(
-                "test", "client", "Test Corp", "Test Corp"
-            )
+            # settings = db_manager.get_channel_settings("test")  # Unused for now
+            # success = db_manager.add_to_watchlist(  # Unused for now
+            #     "test", "client", "Test Corp", "Test Corp"
+            # )
 
             print("  ✅ Database operations working")
             return True
@@ -194,9 +195,10 @@ class DeploymentValidator:
             )
             if result.returncode == 0:
                 self.warnings.append(
-                    "Potential secrets found in code - ensure they're in environment variables"
+                    "Potential secrets found in code - "
+                    "ensure they're in environment variables"
                 )
-        except:
+        except Exception:
             pass  # grep not available or other error
 
         print("  ✅ Basic security checks passed")

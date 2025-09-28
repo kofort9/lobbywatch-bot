@@ -424,12 +424,14 @@ class EnhancedDigestComputer:
         if digest_type == "mini" and len(new_filings) < 5:
             lines.append(f"\n_Updated at {now.strftime('%H:%M PT')}_")
             lines.append(
-                f"\n📚 *Learn more:* <https://www.opensecrets.org/federal-lobbying|OpenSecrets> • <https://lda.congress.gov/|LDA Database>"
+                "\n📚 *Learn more:* "
+                "<https://www.opensecrets.org/federal-lobbying|OpenSecrets> • "
+                "<https://lda.congress.gov/|LDA Database>"
             )
         else:
             # Top registrants section (daily only)
             if top_registrants and digest_type == "daily":
-                lines.append(f"\n*💰 Top registrants (7d):*")
+                lines.append("\n*💰 Top registrants (7d):*")
                 for reg in top_registrants:
                     name_display = (
                         f"**{reg['name']}**" if reg["is_watchlist"] else reg["name"]
@@ -437,7 +439,10 @@ class EnhancedDigestComputer:
                     amount = self._format_amount(reg["total_amount"])
                     count = reg["filing_count"]
 
-                    base_line = f"• {name_display}: {amount} ({count} filing{'s' if count != 1 else ''})"
+                    base_line = (
+                        f"• {name_display}: {amount} "
+                        f"({count} filing{'s' if count != 1 else ''})"
+                    )
 
                     # Add context if available
                     context_parts = []
@@ -453,7 +458,7 @@ class EnhancedDigestComputer:
 
             # Issue activity section (daily only)
             if issue_activity and digest_type == "daily":
-                lines.append(f"\n*📈 Issue activity (7d vs prior 7d):*")
+                lines.append("\n*📈 Issue activity (7d vs prior 7d):*")
                 for issue in issue_activity:
                     code_display = (
                         f"**{issue['code']}**"
@@ -472,13 +477,16 @@ class EnhancedDigestComputer:
                     pct_change = self._format_percentage(issue["pct_change"])
 
                     lines.append(
-                        f"• {full_name}: {current} filings (prev {previous}) {pct_change}"
+                        f"• {full_name}: {current} filings "
+                        f"(prev {previous}) {pct_change}"
                     )
 
             # Footer
             lines.append(f"\n_Updated at {now.strftime('%H:%M PT')}_")
             lines.append(
-                f"\n📚 *Learn more:* <https://www.opensecrets.org/federal-lobbying|OpenSecrets> • <https://lda.congress.gov/|LDA Database>"
+                "\n📚 *Learn more:* "
+                "<https://www.opensecrets.org/federal-lobbying|OpenSecrets> • "
+                "<https://lda.congress.gov/|LDA Database>"
             )
 
         # Record digest run
@@ -486,13 +494,14 @@ class EnhancedDigestComputer:
             channel_id=channel_id,
             run_type=digest_type,
             filings_count=len(new_filings),
-            last_filing_time=new_filings[0]["created_at"] if new_filings else None,
+            last_filing_time=(new_filings[0]["created_at"] if new_filings else None),
             digest_content="\n".join(lines),
         )
 
         result = "\n".join(lines)
         logger.info(
-            f"Generated {digest_type} digest with {len(lines)} lines for channel {channel_id}"
+            f"Generated {digest_type} digest with {len(lines)} lines "
+            f"for channel {channel_id}"
         )
 
         return result if len(lines) > 2 else "*No fresh lobbying activity detected.*"
