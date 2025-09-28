@@ -213,6 +213,9 @@ class SignalsRulesEngine:
         
         # Critical: final rule effective ≤30 days
         if signal.signal_type == SignalType.FINAL_RULE and signal.deadline:
+            # Ensure deadline is timezone-aware
+            if signal.deadline.tzinfo is None:
+                signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
             days_until_effective = (signal.deadline - now).days
             if days_until_effective <= 30:
                 return Urgency.CRITICAL
@@ -222,12 +225,18 @@ class SignalsRulesEngine:
         
         # Proposed rule with comment deadline ≤14 days
         if signal.signal_type == SignalType.PROPOSED_RULE and signal.deadline:
+            # Ensure deadline is timezone-aware
+            if signal.deadline.tzinfo is None:
+                signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
             days_until_deadline = (signal.deadline - now).days
             if days_until_deadline <= 14:
                 high_urgency_conditions.append(True)
         
         # Hearing/markup ≤7 days
         if signal.signal_type in [SignalType.HEARING, SignalType.MARKUP] and signal.deadline:
+            # Ensure deadline is timezone-aware
+            if signal.deadline.tzinfo is None:
+                signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
             days_until_event = (signal.deadline - now).days
             if days_until_event <= 7:
                 high_urgency_conditions.append(True)
@@ -239,6 +248,9 @@ class SignalsRulesEngine:
         # Docket surge ≥200% or deadline ≤7 days
         if signal.signal_type == SignalType.DOCKET:
             if signal.deadline:
+                # Ensure deadline is timezone-aware
+                if signal.deadline.tzinfo is None:
+                    signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
                 days_until_deadline = (signal.deadline - now).days
                 if days_until_deadline <= 7:
                     high_urgency_conditions.append(True)
@@ -256,6 +268,9 @@ class SignalsRulesEngine:
         
         # Hearing/markup 8-21 days
         if signal.signal_type in [SignalType.HEARING, SignalType.MARKUP] and signal.deadline:
+            # Ensure deadline is timezone-aware
+            if signal.deadline.tzinfo is None:
+                signal.deadline = signal.deadline.replace(tzinfo=timezone.utc)
             days_until_event = (signal.deadline - now).days
             if 8 <= days_until_event <= 21:
                 medium_urgency_conditions.append(True)

@@ -262,11 +262,11 @@ class DailySignalsCollectorV2:
         """Create a SignalV2 from Federal Register document data"""
         try:
             doc_number = doc.get('document_number', '')
-            title = doc.get('title', '')
-            summary = doc.get('abstract', '')
+            title = doc.get('title', '') or ''
+            summary = doc.get('abstract', '') or ''
             publication_date = doc.get('publication_date', '')
-            agency_names = doc.get('agency_names', [])
-            document_type = doc.get('type', '')
+            agency_names = doc.get('agency_names', []) or []
+            document_type = doc.get('type', '') or ''
             
             # Create stable ID
             stable_id = f"FR-{doc_number}"
@@ -277,8 +277,11 @@ class DailySignalsCollectorV2:
             # Create URL
             url = doc.get('html_url', '')
             
-            # Parse timestamp
-            timestamp = datetime.fromisoformat(publication_date.replace('Z', '+00:00'))
+            # Parse timestamp with timezone handling
+            if publication_date:
+                timestamp = datetime.fromisoformat(publication_date.replace('Z', '+00:00'))
+            else:
+                timestamp = datetime.now(timezone.utc)
             
             # Determine deadline
             deadline = None
@@ -295,7 +298,7 @@ class DailySignalsCollectorV2:
                 url=url,
                 timestamp=timestamp,
                 issue_codes=issue_codes,
-                agency=', '.join(agency_names),
+                agency=', '.join(agency_names) if agency_names else None,
                 deadline=deadline
             )
         
