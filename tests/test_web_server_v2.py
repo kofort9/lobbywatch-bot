@@ -137,7 +137,9 @@ class TestWebServerV2:
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
-    def test_manual_digest_mini_no_digest(self, mock_run_mini: Any, client: Any) -> None:
+    def test_manual_digest_mini_no_digest(
+        self, mock_run_mini: Any, client: Any
+    ) -> None:
         """Test manual mini digest endpoint when no digest is generated"""
         mock_run_mini.return_value = None
 
@@ -198,7 +200,9 @@ class TestWebServerV2:
         assert "/watchlist" in data["text"]
 
     @patch("bot.web_server_v2.run_daily_digest")
-    def test_handle_slash_command_lobbypulse_daily(self, mock_run_daily: Any, client: Any) -> None:
+    def test_handle_slash_command_lobbypulse_daily(self,
+        mock_run_daily: Any,
+        client: Any) -> None:
         """Test /lobbypulse daily command"""
         mock_run_daily.return_value = "Test Daily Digest"
 
@@ -220,7 +224,9 @@ class TestWebServerV2:
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     @patch("bot.web_server_v2.run_mini_digest")
-    def test_handle_slash_command_lobbypulse_mini_success(self, mock_run_mini: Any, client: Any) -> None:
+    def test_handle_slash_command_lobbypulse_mini_success(self,
+        mock_run_mini: Any,
+        client: Any) -> None:
         """Test /lobbypulse mini command with success"""
         mock_run_mini.return_value = "Test Mini Digest"
 
@@ -264,7 +270,9 @@ class TestWebServerV2:
         assert data["text"] == "No mini-digest - thresholds not met"
 
     @patch("bot.web_server_v2.run_daily_digest")
-    def test_handle_slash_command_lobbypulse_error(self, mock_run_daily: Any, client: Any) -> None:
+    def test_handle_slash_command_lobbypulse_error(self,
+        mock_run_daily: Any,
+        client: Any) -> None:
         """Test /lobbypulse command with error"""
         mock_run_daily.side_effect = Exception("Test error")
 
@@ -461,7 +469,9 @@ class TestWebServerV2:
         assert data["response_type"] in ["in_channel", "ephemeral"]
         assert "10" in data["text"]
 
-    def test_handle_slash_command_threshold_set_invalid_number(self, client: Any) -> None:
+    def test_handle_slash_command_threshold_set_invalid_number(
+        self, client: Any
+    ) -> None:
         """Test /threshold set command with invalid number"""
         response = client.post(
             "/lobbylens/commands",

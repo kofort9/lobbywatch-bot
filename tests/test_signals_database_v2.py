@@ -47,13 +47,15 @@ class TestSignalsDatabaseV2:
 
         # Check channel_settings_v2 table
         cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='channel_settings_v2'"
+            "SELECT name FROM sqlite_master WHERE type='table' AND
+        name='channel_settings_v2'"
         )
         assert cur.fetchone() is not None
 
         # Check indexes were created
         cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_signals_%'"
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE
+        'idx_signals_%'"
         )
         indexes = [row[0] for row in cur.fetchall()]
         assert len(indexes) > 0

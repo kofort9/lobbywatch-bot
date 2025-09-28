@@ -16,7 +16,8 @@ class TestRunV2:
     @patch("bot.run.DigestV2Formatter")
     @patch("bot.run.SignalsDatabaseV2")
     def test_run_daily_digest_success(
-        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+        self, mock_database_class: Any, mock_formatter_class: Any,
+        mock_collector_class: Any
     ) -> None:
         """Test successful daily digest run"""
         # Mock components
@@ -53,7 +54,8 @@ class TestRunV2:
     @patch("bot.run.DigestV2Formatter")
     @patch("bot.run.SignalsDatabaseV2")
     def test_run_daily_digest_with_custom_params(
-        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+        self, mock_database_class: Any, mock_formatter_class: Any,
+        mock_collector_class: Any
     ) -> None:
         """Test daily digest with custom parameters"""
         # Mock components
@@ -86,7 +88,8 @@ class TestRunV2:
     @patch("bot.run.DigestV2Formatter")
     @patch("bot.run.SignalsDatabaseV2")
     def test_run_mini_digest_success(
-        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+        self, mock_database_class: Any, mock_formatter_class: Any,
+        mock_collector_class: Any
     ) -> None:
         """Test successful mini digest run"""
         # Mock components
@@ -120,7 +123,8 @@ class TestRunV2:
     @patch("bot.run.DigestV2Formatter")
     @patch("bot.run.SignalsDatabaseV2")
     def test_run_mini_digest_no_digest(
-        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+        self, mock_database_class: Any, mock_formatter_class: Any,
+        mock_collector_class: Any
     ) -> None:
         """Test mini digest when no digest is generated"""
         # Mock components
@@ -207,7 +211,9 @@ class TestRunV2:
 
     @patch("bot.web_server_v2.create_web_server_v2")
     @patch("bot.run.os.environ.get")
-    def test_run_web_server_default_port(self, mock_env_get: Any, mock_create_server: Any) -> None:
+    def test_run_web_server_default_port(self,
+        mock_env_get: Any,
+        mock_create_server: Any) -> None:
         """Test web server with default port"""
         # Mock environment
         mock_env_get.return_value = "8080"
@@ -288,7 +294,9 @@ class TestRunV2:
 
     @patch("bot.run.run_mini_digest")
     @patch("bot.run.argparse.ArgumentParser")
-    def test_main_mini_mode_no_digest(self, mock_parser_class: Any, mock_run_mini: Any) -> None:
+    def test_main_mini_mode_no_digest(self,
+        mock_parser_class: Any,
+        mock_run_mini: Any) -> None:
         """Test main function in mini mode when no digest is generated"""
         # Mock parser
         mock_parser = Mock()
@@ -333,7 +341,9 @@ class TestRunV2:
 
     @patch("bot.run.run_quarterly_lda_ingest")
     @patch("bot.run.argparse.ArgumentParser")
-    def test_main_quarterly_mode(self, mock_parser_class: Any, mock_run_quarterly: Any) -> None:
+    def test_main_quarterly_mode(self,
+        mock_parser_class: Any,
+        mock_run_quarterly: Any) -> None:
         """Test main function in quarterly mode"""
         # Mock parser
         mock_parser = Mock()
@@ -354,7 +364,9 @@ class TestRunV2:
 
     @patch("bot.run.run_web_server")
     @patch("bot.run.argparse.ArgumentParser")
-    def test_main_server_mode(self, mock_parser_class: Any, mock_run_server: Any) -> None:
+    def test_main_server_mode(self,
+        mock_parser_class: Any,
+        mock_run_server: Any) -> None:
         """Test main function in server mode"""
         # Mock parser
         mock_parser = Mock()
@@ -399,7 +411,9 @@ class TestRunV2:
 
     @patch("bot.run.run_daily_digest")
     @patch("bot.run.argparse.ArgumentParser")
-    def test_main_exception_handling(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
+    def test_main_exception_handling(self,
+        mock_parser_class: Any,
+        mock_run_daily: Any) -> None:
         """Test main function exception handling"""
         # Mock parser
         mock_parser = Mock()
