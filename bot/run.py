@@ -26,7 +26,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     # Removed unused imports
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
-    from bot.signals_database_v2 import SignalsDatabaseV2
+    # from bot.signals_database_v2 import SignalsDatabaseV2  # Unused for now
 
     logger = logging.getLogger(__name__)
     logger.info(f"Running daily digest for last {hours_back} hours")
@@ -58,7 +58,7 @@ def run_mini_digest(
     # Removed unused imports
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
-    from bot.signals_database_v2 import SignalsDatabaseV2
+    # from bot.signals_database_v2 import SignalsDatabaseV2  # Unused for now
 
     logger = logging.getLogger(__name__)
     logger.info(f"Running mini digest for last {hours_back} hours")

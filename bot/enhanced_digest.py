@@ -1,6 +1,6 @@
 """Enhanced digest computation with rich formatting and watchlist integration."""
 
-import json
+# import json  # Unused for now
 import logging
 import sqlite3
 from datetime import datetime, timedelta, timezone

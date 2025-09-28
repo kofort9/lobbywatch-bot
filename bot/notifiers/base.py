@@ -1,6 +1,6 @@
 """Base notifier interface."""
 
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod  # Unused for now
 from typing import Protocol
 
 

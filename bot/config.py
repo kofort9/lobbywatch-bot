@@ -1,6 +1,6 @@
 """Configuration management for LobbyLens bot."""
 
-import os
+# import os  # Unused for now
 from typing import List, Literal, Optional
 
 from pydantic import Field

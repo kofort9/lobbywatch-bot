@@ -17,7 +17,8 @@ def main() -> None:
     print("Version: 2.0.0")
     print("Service: lobbylens-v2")
     print(
-        "Features: industry_snapshots, priority_scoring, mobile_formatting, watchlist_alerts"
+        "Features: industry_snapshots, priority_scoring, "
+        "mobile_formatting, watchlist_alerts"
     )
 
     try:

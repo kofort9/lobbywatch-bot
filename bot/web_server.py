@@ -204,7 +204,9 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
                 "response_type": "in_channel",
                 "text": "🔍 **LobbyLens v2 System Help**\n\n"
                 "**What is LobbyLens?**\n"
-                "LobbyLens monitors daily government activity and provides digestible signals about bills, regulations, hearings, and regulatory actions.\n\n"
+                "LobbyLens monitors daily government activity and provides "
+                "digestible signals about bills, regulations, hearings, and "
+                "regulatory actions.\n\n"
                 "**Key Features:**\n"
                 "• 📰 Daily government signals digest (24h)\n"
                 "• ⚡ Mini digest alerts (4h, when thresholds met)\n"
@@ -280,12 +282,14 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             else:
                 return {
                     "response_type": "in_channel",
-                    "text": f"📋 **Watchlist for #{channel_id}**\n\nNo items in watchlist",
+                    "text": f"📋 **Watchlist for #{channel_id}**\n\n"
+                    "No items in watchlist",
                 }
         else:
             return {
                 "response_type": "ephemeral",
-                "text": "Usage: `/watchlist add <entity>`, `/watchlist remove <entity>`, or `/watchlist list`",
+                "text": "Usage: `/watchlist add <entity>`, "
+                "`/watchlist remove <entity>`, or `/watchlist list`",
             }
 
     def handle_threshold_command(text: str, channel_id: str) -> Dict[str, Any]:
@@ -318,7 +322,8 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             return {
                 "response_type": "in_channel",
                 "text": f"📊 **Threshold Settings for #{channel_id}**\n\n"
-                f"• Mini-digest threshold: {settings['mini_digest_threshold']} signals\n"
+                f"• Mini-digest threshold: "
+                f"{settings['mini_digest_threshold']} signals\n"
                 f"• High-priority threshold: {settings['high_priority_threshold']}\n"
                 f"• Surge threshold: {settings['surge_threshold']}%\n\n"
                 f"Usage: `/threshold set <number>`",

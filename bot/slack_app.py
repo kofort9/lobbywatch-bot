@@ -2,11 +2,11 @@
 
 import hashlib
 import hmac
-import json
+# import json  # Unused for now
 import logging
 import os
 import time
-import urllib.parse
+# import urllib.parse  # Unused for now
 from typing import Any, Dict, List, Optional
 
 import requests

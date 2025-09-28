@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from datetime import time as dt_time
 from datetime import timezone
-from typing import Dict, List, Optional
+from typing import Dict, List  # Optional removed
 
 import click
 from rich.console import Console
