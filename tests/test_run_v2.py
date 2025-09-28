@@ -12,9 +12,9 @@ from bot.run import main, run_daily_digest, run_mini_digest
 class TestRunV2:
     """Test run_v2 module functions"""
 
-    @patch("bot.run.DailySignalsCollectorV2")
-    @patch("bot.run.DigestV2Formatter")
-    @patch("bot.run.SignalsDatabaseV2")
+    @patch("bot.daily_signals_v2.DailySignalsCollectorV2")
+    @patch("bot.digest_v2.DigestV2Formatter")
+    @patch("bot.signals_database_v2.SignalsDatabaseV2")
     def test_run_daily_digest_success(
         self, mock_database_class: Any, mock_formatter_class: Any,
         mock_collector_class: Any
@@ -50,9 +50,9 @@ class TestRunV2:
         mock_formatter.format_daily_digest.assert_called_once_with(mock_signals, 24)
         assert result == mock_digest
 
-    @patch("bot.run.DailySignalsCollectorV2")
-    @patch("bot.run.DigestV2Formatter")
-    @patch("bot.run.SignalsDatabaseV2")
+    @patch("bot.daily_signals_v2.DailySignalsCollectorV2")
+    @patch("bot.digest_v2.DigestV2Formatter")
+    @patch("bot.signals_database_v2.SignalsDatabaseV2")
     def test_run_daily_digest_with_custom_params(
         self, mock_database_class: Any, mock_formatter_class: Any,
         mock_collector_class: Any
@@ -84,9 +84,9 @@ class TestRunV2:
         mock_database.get_watchlist.assert_called_once_with("custom_channel")
         assert result == mock_digest
 
-    @patch("bot.run.DailySignalsCollectorV2")
-    @patch("bot.run.DigestV2Formatter")
-    @patch("bot.run.SignalsDatabaseV2")
+    @patch("bot.daily_signals_v2.DailySignalsCollectorV2")
+    @patch("bot.digest_v2.DigestV2Formatter")
+    @patch("bot.signals_database_v2.SignalsDatabaseV2")
     def test_run_mini_digest_success(
         self, mock_database_class: Any, mock_formatter_class: Any,
         mock_collector_class: Any
@@ -119,9 +119,9 @@ class TestRunV2:
         mock_formatter.format_mini_digest.assert_called_once_with(mock_signals)
         assert result == mock_mini_digest
 
-    @patch("bot.run.DailySignalsCollectorV2")
-    @patch("bot.run.DigestV2Formatter")
-    @patch("bot.run.SignalsDatabaseV2")
+    @patch("bot.daily_signals_v2.DailySignalsCollectorV2")
+    @patch("bot.digest_v2.DigestV2Formatter")
+    @patch("bot.signals_database_v2.SignalsDatabaseV2")
     def test_run_mini_digest_no_digest(
         self, mock_database_class: Any, mock_formatter_class: Any,
         mock_collector_class: Any
@@ -153,7 +153,7 @@ class TestRunV2:
     @patch("bot.run.TestFixturesV2")
     @patch("bot.run.TestValidator")
     @patch("bot.signals_v2.SignalsRulesEngine")
-    @patch("bot.run.DigestV2Formatter")
+    @patch("bot.digest_v2.DigestV2Formatter")
     def test_run_test_scenarios(
         self,
         mock_formatter_class: Any,
@@ -245,31 +245,21 @@ class TestRunV2:
         mock_app.run.assert_called_once_with(host="0.0.0.0", port=9000, debug=False)
 
     @patch("bot.run.run_daily_digest")
-    @patch("bot.run.argparse.ArgumentParser")
-    def test_main_daily_mode(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
+    def test_main_daily_mode(self, mock_run_daily: Any) -> None:
         """Test main function in daily mode"""
-        # Mock parser
-        mock_parser = Mock()
-        mock_args = Mock()
-        mock_args.mode = "daily"
-        mock_args.hours = 24
-        mock_args.channel = "test_channel"
-        mock_args.dry_run = False
-        mock_args.port = 8000
-        mock_parser.parse_args.return_value = mock_args
-        mock_parser_class.return_value = mock_parser
-
         # Mock daily digest
         mock_run_daily.return_value = "Test Digest"
 
         # Test
-        main()
+        from click.testing import CliRunner
+        runner = CliRunner()
+        result = runner.invoke(main, ["--dry-run", "--log-level", "INFO"])
 
         # Verify
-        mock_run_daily.assert_called_once_with(24, "test_channel")
+        mock_run_daily.assert_called_once_with(hours_back=24, channel_id="default")
 
     @patch("bot.run.run_mini_digest")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_mini_mode(self, mock_parser_class: Any, mock_run_mini: Any) -> None:
         """Test main function in mini mode"""
         # Mock parser
@@ -293,7 +283,7 @@ class TestRunV2:
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
     @patch("bot.run.run_mini_digest")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_mini_mode_no_digest(self,
         mock_parser_class: Any,
         mock_run_mini: Any) -> None:
@@ -319,7 +309,7 @@ class TestRunV2:
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
     @patch("bot.run.run_test_scenarios")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_test_mode(self, mock_parser_class: Any, mock_run_test: Any) -> None:
         """Test main function in test mode"""
         # Mock parser
@@ -340,7 +330,7 @@ class TestRunV2:
         mock_run_test.assert_called_once()
 
     @patch("bot.run.run_quarterly_lda_ingest")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_quarterly_mode(self,
         mock_parser_class: Any,
         mock_run_quarterly: Any) -> None:
@@ -363,7 +353,7 @@ class TestRunV2:
         mock_run_quarterly.assert_called_once()
 
     @patch("bot.run.run_web_server")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_server_mode(self,
         mock_parser_class: Any,
         mock_run_server: Any) -> None:
@@ -386,7 +376,7 @@ class TestRunV2:
         mock_run_server.assert_called_once_with(9000)
 
     @patch("bot.run.run_daily_digest")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_dry_run(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
         """Test main function with dry run flag"""
         # Mock parser
@@ -410,7 +400,7 @@ class TestRunV2:
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     @patch("bot.run.run_daily_digest")
-    @patch("bot.run.argparse.ArgumentParser")
+    @patch("argparse.ArgumentParser")
     def test_main_exception_handling(self,
         mock_parser_class: Any,
         mock_run_daily: Any) -> None:
@@ -443,7 +433,7 @@ class TestRunV2:
         # by checking that the main function can be called without errors
         # when we mock the actual execution
         with patch("bot.run.run_daily_digest"):
-            with patch("bot.run.argparse.ArgumentParser") as mock_parser_class:
+            with patch("argparse.ArgumentParser") as mock_parser_class:
                 mock_parser = Mock()
                 mock_args = Mock()
                 mock_args.mode = "daily"
