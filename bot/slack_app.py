@@ -32,7 +32,7 @@ class SlackApp:
         self.signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 
         # Track pending confirmations
-        self.pending_confirmations = {}
+        self.pending_confirmations: Dict[str, Any] = {}
 
     def verify_slack_request(self, headers: Dict[str, str], body: str) -> bool:
         """Verify that request came from Slack with proper signature validation."""
@@ -80,7 +80,7 @@ class SlackApp:
         return is_valid
 
     def post_message(
-        self, channel: str, text: str, thread_ts: str = None
+        self, channel: str, text: str, thread_ts: Optional[str] = None
     ) -> Dict[str, Any]:
         """Post message to Slack channel."""
         if not self.bot_token:
@@ -105,7 +105,8 @@ class SlackApp:
 
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
-            return response.json()
+            result = response.json()
+            return result if isinstance(result, dict) else {"ok": False, "error": "invalid_response"}
         except Exception as e:
             logger.error(f"Failed to post Slack message: {e}")
             return {"ok": False, "error": str(e)}
@@ -172,7 +173,7 @@ class SlackApp:
         lines = ["📝 **Current Watchlist:**"]
 
         # Group by type
-        by_type = {}
+        by_type: Dict[str, List[Dict[str, Any]]] = {}
         for item in watchlist:
             item_type = item["entity_type"]
             if item_type not in by_type:
@@ -491,7 +492,7 @@ class SlackApp:
                 channel_id, digest_type
             )
             result = self.post_message(channel_id, digest)
-            return result.get("ok", False)
+            return bool(result.get("ok", False))
         except Exception as e:
             logger.error(f"Failed to send {digest_type} digest to {channel_id}: {e}")
             return False
@@ -501,7 +502,7 @@ class SlackApp:
         try:
             alert_text = f"🚨 **LobbyLens Alert**\n\n{message}"
             result = self.post_message(channel_id, alert_text)
-            return result.get("ok", False)
+            return bool(result.get("ok", False))
         except Exception as e:
             logger.error(f"Failed to send alert to {channel_id}: {e}")
             return False

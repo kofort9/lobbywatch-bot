@@ -296,4 +296,4 @@ class SignalsDatabase:
 
         conn.commit()
         logger.info(f"Cleaned up {deleted_count} old signal events")
-        return deleted_count
+        return int(deleted_count)

@@ -245,8 +245,8 @@ class DailySignalsCollectorV2:
 
         # Search for recent documents
         search_url = "https://www.federalregister.gov/api/v1/documents.json"
-        params = {
-            "per_page": 50,
+        params: Dict[str, str] = {
+            "per_page": "50",
             "order": "newest",
             "publication_date[gte]": since_date,
         }
@@ -344,9 +344,9 @@ class DailySignalsCollectorV2:
 
         # Get recent dockets
         dockets_url = "https://api.regulations.gov/v4/dockets"
-        params = {
+        params: Dict[str, str] = {
             "sort": "-lastModifiedDate",
-            "page[size]": 50,
+            "page[size]": "50",
             "filter[lastModifiedDate][ge]": since_date,
         }
         headers = {"X-Api-Key": self.regulations_gov_api_key}

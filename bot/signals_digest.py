@@ -168,7 +168,7 @@ class SignalsDigestFormatter:
 
         return issue_counts
 
-    def _parse_issue_codes(self, issue_codes) -> List[str]:
+    def _parse_issue_codes(self, issue_codes: Any) -> List[str]:
         """Parse issue codes from various formats."""
         if isinstance(issue_codes, list):
             return issue_codes
@@ -176,7 +176,9 @@ class SignalsDigestFormatter:
             try:
                 # Handle string representation of list
                 if issue_codes.startswith("[") and issue_codes.endswith("]"):
-                    return eval(issue_codes)
+                    import ast
+                    result = ast.literal_eval(issue_codes)
+                    return result if isinstance(result, list) else [str(result)]
                 else:
                     return [issue_codes]
             except:
@@ -318,7 +320,7 @@ class SignalsDigestFormatter:
         self, signals: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """Group signals by bill ID to avoid duplicates."""
-        bill_groups = {}
+        bill_groups: Dict[str, Dict[str, Any]] = {}
 
         for signal in signals:
             if signal.get("signal_type") == "bill":
@@ -359,7 +361,7 @@ class SignalsDigestFormatter:
         self, signals: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """Group signals by docket ID to avoid duplicates."""
-        docket_groups = {}
+        docket_groups: Dict[str, Dict[str, Any]] = {}
 
         for signal in signals:
             if signal.get("signal_type") == "docket":
@@ -401,7 +403,7 @@ class SignalsDigestFormatter:
         self, signals: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """Group low-priority signals by agency to reduce clutter."""
-        agency_groups = {}
+        agency_groups: Dict[str, Dict[str, Any]] = {}
 
         for signal in signals:
             if (
@@ -562,7 +564,7 @@ class SignalsDigestFormatter:
 
         return f"• {title} • Issues: {issues} • <{link}|FR search>"
 
-    def _format_issues(self, issue_codes) -> str:
+    def _format_issues(self, issue_codes: Any) -> str:
         """Format issue codes for display."""
         parsed_codes = self._parse_issue_codes(issue_codes)
         if not parsed_codes:

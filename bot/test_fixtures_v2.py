@@ -216,8 +216,8 @@ class TestValidator:
     """Validator for test scenarios"""
 
     def __init__(self) -> None:
-        self.errors = []
-        self.warnings = []
+        self.errors: List[str] = []
+        self.warnings: List[str] = []
 
     def validate_digest_format(self, digest_text: str) -> bool:
         """Validate digest format against requirements"""

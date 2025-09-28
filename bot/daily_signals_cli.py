@@ -74,7 +74,9 @@ def main(hours_back: int, dry_run: bool, format_digest: bool, log_level: str) ->
     }
 
     # Collect signals
-    collector = DailySignalsCollector(config)
+    # Filter out None values for the collector
+    clean_config = {k: v for k, v in config.items() if v is not None}
+    collector = DailySignalsCollector(clean_config)
 
     try:
         signals = collector.collect_all_signals(hours_back)

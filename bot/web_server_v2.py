@@ -102,6 +102,7 @@ def create_web_server_v2() -> Flask:
             digest_type = data.get("type", "daily")
             hours_back = data.get("hours", 24)
 
+            digest: Optional[str] = None
             if digest_type == "daily":
                 digest = run_daily_digest(hours_back, channel_id)
             elif digest_type == "mini":
@@ -111,9 +112,12 @@ def create_web_server_v2() -> Flask:
             else:
                 return jsonify({"error": "Invalid digest type"})
 
+            # Ensure digest is a string
+            digest_text = digest or "No digest content available"
+
             return jsonify(
                 {
-                    "digest": digest,
+                    "digest": digest_text,
                     "type": digest_type,
                     "channel_id": channel_id,
                     "hours_back": hours_back,
