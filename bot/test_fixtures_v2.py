@@ -4,7 +4,7 @@ Implements the test fixtures specified in the requirements.
 """
 
 from datetime import datetime, timedelta, timezone
-# from typing import Any, Dict  # Unused imports, List
+from typing import List
 
 from bot.signals_v2 import SignalV2
 

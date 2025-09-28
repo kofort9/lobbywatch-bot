@@ -7,7 +7,7 @@ import argparse
 import logging
 import os
 # from datetime import datetime, timezone  # Unused imports
-# from typing import List  # Unused imports, Optional
+from typing import Optional
 
 from bot.config import settings
 from bot.daily_signals_v2 import DailySignalsCollectorV2
