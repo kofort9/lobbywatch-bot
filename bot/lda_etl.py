@@ -146,9 +146,220 @@ class LDAETLPipeline:
     
     def _fetch_from_api(self, quarter: str) -> List[Dict[str, Any]]:
         """Fetch data from LDA API."""
-        # This is a placeholder - actual API implementation would depend on the specific API
-        logger.warning("API fetching not yet implemented, falling back to bulk")
-        return self._fetch_from_bulk(quarter)
+        if not self.api_key:
+            logger.error("LDA API key not found, falling back to bulk")
+            return self._fetch_from_bulk(quarter)
+        
+        # Parse quarter (e.g., "2024Q3" -> year=2024, quarter="Q3")
+        try:
+            year = int(quarter[:4])
+            quarter_num = quarter[4:]  # "Q3"
+        except (ValueError, IndexError):
+            logger.error(f"Invalid quarter format: {quarter}")
+            return []
+        
+        # Map quarter to filing types (Q1, Q2, Q3, Q4 for quarterly reports)
+        filing_types = [quarter_num]  # e.g., ["Q3"]
+        
+        all_filings = []
+        
+        for filing_type in filing_types:
+            try:
+                filings = self._fetch_filings_by_type(year, filing_type)
+                all_filings.extend(filings)
+                logger.info(f"Fetched {len(filings)} {filing_type} filings for {year}")
+            except Exception as e:
+                logger.error(f"Failed to fetch {filing_type} filings for {year}: {e}")
+        
+        return all_filings
+    
+    def _fetch_filings_by_type(self, year: int, filing_type: str, max_pages: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Fetch filings of a specific type from the LDA API with proper pagination and retries."""
+        import time
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        # Create session with retries and timeouts
+        session = requests.Session()
+        
+        # Retry strategy for 429, 500, 502, 503, 504
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"]
+        )
+        
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        headers = {
+            "Authorization": f"Token {self.api_key}",
+            "User-Agent": "LobbyLens/1.0",
+            "Accept": "application/json"
+        }
+        
+        base_url = f"{self.api_base_url}filings/"
+        params = {
+            "filing_year": year,
+            "filing_type": filing_type,
+            "page_size": 50  # Reasonable page size for stability
+        }
+        
+        all_results = []
+        page = 1
+        
+        logger.info(f"Fetching {filing_type} filings for {year} (max_pages: {max_pages or 'unlimited'})")
+        
+        while True:
+            if max_pages and page > max_pages:
+                logger.info(f"Reached max_pages limit ({max_pages}), stopping")
+                break
+                
+            params["page"] = page
+            
+            try:
+                # Log the full request URL for debugging
+                full_url = f"{base_url}?" + "&".join([f"{k}={v}" for k, v in params.items()])
+                logger.debug(f"Requesting: {full_url}")
+                
+                response = session.get(
+                    base_url, 
+                    headers=headers, 
+                    params=params, 
+                    timeout=(3, 30)  # 3s connect, 30s read
+                )
+                response.raise_for_status()
+                
+                # Log response details
+                logger.debug(f"Response: {response.status_code}, Time: {response.elapsed.total_seconds():.2f}s")
+                
+                data = response.json()
+                results = data.get("results", [])
+                total_count = data.get("count", 0)
+                
+                if not results:
+                    logger.info(f"No more results on page {page}")
+                    break
+                
+                logger.info(f"Page {page}: {len(results)} filings (total available: {total_count:,})")
+                
+                # Process each filing to extract the data we need
+                processed_count = 0
+                for filing in results:
+                    processed_filing = self._process_api_filing(filing)
+                    if processed_filing:
+                        all_results.append(processed_filing)
+                        processed_count += 1
+                
+                logger.info(f"Processed {processed_count}/{len(results)} filings from page {page}")
+                
+                # Check if there's a next page
+                if not data.get("next"):
+                    logger.info("No next page, stopping")
+                    break
+                
+                page += 1
+                
+                # Rate limiting - respect API limits (120 req/min = 0.5s between requests)
+                time.sleep(0.5)
+                
+            except requests.exceptions.Timeout as e:
+                logger.error(f"Timeout for {filing_type} {year} page {page}: {e}")
+                break
+            except requests.exceptions.HTTPError as e:
+                logger.error(f"HTTP error for {filing_type} {year} page {page}: {e}")
+                if e.response.status_code == 429:
+                    logger.info("Rate limited, waiting 60 seconds...")
+                    time.sleep(60)
+                    continue
+                break
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request failed for {filing_type} {year} page {page}: {e}")
+                break
+            except Exception as e:
+                logger.error(f"Error processing API response for {filing_type} {year} page {page}: {e}")
+                break
+        
+        logger.info(f"Fetched {len(all_results)} total processed filings for {filing_type} {year}")
+        return all_results
+    
+    def _process_api_filing(self, api_filing: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Process a filing from the API into our standard format."""
+        try:
+            # Extract basic filing info
+            filing_uuid = api_filing.get("filing_uuid")
+            if not filing_uuid:
+                return None
+            
+            # Get filing date
+            dt_posted = api_filing.get("dt_posted")
+            if not dt_posted:
+                return None
+            
+            # Parse the datetime string (e.g., "2024-07-16T21:02:57-04:00")
+            from datetime import datetime
+            filing_date = datetime.fromisoformat(dt_posted.replace('Z', '+00:00')).strftime('%Y-%m-%d')
+            
+            # Get income or expenses amount (lobbying amount)
+            income = api_filing.get("income")
+            expenses = api_filing.get("expenses")
+            amount = 0
+            
+            # Try income first, then expenses
+            if income:
+                try:
+                    amount = int(float(income))
+                except (ValueError, TypeError):
+                    amount = 0
+            elif expenses:
+                try:
+                    amount = int(float(expenses))
+                except (ValueError, TypeError):
+                    amount = 0
+            
+            # Get client and registrant info
+            client_info = api_filing.get("client", {})
+            registrant_info = api_filing.get("registrant", {})
+            
+            client_name = client_info.get("name", "").strip()
+            registrant_name = registrant_info.get("name", "").strip()
+            
+            # Get lobbying activities and extract issue codes
+            lobbying_activities = api_filing.get("lobbying_activities", [])
+            issue_codes = []
+            descriptions = []
+            
+            for activity in lobbying_activities:
+                issue_code = activity.get("general_issue_code")
+                if issue_code:
+                    issue_codes.append(issue_code)
+                
+                description = activity.get("description", "").strip()
+                if description:
+                    descriptions.append(description)
+            
+            # Combine descriptions
+            combined_description = "; ".join(descriptions) if descriptions else ""
+            
+            # Get filing document URL
+            filing_url = api_filing.get("filing_document_url", "")
+            
+            return {
+                "filing_uid": filing_uuid,
+                "client_name": client_name,
+                "registrant_name": registrant_name,
+                "filing_date": filing_date,
+                "amount": amount,
+                "url": filing_url,
+                "specific_issues": combined_description,
+                "issue_codes": issue_codes
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing API filing {api_filing.get('filing_uuid', 'unknown')}: {e}")
+            return None
     
     def _fetch_from_bulk(self, quarter: str) -> List[Dict[str, Any]]:
         """Fetch data from bulk download files."""
