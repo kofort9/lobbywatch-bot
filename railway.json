@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
+    "startCommand": "python main.py",
     "runtime": "V2",
     "numReplicas": 1,
     "sleepApplication": false,
