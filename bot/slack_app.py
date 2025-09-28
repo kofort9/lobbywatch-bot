@@ -129,6 +129,8 @@ class SlackApp:
             return self._handle_summary_command(text, channel_id, user_id)
         elif command == "/lobbylens":
             return self._handle_lobbylens_command(text, channel_id, user_id)
+        elif command == "/lobbypulse":
+            return self._handle_lobbypulse_command(text, channel_id, user_id)
         else:
             return {"response_type": "ephemeral", "text": f"Unknown command: {command}"}
 
@@ -416,6 +418,61 @@ class SlackApp:
         self.post_message(channel_id, result["message"])
 
         return result
+
+    def _handle_lobbypulse_command(
+        self, text: str, channel_id: str, user_id: str
+    ) -> Dict[str, str]:
+        """Handle /lobbypulse command for manual digest generation."""
+        # Parse digest type from text
+        digest_type = "daily"  # Default
+        if text:
+            text_lower = text.lower().strip()
+            if text_lower in ["daily", "mini"]:
+                digest_type = text_lower
+            elif text_lower in ["help", "?"]:
+                return {
+                    "response_type": "ephemeral",
+                    "text": "💓 **LobbyPulse Commands:**\n"
+                    "• `/lobbypulse` - Generate daily digest\n"
+                    "• `/lobbypulse daily` - Generate daily digest\n"
+                    "• `/lobbypulse mini` - Generate mini digest\n"
+                    "• `/lobbypulse help` - Show this help\n\n"
+                    "_This won't affect your scheduled morning/afternoon digests._",
+                }
+            else:
+                return {
+                    "response_type": "ephemeral",
+                    "text": f"❌ Unknown option: `{text}`\n"
+                    "Use `/lobbypulse help` for available options.",
+                }
+
+        # Generate and send digest
+        try:
+            logger.info(f"Manual {digest_type} digest requested by {user_id} in {channel_id}")
+            
+            # Generate digest
+            digest = self.digest_computer.compute_enhanced_digest(channel_id, digest_type)
+            
+            # Post to channel
+            result = self.post_message(channel_id, digest)
+            
+            if result.get("ok", False):
+                return {
+                    "response_type": "in_channel",
+                    "text": f"💓 **LobbyPulse {digest_type.title()} Digest** generated successfully!",
+                }
+            else:
+                return {
+                    "response_type": "ephemeral",
+                    "text": f"❌ Failed to generate {digest_type} digest. Please try again.",
+                }
+                
+        except Exception as e:
+            logger.error(f"Error generating manual {digest_type} digest: {e}")
+            return {
+                "response_type": "ephemeral",
+                "text": f"❌ Error generating {digest_type} digest: {str(e)}",
+            }
 
     def send_digest(self, channel_id: str, digest_type: str = "daily") -> bool:
         """Send digest to a channel."""
