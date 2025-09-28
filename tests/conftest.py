@@ -5,7 +5,7 @@ import sqlite3
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Generator
+from typing import Any, Dict, Generator
 
 import pytest
 import requests_mock
@@ -216,7 +216,7 @@ def test_settings(temp_db: Path, temp_state_dir: Path) -> Settings:
 
 
 @pytest.fixture
-def mock_slack_webhook():
+def mock_slack_webhook() -> Any:
     """Mock Slack webhook requests."""
     with requests_mock.Mocker() as m:
         m.post("https://hooks.slack.com/services/TEST/TEST/TEST", text="ok")
@@ -230,7 +230,7 @@ def slack_notifier() -> SlackNotifier:
 
 
 @pytest.fixture
-def sample_digest_data():
+def sample_digest_data() -> Dict[str, Any]:
     """Sample data for digest formatting tests."""
     return {
         "new_filings": [

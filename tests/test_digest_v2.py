@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from bot.digest_v2 import DigestV2Formatter
 from bot.signals_v2 import SignalType, SignalV2, Urgency
+from typing import Any, Dict, List, Optional
 
 # from unittest.mock import patch  # Unused import
 
@@ -13,7 +14,7 @@ from bot.signals_v2 import SignalType, SignalV2, Urgency
 class TestDigestV2Formatter:
     """Tests for DigestV2Formatter."""
 
-    def test_formatter_initialization(self):
+    def test_formatter_initialization(self) -> None:
         """Test formatter initialization with and without watchlist."""
         # Without watchlist
         formatter = DigestV2Formatter()
@@ -26,7 +27,7 @@ class TestDigestV2Formatter:
         formatter = DigestV2Formatter(watchlist)
         assert formatter.watchlist == watchlist
 
-    def test_format_daily_digest_empty(self):
+    def test_format_daily_digest_empty(self) -> None:
         """Test formatting empty daily digest."""
         formatter = DigestV2Formatter()
         result = formatter.format_daily_digest([])
@@ -35,7 +36,7 @@ class TestDigestV2Formatter:
         assert "No fresh government activity detected" in result
         assert "/lobbylens help" in result
 
-    def test_format_daily_digest_with_signals(self):
+    def test_format_daily_digest_with_signals(self) -> None:
         """Test formatting daily digest with signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -85,7 +86,7 @@ class TestDigestV2Formatter:
         assert "What Changed" in result
         assert "Industry Snapshots" in result
 
-    def test_format_mini_digest_thresholds_not_met(self):
+    def test_format_mini_digest_thresholds_not_met(self) -> None:
         """Test mini-digest when thresholds are not met."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -111,7 +112,7 @@ class TestDigestV2Formatter:
         result = formatter.format_mini_digest(signals)
         assert result is None
 
-    def test_format_mini_digest_thresholds_met(self):
+    def test_format_mini_digest_thresholds_met(self) -> None:
         """Test mini-digest when thresholds are met."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -142,7 +143,7 @@ class TestDigestV2Formatter:
         assert "1 high-priority" in result
         assert "Critical Final Rule" in result
 
-    def test_format_mini_digest_watchlist_hit(self):
+    def test_format_mini_digest_watchlist_hit(self) -> None:
         """Test mini-digest triggered by watchlist hit."""
         formatter = DigestV2Formatter(["Apple"])
         now = datetime.now(timezone.utc)
@@ -169,7 +170,7 @@ class TestDigestV2Formatter:
         assert result is not None
         assert "Mini Signals Alert" in result
 
-    def test_format_mini_digest_docket_surge(self):
+    def test_format_mini_digest_docket_surge(self) -> None:
         """Test mini-digest triggered by docket surge."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -196,7 +197,7 @@ class TestDigestV2Formatter:
         assert result is not None
         assert "Mini Signals Alert" in result
 
-    def test_get_watchlist_signals(self):
+    def test_get_watchlist_signals(self) -> None:
         """Test getting watchlist hit signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -226,7 +227,7 @@ class TestDigestV2Formatter:
         assert len(watchlist_signals) == 1
         assert watchlist_signals[0].stable_id == "bill-2"
 
-    def test_get_what_changed_signals(self):
+    def test_get_what_changed_signals(self) -> None:
         """Test getting high-priority signals for What Changed section."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -256,7 +257,7 @@ class TestDigestV2Formatter:
         assert len(what_changed) == 1
         assert what_changed[0].stable_id == "bill-2"
 
-    def test_get_industry_snapshots(self):
+    def test_get_industry_snapshots(self) -> None:
         """Test getting industry snapshot signals."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -302,7 +303,7 @@ class TestDigestV2Formatter:
         assert snapshots[1].priority_score == 4.0
         assert snapshots[2].priority_score == 3.0
 
-    def test_get_deadline_signals(self):
+    def test_get_deadline_signals(self) -> None:
         """Test getting signals with deadlines in next 7 days."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -341,7 +342,7 @@ class TestDigestV2Formatter:
         assert len(deadlines) == 1
         assert deadlines[0].stable_id == "bill-2"
 
-    def test_get_docket_surge_signals(self):
+    def test_get_docket_surge_signals(self) -> None:
         """Test getting docket signals with surge activity."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -384,7 +385,7 @@ class TestDigestV2Formatter:
         assert len(surges) == 1
         assert surges[0].stable_id == "docket-2"
 
-    def test_get_bill_action_signals(self):
+    def test_get_bill_action_signals(self) -> None:
         """Test getting bill action signals grouped by bill_id."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -429,7 +430,7 @@ class TestDigestV2Formatter:
         assert "HR-123" in bill_ids
         assert "HR-456" in bill_ids
 
-    def test_format_watchlist_signal(self):
+    def test_format_watchlist_signal(self) -> None:
         """Test formatting watchlist alert signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -458,7 +459,7 @@ class TestDigestV2Formatter:
         assert "Issues: TEC" in result
         assert "<https://example.com/bill-1|View>" in result
 
-    def test_format_what_changed_signal(self):
+    def test_format_what_changed_signal(self) -> None:
         """Test formatting what changed signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -487,7 +488,7 @@ class TestDigestV2Formatter:
         assert "Issues: TEC" in result
         assert "<https://example.com/fr-1|View>" in result
 
-    def test_format_docket_surge_signal(self):
+    def test_format_docket_surge_signal(self) -> None:
         """Test formatting docket surge signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -522,7 +523,7 @@ class TestDigestV2Formatter:
         assert "Issues: ENV" in result
         assert "<https://example.com/docket-1|Regulations.gov>" in result
 
-    def test_format_bill_action_signal(self):
+    def test_format_bill_action_signal(self) -> None:
         """Test formatting bill action signal."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -553,7 +554,7 @@ class TestDigestV2Formatter:
         assert "Issues: HCR" in result
         assert "<https://example.com/action-1|Congress>" in result
 
-    def test_format_title_for_mobile_short(self):
+    def test_format_title_for_mobile_short(self) -> None:
         """Test mobile title formatting for short titles."""
         formatter = DigestV2Formatter()
 
@@ -561,7 +562,7 @@ class TestDigestV2Formatter:
         result = formatter._format_title_for_mobile(title, 60)
         assert result == "Short Title"
 
-    def test_format_title_for_mobile_long(self):
+    def test_format_title_for_mobile_long(self) -> None:
         """Test mobile title formatting for long titles."""
         formatter = DigestV2Formatter()
 
@@ -576,7 +577,7 @@ class TestDigestV2Formatter:
         assert "This is a very long title that should be broken into" in result
         assert "  multiple lines for better mobile readability" in result
 
-    def test_format_summary_short(self):
+    def test_format_summary_short(self) -> None:
         """Test summary formatting for short summaries."""
         formatter = DigestV2Formatter()
 
@@ -584,7 +585,7 @@ class TestDigestV2Formatter:
         result = formatter._format_summary(summary, 160)
         assert result == "Short summary"
 
-    def test_format_summary_long(self):
+    def test_format_summary_long(self) -> None:
         """Test summary formatting for long summaries."""
         formatter = DigestV2Formatter()
 
@@ -599,7 +600,7 @@ class TestDigestV2Formatter:
         assert len(result) <= 161  # Allow for space + ellipsis
         assert result.endswith("...")
 
-    def test_format_issue_codes(self):
+    def test_format_issue_codes(self) -> None:
         """Test issue codes formatting."""
         formatter = DigestV2Formatter()
 
@@ -615,7 +616,7 @@ class TestDigestV2Formatter:
         result = formatter._format_issue_codes([])
         assert result == "None"
 
-    def test_get_pt_time(self):
+    def test_get_pt_time(self) -> None:
         """Test getting current time in PT."""
         formatter = DigestV2Formatter()
 
@@ -624,7 +625,7 @@ class TestDigestV2Formatter:
         assert "PT" in result
         assert ":" in result
 
-    def test_format_empty_digest(self):
+    def test_format_empty_digest(self) -> None:
         """Test formatting empty digest."""
         formatter = DigestV2Formatter()
         result = formatter._format_empty_digest()
@@ -633,7 +634,7 @@ class TestDigestV2Formatter:
         assert "No fresh government activity detected" in result
         assert "/lobbylens help" in result
 
-    def test_section_limits(self):
+    def test_section_limits(self) -> None:
         """Test that sections respect their limits."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)
@@ -673,7 +674,7 @@ class TestDigestV2Formatter:
         assert watchlist_count <= 5  # Max 5 watchlist alerts
         # Note: what_changed section limit is tested by the formatter logic
 
-    def test_threading_footer(self):
+    def test_threading_footer(self) -> None:
         """Test threading footer when there are many items."""
         formatter = DigestV2Formatter()
         now = datetime.now(timezone.utc)

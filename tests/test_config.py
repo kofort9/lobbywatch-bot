@@ -6,16 +6,17 @@ from unittest.mock import patch
 import pytest
 
 from bot.config import Settings
+from typing import Any, Dict, List, Optional
 
 
-def test_settings_defaults():
+def test_settings_defaults() -> None:
     """Test default settings values."""
     # Skip this test since Settings loads from .env file
     # The actual defaults are tested in integration tests
     pytest.skip("Settings class loads from .env file - tested in integration")
 
 
-def test_settings_from_env():
+def test_settings_from_env() -> None:
     """Test settings loaded from environment variables."""
     env_vars = {
         "DATABASE_FILE": "/custom/path.db",
@@ -37,14 +38,14 @@ def test_settings_from_env():
         assert settings.dry_run is True
 
 
-def test_notifier_type_detection():
+def test_notifier_type_detection() -> None:
     """Test notifier type detection logic."""
     # Skip this test since Settings loads from .env file
     # The actual logic is tested in integration tests
     pytest.skip("Settings class loads from .env file - tested in integration")
 
 
-def test_validate_notifier_config():
+def test_validate_notifier_config() -> None:
     """Test notifier configuration validation."""
     # Skip this test since Settings loads from .env file
     # The actual validation is tested in integration tests

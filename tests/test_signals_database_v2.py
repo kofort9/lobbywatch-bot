@@ -10,13 +10,14 @@ import pytest
 
 from bot.signals_database_v2 import SignalsDatabaseV2
 from bot.signals_v2 import SignalType, SignalV2, Urgency
+from typing import Any, Dict, List, Optional
 
 
 class TestSignalsDatabaseV2:
     """Tests for SignalsDatabaseV2."""
 
     @pytest.fixture
-    def temp_db(self):
+    def temp_db(self) -> Any:
         """Create a temporary database for testing."""
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -27,7 +28,7 @@ class TestSignalsDatabaseV2:
         # Cleanup
         Path(db_path).unlink(missing_ok=True)
 
-    def test_database_initialization(self, temp_db):
+    def test_database_initialization(self, temp_db: Any) -> None:
         """Test database initialization and schema creation."""
         # Check that tables were created
         conn = sqlite3.connect(temp_db.db_path)
@@ -60,7 +61,7 @@ class TestSignalsDatabaseV2:
 
         conn.close()
 
-    def test_store_signal(self, temp_db):
+    def test_store_signal(self, temp_db: Any) -> None:
         """Test storing a single signal."""
         now = datetime.now(timezone.utc)
         signal = SignalV2(
@@ -97,7 +98,7 @@ class TestSignalsDatabaseV2:
         # SQLite stores booleans as integers
         assert signals[0].watchlist_hit == 1
 
-    def test_store_signal_duplicate(self, temp_db):
+    def test_store_signal_duplicate(self, temp_db: Any) -> None:
         """Test storing duplicate signal (should update)."""
         now = datetime.now(timezone.utc)
         signal1 = SignalV2(
@@ -130,7 +131,7 @@ class TestSignalsDatabaseV2:
         assert signals[0].title == "Updated Bill"
         assert signals[0].priority_score == 7.0
 
-    def test_store_signals_multiple(self, temp_db):
+    def test_store_signals_multiple(self, temp_db: Any) -> None:
         """Test storing multiple signals."""
         now = datetime.now(timezone.utc)
         signals = [
@@ -153,7 +154,7 @@ class TestSignalsDatabaseV2:
         recent_signals = temp_db.get_recent_signals(24)
         assert len(recent_signals) == 5
 
-    def test_get_recent_signals(self, temp_db):
+    def test_get_recent_signals(self, temp_db: Any) -> None:
         """Test getting recent signals."""
         now = datetime.now(timezone.utc)
 
@@ -190,7 +191,7 @@ class TestSignalsDatabaseV2:
         recent_signals = temp_db.get_recent_signals(30)
         assert len(recent_signals) == 2
 
-    def test_get_high_priority_signals(self, temp_db):
+    def test_get_high_priority_signals(self, temp_db: Any) -> None:
         """Test getting high priority signals."""
         now = datetime.now(timezone.utc)
 
@@ -214,7 +215,7 @@ class TestSignalsDatabaseV2:
         assert len(high_priority) == 2  # Only signals with score 6.0 and 8.0
         assert all(s.priority_score >= 5.0 for s in high_priority)
 
-    def test_watchlist_operations(self, temp_db):
+    def test_watchlist_operations(self, temp_db: Any) -> None:
         """Test watchlist add/remove/get operations."""
         channel_id = "C1234567890"
 
@@ -238,7 +239,7 @@ class TestSignalsDatabaseV2:
         assert len(watchlist) == 2
         assert not any(item["name"] == "Google" for item in watchlist)
 
-    def test_get_watchlist_signals(self, temp_db):
+    def test_get_watchlist_signals(self, temp_db: Any) -> None:
         """Test getting signals that match watchlist."""
         channel_id = "C1234567890"
         now = datetime.now(timezone.utc)
@@ -287,7 +288,7 @@ class TestSignalsDatabaseV2:
         assert len(watchlist_signals) == 3
         assert all(s.watchlist_hit for s in watchlist_signals)
 
-    def test_get_docket_surges(self, temp_db):
+    def test_get_docket_surges(self, temp_db: Any) -> None:
         """Test getting docket signals with surge activity."""
         now = datetime.now(timezone.utc)
 
@@ -332,7 +333,7 @@ class TestSignalsDatabaseV2:
         assert len(surges) == 1
         assert surges[0].stable_id == "docket-2"
 
-    def test_get_deadline_signals(self, temp_db):
+    def test_get_deadline_signals(self, temp_db: Any) -> None:
         """Test getting signals with deadlines."""
         now = datetime.now(timezone.utc)
 
@@ -373,7 +374,7 @@ class TestSignalsDatabaseV2:
         assert len(deadlines) == 1
         assert deadlines[0].stable_id == "bill-2"
 
-    def test_get_industry_signals(self, temp_db):
+    def test_get_industry_signals(self, temp_db: Any) -> None:
         """Test getting signals by industry."""
         now = datetime.now(timezone.utc)
 
@@ -420,7 +421,7 @@ class TestSignalsDatabaseV2:
         assert health_signals[0].priority_score == 5.0
         assert health_signals[1].priority_score == 3.0
 
-    def test_channel_settings(self, temp_db):
+    def test_channel_settings(self, temp_db: Any) -> None:
         """Test channel settings operations."""
         channel_id = "C1234567890"
 
@@ -452,7 +453,7 @@ class TestSignalsDatabaseV2:
         # SQLite stores booleans as integers
         assert settings["show_summaries"] == 0
 
-    def test_cleanup_old_signals(self, temp_db):
+    def test_cleanup_old_signals(self, temp_db: Any) -> None:
         """Test cleaning up old signals."""
         now = datetime.now(timezone.utc)
 
@@ -493,7 +494,7 @@ class TestSignalsDatabaseV2:
         assert len(all_signals) == 1
         assert all_signals[0].stable_id == "recent-bill"
 
-    def test_get_signal_stats(self, temp_db):
+    def test_get_signal_stats(self, temp_db: Any) -> None:
         """Test getting signal statistics."""
         now = datetime.now(timezone.utc)
 
@@ -558,7 +559,7 @@ class TestSignalsDatabaseV2:
         assert stats["high_priority"] == 2  # Scores >= 5.0
         assert stats["watchlist_hits"] == 1
 
-    def test_signal_serialization_roundtrip(self, temp_db):
+    def test_signal_serialization_roundtrip(self, temp_db: Any) -> None:
         """Test that signal serialization and deserialization works correctly."""
         now = datetime.now(timezone.utc)
         original_signal = SignalV2(
@@ -611,7 +612,7 @@ class TestSignalsDatabaseV2:
         assert retrieved_signal.industry_tag == original_signal.industry_tag
         assert retrieved_signal.watchlist_hit == original_signal.watchlist_hit
 
-    def test_error_handling(self, temp_db):
+    def test_error_handling(self, temp_db: Any) -> None:
         """Test error handling in database operations."""
         # Test storing invalid signal data
         # This should not crash but return False

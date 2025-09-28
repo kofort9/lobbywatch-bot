@@ -13,7 +13,7 @@ from bot.test_fixtures_v2 import TestFixturesV2, TestValidator
 class TestTestFixturesV2:
     """Test TestFixturesV2 class"""
 
-    def test_get_fixture_a_mixed_day(self):
+    def test_get_fixture_a_mixed_day(self) -> None:
         """Test fixture A - mixed day scenario"""
         signals = TestFixturesV2.get_fixture_a_mixed_day()
 
@@ -45,7 +45,7 @@ class TestTestFixturesV2:
         assert "ENV" in issue_codes
         assert "FIN" in issue_codes
 
-    def test_get_fixture_b_watchlist_hit(self):
+    def test_get_fixture_b_watchlist_hit(self) -> None:
         """Test fixture B - watchlist hit scenario"""
         signals = TestFixturesV2.get_fixture_b_watchlist_hit()
 
@@ -57,7 +57,7 @@ class TestTestFixturesV2:
         assert signal.watchlist_hit is True
         assert signal.issue_codes == ["TEC"]
 
-    def test_get_fixture_c_mini_digest_threshold(self):
+    def test_get_fixture_c_mini_digest_threshold(self) -> None:
         """Test fixture C - mini digest threshold scenario"""
         signals = TestFixturesV2.get_fixture_c_mini_digest_threshold()
 
@@ -83,7 +83,7 @@ class TestTestFixturesV2:
         assert "TEC" in issue_codes
         assert "HCR" in issue_codes
 
-    def test_get_fixture_d_character_budget_stress(self):
+    def test_get_fixture_d_character_budget_stress(self) -> None:
         """Test fixture D - character budget stress test"""
         signals = TestFixturesV2.get_fixture_d_character_budget_stress()
 
@@ -113,7 +113,7 @@ class TestTestFixturesV2:
         assert "FIN" in issue_codes
         assert "ENE" in issue_codes
 
-    def test_get_fixture_e_timezone_test(self):
+    def test_get_fixture_e_timezone_test(self) -> None:
         """Test fixture E - timezone handling test"""
         signals = TestFixturesV2.get_fixture_e_timezone_test()
 
@@ -129,7 +129,7 @@ class TestTestFixturesV2:
         now = datetime.now(timezone.utc)
         assert signal.deadline > now
 
-    def test_fixture_timestamps(self):
+    def test_fixture_timestamps(self) -> None:
         """Test that all fixtures have proper timestamps"""
         fixtures = [
             TestFixturesV2.get_fixture_a_mixed_day(),
@@ -145,7 +145,7 @@ class TestTestFixturesV2:
                 assert signal.timestamp.tzinfo is not None
                 assert signal.timestamp.tzinfo == timezone.utc
 
-    def test_fixture_urls(self):
+    def test_fixture_urls(self) -> None:
         """Test that all fixtures have proper URLs"""
         fixtures = [
             TestFixturesV2.get_fixture_a_mixed_day(),
@@ -160,7 +160,7 @@ class TestTestFixturesV2:
                 assert signal.url.startswith("https://")
                 assert len(signal.url) > 10
 
-    def test_fixture_stable_ids(self):
+    def test_fixture_stable_ids(self) -> None:
         """Test that all fixtures have unique stable IDs"""
         fixtures = [
             TestFixturesV2.get_fixture_a_mixed_day(),
@@ -188,16 +188,16 @@ class TestTestValidator:
     """Test TestValidator class"""
 
     @pytest.fixture
-    def validator(self):
+    def validator(self) -> TestValidator:
         """Create validator instance"""
         return TestValidator()
 
-    def test_init(self, validator):
+    def test_init(self, validator: TestValidator) -> None:
         """Test validator initialization"""
         assert validator.errors == []
         assert validator.warnings == []
 
-    def test_validate_digest_format_valid(self, validator):
+    def test_validate_digest_format_valid(self, validator: TestValidator) -> None:
         """Test digest format validation with valid digest"""
         valid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -231,7 +231,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert result is True
         assert len(validator.errors) == 0
 
-    def test_validate_digest_format_missing_header(self, validator):
+    def test_validate_digest_format_missing_header(self, validator: TestValidator) -> None:
         """Test digest format validation with missing header"""
         invalid_digest = "Some content without proper header"
 
@@ -239,7 +239,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert result is False
         assert "Missing required header format" in validator.errors
 
-    def test_validate_digest_format_missing_mini_stats(self, validator):
+    def test_validate_digest_format_missing_mini_stats(self, validator: TestValidator) -> None:
         """Test digest format validation with missing mini-stats"""
         invalid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Some content without mini-stats"""
@@ -248,7 +248,7 @@ Some content without mini-stats"""
         assert result is False
         assert "Missing mini-stats section" in validator.errors
 
-    def test_validate_digest_format_missing_sections(self, validator):
+    def test_validate_digest_format_missing_sections(self, validator: TestValidator) -> None:
         """Test digest format validation with missing sections"""
         invalid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 0 · FR 0 · Dockets 0 · Watchlist hits 0
@@ -260,7 +260,7 @@ Some content without proper sections"""
         assert len(validator.warnings) > 0
         assert any("Missing section" in warning for warning in validator.warnings)
 
-    def test_validate_digest_format_character_limit(self, validator):
+    def test_validate_digest_format_character_limit(self, validator: TestValidator) -> None:
         """Test digest format validation with character limit warning"""
         # Create a very long digest with proper format
         long_digest = (
@@ -294,7 +294,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert result is True  # No errors, just warnings
         assert any("Slack message limits" in warning for warning in validator.warnings)
 
-    def test_validate_digest_format_no_links(self, validator):
+    def test_validate_digest_format_no_links(self, validator: TestValidator) -> None:
         """Test digest format validation with no links"""
         invalid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 0 · FR 0 · Dockets 0 · Watchlist hits 0
@@ -308,7 +308,7 @@ Some content without links"""
             for warning in validator.warnings
         )
 
-    def test_validate_section_limits_valid(self, validator):
+    def test_validate_section_limits_valid(self, validator: TestValidator) -> None:
         """Test section limits validation with valid digest"""
         valid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -340,7 +340,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert result is True
         assert len(validator.errors) == 0
 
-    def test_validate_section_limits_exceeded(self, validator):
+    def test_validate_section_limits_exceeded(self, validator: TestValidator) -> None:
         """Test section limits validation with exceeded limits"""
         invalid_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -368,7 +368,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert len(validator.errors) > 0
         assert any("exceeds limit" in error for error in validator.errors)
 
-    def test_validate_mobile_formatting_with_ellipses(self, validator):
+    def test_validate_mobile_formatting_with_ellipses(self, validator: TestValidator) -> None:
         """Test mobile formatting validation with ellipses"""
         digest_with_ellipses = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -379,7 +379,7 @@ Some content with ellipses..."""
         assert result is True  # No errors, just warnings
         assert any("ellipses" in warning for warning in validator.warnings)
 
-    def test_validate_mobile_formatting_long_titles(self, validator):
+    def test_validate_mobile_formatting_long_titles(self, validator: TestValidator) -> None:
         """Test mobile formatting validation with long titles"""
         digest_with_long_titles = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -390,7 +390,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
         assert result is True  # No errors, just warnings
         assert any("long title lines" in warning for warning in validator.warnings)
 
-    def test_validate_mobile_formatting_no_indentation(self, validator):
+    def test_validate_mobile_formatting_no_indentation(self, validator: TestValidator) -> None:
         """Test mobile formatting validation without indentation"""
         digest_without_indentation = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -405,7 +405,7 @@ Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
             "indented continuation lines" in warning for warning in validator.warnings
         )
 
-    def test_validate_timezone_handling_with_pt(self, validator):
+    def test_validate_timezone_handling_with_pt(self, validator: TestValidator) -> None:
         """Test timezone handling validation with PT timezone"""
         digest_with_pt = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -418,7 +418,7 @@ Some content
         assert result is True
         assert len(validator.warnings) == 0
 
-    def test_validate_timezone_handling_without_pt(self, validator):
+    def test_validate_timezone_handling_without_pt(self, validator: TestValidator) -> None:
         """Test timezone handling validation without PT timezone"""
         digest_without_pt = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -431,7 +431,7 @@ Some content
         assert result is True  # No errors, just warnings
         assert any("PT timezone" in warning for warning in validator.warnings)
 
-    def test_validate_timezone_handling_without_date(self, validator):
+    def test_validate_timezone_handling_without_date(self, validator: TestValidator) -> None:
         """Test timezone handling validation without proper date format"""
         digest_without_date = """🔍 LobbyLens — Daily Signals · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0
@@ -442,12 +442,12 @@ Some content"""
         assert result is True  # No errors, just warnings
         assert any("date format" in warning for warning in validator.warnings)
 
-    def test_get_validation_report_no_issues(self, validator):
+    def test_get_validation_report_no_issues(self, validator: TestValidator) -> None:
         """Test validation report with no issues"""
         report = validator.get_validation_report()
         assert "✅ All validations passed!" in report
 
-    def test_get_validation_report_with_errors(self, validator):
+    def test_get_validation_report_with_errors(self, validator: TestValidator) -> None:
         """Test validation report with errors"""
         validator.errors = ["Test error 1", "Test error 2"]
         validator.warnings = ["Test warning 1"]
@@ -459,7 +459,7 @@ Some content"""
         assert "⚠️  WARNINGS:" in report
         assert "• Test warning 1" in report
 
-    def test_get_validation_report_with_warnings_only(self, validator):
+    def test_get_validation_report_with_warnings_only(self, validator: TestValidator) -> None:
         """Test validation report with warnings only"""
         validator.warnings = ["Test warning 1", "Test warning 2"]
 
@@ -469,7 +469,7 @@ Some content"""
         assert "• Test warning 1" in report
         assert "• Test warning 2" in report
 
-    def test_validator_reset(self, validator):
+    def test_validator_reset(self, validator: TestValidator) -> None:
         """Test that validator can be reset"""
         validator.errors = ["Test error"]
         validator.warnings = ["Test warning"]
@@ -479,7 +479,7 @@ Some content"""
         assert new_validator.errors == []
         assert new_validator.warnings == []
 
-    def test_validate_digest_format_realistic(self, validator):
+    def test_validate_digest_format_realistic(self, validator: TestValidator) -> None:
         """Test digest format validation with realistic digest"""
         realistic_digest = """🔍 LobbyLens — Daily Signals (2025-09-28) · 24h
 Mini-stats: Bills 3 · FR 2 · Dockets 1 · Watchlist hits 0

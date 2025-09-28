@@ -3,6 +3,8 @@
 # import json  # Unused import
 from datetime import datetime, timedelta, timezone
 
+from typing import Any, Dict, List, Optional
+
 from bot.signals_v2 import (
     SignalDeduplicator,
     SignalsRulesEngine,
@@ -19,7 +21,7 @@ from bot.signals_v2 import (
 class TestSignalV2:
     """Tests for SignalV2 data model."""
 
-    def test_signal_creation(self):
+    def test_signal_creation(self) -> None:
         """Test basic signal creation."""
         now = datetime.now(timezone.utc)
         signal = SignalV2(
@@ -44,9 +46,10 @@ class TestSignalV2:
         assert signal.issue_codes == ["HCR", "TEC"]
         assert signal.bill_id == "HR-123"
         assert signal.comment_count == 100
+        assert signal.metric_json is not None
         assert signal.metric_json["comments_24h_delta_pct"] == 50.0
 
-    def test_signal_to_dict(self):
+    def test_signal_to_dict(self) -> None:
         """Test signal serialization to dictionary."""
         now = datetime.now(timezone.utc)
         signal = SignalV2(
@@ -76,7 +79,7 @@ class TestSignalV2:
         assert data["industry_tag"] == "Tech"
         assert data["watchlist_hit"] is True
 
-    def test_signal_from_dict(self):
+    def test_signal_from_dict(self) -> None:
         """Test signal deserialization from dictionary."""
         now = datetime.now(timezone.utc)
         data = {
@@ -114,7 +117,7 @@ class TestSignalV2:
         assert signal.industry_tag == "Environment"
         assert signal.watchlist_hit is False
 
-    def test_signal_from_dict_with_none_values(self):
+    def test_signal_from_dict_with_none_values(self) -> None:
         """Test signal deserialization with None values."""
         now = datetime.now(timezone.utc)
         data = {
@@ -154,7 +157,7 @@ class TestSignalV2:
 class TestSignalsRulesEngine:
     """Tests for SignalsRulesEngine rules processing."""
 
-    def test_engine_initialization(self):
+    def test_engine_initialization(self) -> None:
         """Test engine initialization with and without watchlist."""
         # Without watchlist
         engine = SignalsRulesEngine()
@@ -165,7 +168,7 @@ class TestSignalsRulesEngine:
         engine = SignalsRulesEngine(watchlist)
         assert engine.watchlist == watchlist
 
-    def test_classify_signal_type_federal_register(self):
+    def test_classify_signal_type_federal_register(self) -> None:
         """Test signal type classification for Federal Register."""
         engine = SignalsRulesEngine()
 
@@ -204,7 +207,7 @@ class TestSignalsRulesEngine:
         signal_type = engine._classify_signal_type(signal)
         assert signal_type == SignalType.NOTICE
 
-    def test_classify_signal_type_congress(self):
+    def test_classify_signal_type_congress(self) -> None:
         """Test signal type classification for Congress."""
         engine = SignalsRulesEngine()
 
@@ -240,7 +243,7 @@ class TestSignalsRulesEngine:
         signal_type = engine._classify_signal_type(signal)
         assert signal_type == SignalType.BILL
 
-    def test_classify_signal_type_regulations_gov(self):
+    def test_classify_signal_type_regulations_gov(self) -> None:
         """Test signal type classification for Regulations.gov."""
         engine = SignalsRulesEngine()
 
@@ -255,7 +258,7 @@ class TestSignalsRulesEngine:
         signal_type = engine._classify_signal_type(signal)
         assert signal_type == SignalType.DOCKET
 
-    def test_determine_urgency_critical(self):
+    def test_determine_urgency_critical(self) -> None:
         """Test critical urgency determination."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -274,7 +277,7 @@ class TestSignalsRulesEngine:
         urgency = engine._determine_urgency(signal)
         assert urgency == Urgency.CRITICAL
 
-    def test_determine_urgency_high(self):
+    def test_determine_urgency_high(self) -> None:
         """Test high urgency determination."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -335,7 +338,7 @@ class TestSignalsRulesEngine:
         urgency = engine._determine_urgency(signal)
         assert urgency == Urgency.HIGH
 
-    def test_determine_urgency_medium(self):
+    def test_determine_urgency_medium(self) -> None:
         """Test medium urgency determination."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -382,7 +385,7 @@ class TestSignalsRulesEngine:
         urgency = engine._determine_urgency(signal)
         assert urgency == Urgency.MEDIUM
 
-    def test_determine_urgency_low(self):
+    def test_determine_urgency_low(self) -> None:
         """Test low urgency determination."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -414,7 +417,7 @@ class TestSignalsRulesEngine:
         urgency = engine._determine_urgency(signal)
         assert urgency == Urgency.LOW
 
-    def test_calculate_priority_score(self):
+    def test_calculate_priority_score(self) -> None:
         """Test priority score calculation."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -453,7 +456,7 @@ class TestSignalsRulesEngine:
         # Base (1.5) + Low urgency (0.0) + No watchlist (0.0) = 1.5
         assert score == 1.5
 
-    def test_calculate_priority_score_with_modifiers(self):
+    def test_calculate_priority_score_with_modifiers(self) -> None:
         """Test priority score calculation with various modifiers."""
         engine = SignalsRulesEngine()
         now = datetime.now(timezone.utc)
@@ -477,7 +480,7 @@ class TestSignalsRulesEngine:
         # 5.8
         assert score == 5.8
 
-    def test_assign_industry_tag_from_issue_codes(self):
+    def test_assign_industry_tag_from_issue_codes(self) -> None:
         """Test industry tag assignment from issue codes."""
         engine = SignalsRulesEngine()
 
@@ -504,7 +507,7 @@ class TestSignalsRulesEngine:
         tag = engine._assign_industry_tag(signal)
         assert tag == "Tech"  # TEC comes first in the list
 
-    def test_assign_industry_tag_from_agency(self):
+    def test_assign_industry_tag_from_agency(self) -> None:
         """Test industry tag assignment from agency keywords."""
         engine = SignalsRulesEngine()
 
@@ -536,7 +539,7 @@ class TestSignalsRulesEngine:
         tag = engine._assign_industry_tag(signal)
         assert tag == "Tech"
 
-    def test_assign_industry_tag_from_keywords(self):
+    def test_assign_industry_tag_from_keywords(self) -> None:
         """Test industry tag assignment from content keywords."""
         engine = SignalsRulesEngine()
 
@@ -565,7 +568,7 @@ class TestSignalsRulesEngine:
         tag = engine._assign_industry_tag(signal)
         assert tag == "Finance"
 
-    def test_assign_industry_tag_default(self):
+    def test_assign_industry_tag_default(self) -> None:
         """Test industry tag assignment default fallback."""
         engine = SignalsRulesEngine()
 
@@ -582,7 +585,7 @@ class TestSignalsRulesEngine:
         tag = engine._assign_industry_tag(signal)
         assert tag == "Government"
 
-    def test_check_watchlist_hit(self):
+    def test_check_watchlist_hit(self) -> None:
         """Test watchlist hit detection."""
         watchlist = ["Apple", "Google", "Microsoft", "privacy"]
         engine = SignalsRulesEngine(watchlist)
@@ -626,7 +629,7 @@ class TestSignalsRulesEngine:
         hit = engine._check_watchlist_hit(signal)
         assert hit is False
 
-    def test_check_watchlist_hit_no_watchlist(self):
+    def test_check_watchlist_hit_no_watchlist(self) -> None:
         """Test watchlist hit detection with no watchlist."""
         engine = SignalsRulesEngine()
 
@@ -641,7 +644,7 @@ class TestSignalsRulesEngine:
         hit = engine._check_watchlist_hit(signal)
         assert hit is False
 
-    def test_process_signal_full_workflow(self):
+    def test_process_signal_full_workflow(self) -> None:
         """Test complete signal processing workflow."""
         watchlist = ["Apple", "privacy"]
         engine = SignalsRulesEngine(watchlist)
@@ -671,7 +674,7 @@ class TestSignalsRulesEngine:
 class TestSignalDeduplicator:
     """Tests for SignalDeduplicator."""
 
-    def test_deduplicate_signals_no_duplicates(self):
+    def test_deduplicate_signals_no_duplicates(self) -> None:
         """Test deduplication with no duplicates."""
         deduplicator = SignalDeduplicator()
         now = datetime.now(timezone.utc)
@@ -702,7 +705,7 @@ class TestSignalDeduplicator:
         assert deduplicated[0].stable_id == "bill-1"
         assert deduplicated[1].stable_id == "bill-2"
 
-    def test_deduplicate_signals_with_duplicates(self):
+    def test_deduplicate_signals_with_duplicates(self) -> None:
         """Test deduplication with duplicates."""
         deduplicator = SignalDeduplicator()
         now = datetime.now(timezone.utc)
@@ -745,7 +748,7 @@ class TestSignalDeduplicator:
         assert bill_1_signals[0].priority_score == 7.0
         assert bill_1_signals[0].title == "Bill 1 Updated"
 
-    def test_group_bills(self):
+    def test_group_bills(self) -> None:
         """Test grouping signals by bill_id."""
         deduplicator = SignalDeduplicator()
         now = datetime.now(timezone.utc)
@@ -785,7 +788,7 @@ class TestSignalDeduplicator:
         assert len(grouped["HR-123"]) == 2
         assert len(grouped["HR-456"]) == 1
 
-    def test_group_dockets(self):
+    def test_group_dockets(self) -> None:
         """Test grouping signals by docket_id."""
         deduplicator = SignalDeduplicator()
         now = datetime.now(timezone.utc)
@@ -824,7 +827,7 @@ class TestSignalDeduplicator:
         assert len(grouped["EPA"]) == 2
         assert len(grouped["FCC"]) == 1
 
-    def test_group_dockets_no_dash(self):
+    def test_group_dockets_no_dash(self) -> None:
         """Test grouping dockets when stable_id has no dash."""
         deduplicator = SignalDeduplicator()
         now = datetime.now(timezone.utc)

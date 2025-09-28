@@ -9,24 +9,25 @@ from unittest.mock import patch
 import pytest
 
 from bot.digest import DigestComputer, DigestError, compute_digest
+from typing import Any, Dict, List, Optional
 
 
 class TestDigestComputer:
     """Tests for DigestComputer class."""
 
-    def test_init(self, temp_db):
+    def test_init(self, temp_db: Any) -> None:
         """Test DigestComputer initialization."""
         computer = DigestComputer(str(temp_db))
         assert computer.db_path == temp_db
         assert computer.state_file == Path("state/last_run.json")
 
-    def test_init_nonexistent_db(self):
+    def test_init_nonexistent_db(self) -> None:
         """Test initialization with non-existent database."""
         computer = DigestComputer("/nonexistent/db.sqlite")
         with pytest.raises(DigestError, match="Database file not found"):
             computer._connect()
 
-    def test_connect(self, temp_db):
+    def test_connect(self, temp_db: Any) -> None:
         """Test database connection."""
         computer = DigestComputer(str(temp_db))
         with computer._connect() as conn:
@@ -37,14 +38,14 @@ class TestDigestComputer:
             # Test row factory is set
             assert conn.row_factory == sqlite3.Row
 
-    def test_last_run_time_no_file(self, temp_db, temp_state_dir):
+    def test_last_run_time_no_file(self, temp_db: Any, temp_state_dir: Any) -> None:
         """Test getting last run time when no state file exists."""
         computer = DigestComputer(str(temp_db))
         computer.state_file = temp_state_dir / "last_run.json"
 
         assert computer._get_last_run_time() is None
 
-    def test_last_run_time_with_file(self, temp_db, temp_state_dir):
+    def test_last_run_time_with_file(self, temp_db: Any, temp_state_dir: Any) -> None:
         """Test getting last run time from existing state file."""
         computer = DigestComputer(str(temp_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -57,7 +58,7 @@ class TestDigestComputer:
         result = computer._get_last_run_time()
         assert result == test_time
 
-    def test_last_run_time_invalid_file(self, temp_db, temp_state_dir):
+    def test_last_run_time_invalid_file(self, temp_db: Any, temp_state_dir: Any) -> None:
         """Test handling of invalid state file."""
         computer = DigestComputer(str(temp_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -68,7 +69,7 @@ class TestDigestComputer:
 
         assert computer._get_last_run_time() is None
 
-    def test_save_last_run_time(self, temp_db, temp_state_dir):
+    def test_save_last_run_time(self, temp_db: Any, temp_state_dir: Any) -> None:
         """Test saving last run time."""
         computer = DigestComputer(str(temp_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -83,7 +84,7 @@ class TestDigestComputer:
             assert data["last_run_at"] == test_time.isoformat()
             assert data["version"] == "1.0"
 
-    def test_get_new_filings(self, populated_db):
+    def test_get_new_filings(self, populated_db: Any) -> None:
         """Test getting new filings from database."""
         computer = DigestComputer(str(populated_db))
 
@@ -102,7 +103,7 @@ class TestDigestComputer:
         assert "amount" in filing.keys()
         assert "url" in filing.keys()
 
-    def test_get_top_registrants(self, populated_db):
+    def test_get_top_registrants(self, populated_db: Any) -> None:
         """Test getting top registrants."""
         computer = DigestComputer(str(populated_db))
 
@@ -123,7 +124,7 @@ class TestDigestComputer:
         if len(registrants) > 1:
             assert registrants[0]["total_amount"] >= registrants[1]["total_amount"]
 
-    def test_get_issue_surges(self, populated_db):
+    def test_get_issue_surges(self, populated_db: Any) -> None:
         """Test getting issue surges."""
         computer = DigestComputer(str(populated_db))
 
@@ -143,7 +144,7 @@ class TestDigestComputer:
             assert "count_previous" in surge.keys()
             assert "pct_change" in surge.keys()
 
-    def test_format_amount(self, temp_db):
+    def test_format_amount(self, temp_db: Any) -> None:
         """Test amount formatting."""
         computer = DigestComputer(str(temp_db))
 
@@ -153,7 +154,7 @@ class TestDigestComputer:
         assert computer._format_amount(1000000) == "$1.0M"
         assert computer._format_amount(2500000) == "$2.5M"
 
-    def test_format_percentage(self, temp_db):
+    def test_format_percentage(self, temp_db: Any) -> None:
         """Test percentage formatting."""
         computer = DigestComputer(str(temp_db))
 
@@ -164,7 +165,7 @@ class TestDigestComputer:
         assert computer._format_percentage(10.0) == "∞"  # Represents infinity
 
     @patch("bot.digest.datetime")
-    def test_compute_digest_success(self, mock_datetime, populated_db, temp_state_dir):
+    def test_compute_digest_success(self, mock_datetime: Any, populated_db: Any, temp_state_dir: Any) -> None:
         """Test successful digest computation."""
         # Mock current time
         fixed_now = datetime(2023, 10, 15, 12, 0, 0)
@@ -183,7 +184,7 @@ class TestDigestComputer:
         # Verify state was saved
         assert computer.state_file.exists()
 
-    def test_compute_digest_no_data(self, temp_db, temp_state_dir):
+    def test_compute_digest_no_data(self, temp_db: Any, temp_state_dir: Any) -> None:
         """Test digest computation with no data."""
         computer = DigestComputer(str(temp_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -195,7 +196,7 @@ class TestDigestComputer:
             or "LobbyLens Daily Digest" in result
         )
 
-    def test_compute_digest_database_error(self, temp_state_dir):
+    def test_compute_digest_database_error(self, temp_state_dir: Any) -> None:
         """Test digest computation with database error."""
         # Use non-existent database
         computer = DigestComputer("/nonexistent/path.db")
@@ -208,7 +209,7 @@ class TestDigestComputer:
 class TestDigestFormatting:
     """Tests for digest message formatting."""
 
-    def test_digest_structure(self, populated_db, temp_state_dir):
+    def test_digest_structure(self, populated_db: Any, temp_state_dir: Any) -> None:
         """Test that digest has expected structure."""
         computer = DigestComputer(str(populated_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -225,7 +226,7 @@ class TestDigestFormatting:
         for header in section_headers:
             assert any(header in line for line in lines)
 
-    def test_digest_with_urls(self, populated_db, temp_state_dir):
+    def test_digest_with_urls(self, populated_db: Any, temp_state_dir: Any) -> None:
         """Test digest formatting with filing URLs."""
         computer = DigestComputer(str(populated_db))
         computer.state_file = temp_state_dir / "last_run.json"
@@ -236,7 +237,7 @@ class TestDigestFormatting:
         assert "http://example.com" in result or "View>" in result
 
 
-def test_compute_digest_convenience_function(populated_db):
+def test_compute_digest_convenience_function(populated_db: Any) -> None:
     """Test the convenience function."""
     result = compute_digest(str(populated_db))
 

@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from typing import Any, Dict, List, Optional
+
 from bot.run_v2 import (
     main,
     run_daily_digest,
@@ -23,8 +25,8 @@ class TestRunV2:
     @patch("bot.run_v2.DigestV2Formatter")
     @patch("bot.run_v2.SignalsDatabaseV2")
     def test_run_daily_digest_success(
-        self, mock_database_class, mock_formatter_class, mock_collector_class
-    ):
+        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+    ) -> None:
         """Test successful daily digest run"""
         # Mock components
         mock_collector = Mock()
@@ -60,8 +62,8 @@ class TestRunV2:
     @patch("bot.run_v2.DigestV2Formatter")
     @patch("bot.run_v2.SignalsDatabaseV2")
     def test_run_daily_digest_with_custom_params(
-        self, mock_database_class, mock_formatter_class, mock_collector_class
-    ):
+        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+    ) -> None:
         """Test daily digest with custom parameters"""
         # Mock components
         mock_collector = Mock()
@@ -75,7 +77,7 @@ class TestRunV2:
         # Mock data
         mock_signals = [Mock()]
         mock_digest = "Test Daily Digest"
-        mock_watchlist = []
+        mock_watchlist: List[Any] = []
 
         mock_collector.collect_all_signals.return_value = mock_signals
         mock_database.get_watchlist.return_value = mock_watchlist
@@ -93,8 +95,8 @@ class TestRunV2:
     @patch("bot.run_v2.DigestV2Formatter")
     @patch("bot.run_v2.SignalsDatabaseV2")
     def test_run_mini_digest_success(
-        self, mock_database_class, mock_formatter_class, mock_collector_class
-    ):
+        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+    ) -> None:
         """Test successful mini digest run"""
         # Mock components
         mock_collector = Mock()
@@ -127,8 +129,8 @@ class TestRunV2:
     @patch("bot.run_v2.DigestV2Formatter")
     @patch("bot.run_v2.SignalsDatabaseV2")
     def test_run_mini_digest_no_digest(
-        self, mock_database_class, mock_formatter_class, mock_collector_class
-    ):
+        self, mock_database_class: Any, mock_formatter_class: Any, mock_collector_class: Any
+    ) -> None:
         """Test mini digest when no digest is generated"""
         # Mock components
         mock_collector = Mock()
@@ -140,8 +142,8 @@ class TestRunV2:
         mock_database_class.return_value = mock_database
 
         # Mock data - no signals
-        mock_signals = []
-        mock_watchlist = []
+        mock_signals: List[Any] = []
+        mock_watchlist: List[Any] = []
 
         mock_collector.collect_all_signals.return_value = mock_signals
         mock_database.get_watchlist.return_value = mock_watchlist
@@ -159,11 +161,11 @@ class TestRunV2:
     @patch("bot.run_v2.DigestV2Formatter")
     def test_run_test_scenarios(
         self,
-        mock_formatter_class,
-        mock_rules_engine_class,
-        mock_validator_class,
-        mock_fixtures_class,
-    ):
+        mock_formatter_class: Any,
+        mock_rules_engine_class: Any,
+        mock_validator_class: Any,
+        mock_fixtures_class: Any,
+    ) -> None:
         """Test running test scenarios"""
         # Mock components
         mock_fixtures = Mock()
@@ -207,14 +209,14 @@ class TestRunV2:
         assert mock_validator.validate_mobile_formatting.call_count == 5
         assert mock_validator.validate_timezone_handling.call_count == 5
 
-    def test_run_quarterly_lda_ingest(self):
+    def test_run_quarterly_lda_ingest(self) -> None:
         """Test quarterly LDA ingest (placeholder)"""
         # This is a placeholder function, so we just test it doesn't raise
         run_quarterly_lda_ingest()
 
     @patch("bot.web_server_v2.create_web_server_v2")
     @patch("bot.run_v2.os.environ.get")
-    def test_run_web_server_default_port(self, mock_env_get, mock_create_server):
+    def test_run_web_server_default_port(self, mock_env_get: Any, mock_create_server: Any) -> None:
         """Test web server with default port"""
         # Mock environment
         mock_env_get.return_value = "8080"
@@ -232,7 +234,7 @@ class TestRunV2:
         mock_app.run.assert_called_once_with(host="0.0.0.0", port=8080, debug=False)
 
     @patch("bot.web_server_v2.create_web_server_v2")
-    def test_run_web_server_custom_port(self, mock_create_server):
+    def test_run_web_server_custom_port(self, mock_create_server: Any) -> None:
         """Test web server with custom port"""
         # Mock web server
         mock_app = Mock()
@@ -247,7 +249,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_daily_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_daily_mode(self, mock_parser_class, mock_run_daily):
+    def test_main_daily_mode(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
         """Test main function in daily mode"""
         # Mock parser
         mock_parser = Mock()
@@ -271,7 +273,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_mini_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_mini_mode(self, mock_parser_class, mock_run_mini):
+    def test_main_mini_mode(self, mock_parser_class: Any, mock_run_mini: Any) -> None:
         """Test main function in mini mode"""
         # Mock parser
         mock_parser = Mock()
@@ -295,7 +297,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_mini_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_mini_mode_no_digest(self, mock_parser_class, mock_run_mini):
+    def test_main_mini_mode_no_digest(self, mock_parser_class: Any, mock_run_mini: Any) -> None:
         """Test main function in mini mode when no digest is generated"""
         # Mock parser
         mock_parser = Mock()
@@ -319,7 +321,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_test_scenarios")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_test_mode(self, mock_parser_class, mock_run_test):
+    def test_main_test_mode(self, mock_parser_class: Any, mock_run_test: Any) -> None:
         """Test main function in test mode"""
         # Mock parser
         mock_parser = Mock()
@@ -340,7 +342,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_quarterly_lda_ingest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_quarterly_mode(self, mock_parser_class, mock_run_quarterly):
+    def test_main_quarterly_mode(self, mock_parser_class: Any, mock_run_quarterly: Any) -> None:
         """Test main function in quarterly mode"""
         # Mock parser
         mock_parser = Mock()
@@ -361,7 +363,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_web_server")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_server_mode(self, mock_parser_class, mock_run_server):
+    def test_main_server_mode(self, mock_parser_class: Any, mock_run_server: Any) -> None:
         """Test main function in server mode"""
         # Mock parser
         mock_parser = Mock()
@@ -382,7 +384,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_daily_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_dry_run(self, mock_parser_class, mock_run_daily):
+    def test_main_dry_run(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
         """Test main function with dry run flag"""
         # Mock parser
         mock_parser = Mock()
@@ -406,7 +408,7 @@ class TestRunV2:
 
     @patch("bot.run_v2.run_daily_digest")
     @patch("bot.run_v2.argparse.ArgumentParser")
-    def test_main_exception_handling(self, mock_parser_class, mock_run_daily):
+    def test_main_exception_handling(self, mock_parser_class: Any, mock_run_daily: Any) -> None:
         """Test main function exception handling"""
         # Mock parser
         mock_parser = Mock()
@@ -426,7 +428,7 @@ class TestRunV2:
         with pytest.raises(Exception, match="Test error"):
             main()
 
-    def test_main_argument_parser_setup(self):
+    def test_main_argument_parser_setup(self) -> None:
         """Test that argument parser is set up correctly"""
         import argparse
 

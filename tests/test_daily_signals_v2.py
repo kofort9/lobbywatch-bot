@@ -3,6 +3,7 @@ Tests for bot/daily_signals_v2.py
 """
 
 from datetime import datetime, timezone
+from typing import Any, Dict, List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -15,7 +16,7 @@ class TestDailySignalsCollectorV2:
     """Test DailySignalsCollectorV2 class"""
 
     @pytest.fixture
-    def config(self):
+    def config(self) -> Dict[str, str]:
         """Test configuration"""
         return {
             "CONGRESS_API_KEY": "test_congress_key",
@@ -23,16 +24,16 @@ class TestDailySignalsCollectorV2:
         }
 
     @pytest.fixture
-    def watchlist(self):
+    def watchlist(self) -> List[str]:
         """Test watchlist"""
         return ["Google", "privacy", "AI"]
 
     @pytest.fixture
-    def collector(self, config, watchlist):
+    def collector(self, config: Dict[str, str], watchlist: List[str]) -> DailySignalsCollectorV2:
         """Create collector instance"""
         return DailySignalsCollectorV2(config, watchlist)
 
-    def test_init(self, config, watchlist):
+    def test_init(self, config: Dict[str, str], watchlist: List[str]) -> None:
         """Test collector initialization"""
         collector = DailySignalsCollectorV2(config, watchlist)
 
@@ -44,12 +45,12 @@ class TestDailySignalsCollectorV2:
         assert collector.database is not None
         assert collector.session is not None
 
-    def test_init_no_watchlist(self, config):
+    def test_init_no_watchlist(self, config: Dict[str, str]) -> None:
         """Test collector initialization without watchlist"""
         collector = DailySignalsCollectorV2(config)
         assert collector.watchlist == []
 
-    def test_priority_weights(self, collector):
+    def test_priority_weights(self, collector: DailySignalsCollectorV2) -> None:
         """Test priority weights are set correctly"""
         expected_weights = {
             "final_rule": 5.0,
@@ -62,7 +63,7 @@ class TestDailySignalsCollectorV2:
         }
         assert collector.priority_weights == expected_weights
 
-    def test_keyword_issue_mapping(self, collector):
+    def test_keyword_issue_mapping(self, collector: DailySignalsCollectorV2) -> None:
         """Test keyword to issue code mapping"""
         assert "privacy" in collector.keyword_issue_mapping
         assert collector.keyword_issue_mapping["privacy"] == ["TEC"]
@@ -81,8 +82,8 @@ class TestDailySignalsCollectorV2:
     @patch("bot.daily_signals_v2.SignalsRulesEngine.process_signal")
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.store_signals")
     def test_collect_all_signals_success(
-        self, mock_store, mock_process, mock_reg_gov, mock_fr, mock_congress, collector
-    ):
+        self, mock_store: Any, mock_process: Any, mock_reg_gov: Any, mock_fr: Any, mock_congress: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test successful collection of all signals"""
         # Mock signal data
         mock_signal = SignalV2(
@@ -122,8 +123,8 @@ class TestDailySignalsCollectorV2:
         "bot.daily_signals_v2.DailySignalsCollectorV2._collect_regulations_gov_signals"
     )
     def test_collect_all_signals_with_errors(
-        self, mock_reg_gov, mock_fr, mock_congress, collector
-    ):
+        self, mock_reg_gov: Any, mock_fr: Any, mock_congress: Any, collector: DailySignalsCollectorV2
+    ) -> None:
         """Test collection with API errors"""
         # Mock errors
         mock_congress.side_effect = Exception("Congress API error")
@@ -135,7 +136,7 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_congress_signals_success(self, mock_get, collector):
+    def test_collect_congress_signals_success(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test successful Congress signals collection"""
         # Mock API responses
         bills_response = Mock()
@@ -178,7 +179,7 @@ class TestDailySignalsCollectorV2:
         assert signal.action_type == "hearing"
         assert "Hearing:" in signal.title
 
-    def test_collect_congress_signals_no_api_key(self, config):
+    def test_collect_congress_signals_no_api_key(self, config: Dict[str, str]) -> None:
         """Test Congress signals collection without API key"""
         config_no_key = config.copy()
         del config_no_key["CONGRESS_API_KEY"]
@@ -188,14 +189,14 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_congress_signals_api_error(self, mock_get, collector):
+    def test_collect_congress_signals_api_error(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test Congress signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
         result = collector._collect_congress_signals(24)
         assert result == []
 
-    def test_create_congress_signal_hearing(self, collector):
+    def test_create_congress_signal_hearing(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Congress signal for hearing"""
         bill = {"billId": "hr123", "title": "Test Bill"}
         action = {
@@ -214,7 +215,7 @@ class TestDailySignalsCollectorV2:
         assert "Hearing:" in signal.title
         assert "hr123" in signal.summary
 
-    def test_create_congress_signal_markup(self, collector):
+    def test_create_congress_signal_markup(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Congress signal for markup"""
         bill = {"billId": "hr123", "title": "Test Bill"}
         action = {
@@ -229,7 +230,7 @@ class TestDailySignalsCollectorV2:
         assert signal is not None
         assert "Markup:" in signal.title
 
-    def test_create_congress_signal_other_action(self, collector):
+    def test_create_congress_signal_other_action(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Congress signal for other action types"""
         bill = {"billId": "hr123", "title": "Test Bill"}
         action = {
@@ -244,16 +245,16 @@ class TestDailySignalsCollectorV2:
         assert signal is not None
         assert "Bill Action:" in signal.title
 
-    def test_create_congress_signal_error(self, collector):
+    def test_create_congress_signal_error(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Congress signal with invalid data"""
-        bill = {}  # Missing billId
-        action = {}
+        bill: Dict[str, Any] = {}  # Missing billId
+        action: Dict[str, Any] = {}
 
         signal = collector._create_congress_signal(bill, action)
         assert signal is None
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_success(self, mock_get, collector):
+    def test_collect_federal_register_signals_success(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test successful Federal Register signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -285,14 +286,14 @@ class TestDailySignalsCollectorV2:
         assert signal.agency == "EPA"
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_federal_register_signals_api_error(self, mock_get, collector):
+    def test_collect_federal_register_signals_api_error(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test Federal Register signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
         result = collector._collect_federal_register_signals(24)
         assert result == []
 
-    def test_create_federal_register_signal_success(self, collector):
+    def test_create_federal_register_signal_success(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Federal Register signal"""
         doc = {
             "document_number": "2024-001",
@@ -312,7 +313,7 @@ class TestDailySignalsCollectorV2:
         assert signal.title == "Test Rule"
         assert signal.agency == "EPA"
 
-    def test_create_federal_register_signal_with_comment_deadline(self, collector):
+    def test_create_federal_register_signal_with_comment_deadline(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Federal Register signal with comment deadline"""
         doc = {
             "document_number": "2024-001",
@@ -332,9 +333,9 @@ class TestDailySignalsCollectorV2:
         # None
         assert signal.deadline is None
 
-    def test_create_federal_register_signal_error(self, collector):
+    def test_create_federal_register_signal_error(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Federal Register signal with invalid data"""
-        doc = {}  # Missing required fields
+        doc: Dict[str, Any] = {}  # Missing required fields
 
         signal = collector._create_federal_register_signal(doc)
         # The method is designed to be robust and handle missing data
@@ -346,7 +347,7 @@ class TestDailySignalsCollectorV2:
         assert signal.summary == ""
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_success(self, mock_get, collector):
+    def test_collect_regulations_gov_signals_success(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test successful Regulations.gov signals collection"""
         # Mock API response
         mock_response = Mock()
@@ -377,7 +378,7 @@ class TestDailySignalsCollectorV2:
         assert signal.agency == "EPA"
         assert signal.comment_count == 150
 
-    def test_collect_regulations_gov_signals_no_api_key(self, config):
+    def test_collect_regulations_gov_signals_no_api_key(self, config: Dict[str, str]) -> None:
         """Test Regulations.gov signals collection without API key"""
         config_no_key = config.copy()
         del config_no_key["REGULATIONS_GOV_API_KEY"]
@@ -387,14 +388,14 @@ class TestDailySignalsCollectorV2:
         assert result == []
 
     @patch("bot.daily_signals_v2.requests.Session.get")
-    def test_collect_regulations_gov_signals_api_error(self, mock_get, collector):
+    def test_collect_regulations_gov_signals_api_error(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test Regulations.gov signals collection with API error"""
         mock_get.side_effect = Exception("API error")
 
         result = collector._collect_regulations_gov_signals(24)
         assert result == []
 
-    def test_create_regulations_gov_signal_success(self, collector):
+    def test_create_regulations_gov_signal_success(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Regulations.gov signal"""
         docket = {
             "id": "EPA-2024-001",
@@ -415,14 +416,14 @@ class TestDailySignalsCollectorV2:
         assert signal.comment_count == 150
         assert signal.metric_json is not None
 
-    def test_create_regulations_gov_signal_error(self, collector):
+    def test_create_regulations_gov_signal_error(self, collector: DailySignalsCollectorV2) -> None:
         """Test creating Regulations.gov signal with invalid data"""
-        docket = {}  # Missing required fields
+        docket: Dict[str, Any] = {}  # Missing required fields
 
         signal = collector._create_regulations_gov_signal(docket)
         assert signal is None
 
-    def test_map_bill_to_issues(self, collector):
+    def test_map_bill_to_issues(self, collector: DailySignalsCollectorV2) -> None:
         """Test mapping bill data to issue codes"""
         bill = {"title": "Privacy Protection Act"}
         action = {"text": "A bill about data privacy and cybersecurity"}
@@ -432,7 +433,7 @@ class TestDailySignalsCollectorV2:
         assert "TEC" in issue_codes  # privacy, data
         assert "DEF" in issue_codes  # cybersecurity
 
-    def test_map_bill_to_issues_no_matches(self, collector):
+    def test_map_bill_to_issues_no_matches(self, collector: DailySignalsCollectorV2) -> None:
         """Test mapping bill data with no keyword matches"""
         bill = {"title": "Random Bill"}
         action = {"text": "A bill about nothing specific"}
@@ -440,7 +441,7 @@ class TestDailySignalsCollectorV2:
         issue_codes = collector._map_bill_to_issues(bill, action)
         assert issue_codes == []
 
-    def test_map_fr_document_to_issues(self, collector):
+    def test_map_fr_document_to_issues(self, collector: DailySignalsCollectorV2) -> None:
         """Test mapping Federal Register document to issue codes"""
         doc = {
             "title": "Climate Change Regulation",
@@ -452,7 +453,7 @@ class TestDailySignalsCollectorV2:
         assert "ENV" in issue_codes  # climate, carbon, emissions
         assert "ENE" in issue_codes  # renewable, energy
 
-    def test_map_docket_to_issues(self, collector):
+    def test_map_docket_to_issues(self, collector: DailySignalsCollectorV2) -> None:
         """Test mapping docket data to issue codes"""
         docket = {
             "title": "Healthcare Reform Docket",
@@ -463,7 +464,7 @@ class TestDailySignalsCollectorV2:
 
         assert "HCR" in issue_codes  # healthcare, medicare, pharmaceutical
 
-    def test_map_issues_deduplication(self, collector):
+    def test_map_issues_deduplication(self, collector: DailySignalsCollectorV2) -> None:
         """Test that issue code mapping removes duplicates"""
         bill = {"title": "Privacy and Data Protection Act"}
         action = {"text": "A bill about privacy, data, and cybersecurity"}
@@ -476,61 +477,61 @@ class TestDailySignalsCollectorV2:
         assert "DEF" in issue_codes
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_recent_signals")
-    def test_get_signals_for_digest(self, mock_get_recent, collector):
+    def test_get_signals_for_digest(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test getting signals for digest"""
         mock_signals = [Mock()]
-        mock_get_recent.return_value = mock_signals
+        mock_get.return_value = mock_signals
 
         result = collector.get_signals_for_digest(24)
 
-        mock_get_recent.assert_called_once_with(24)
+        mock_get.assert_called_once_with(24)
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_watchlist_signals")
-    def test_get_watchlist_signals(self, mock_get_watchlist, collector):
+    def test_get_watchlist_signals(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test getting watchlist signals"""
         mock_signals = [Mock()]
-        mock_get_watchlist.return_value = mock_signals
+        mock_get.return_value = mock_signals
 
         result = collector.get_watchlist_signals("channel123")
 
-        mock_get_watchlist.assert_called_once_with("channel123")
+        mock_get.assert_called_once_with("channel123")
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_high_priority_signals")
-    def test_get_high_priority_signals(self, mock_get_high_priority, collector):
+    def test_get_high_priority_signals(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test getting high-priority signals"""
         mock_signals = [Mock()]
-        mock_get_high_priority.return_value = mock_signals
+        mock_get.return_value = mock_signals
 
         result = collector.get_high_priority_signals(5.0)
 
-        mock_get_high_priority.assert_called_once_with(5.0)
+        mock_get.assert_called_once_with(5.0)
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_docket_surges")
-    def test_get_docket_surges(self, mock_get_surges, collector):
+    def test_get_docket_surges(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test getting docket surge signals"""
         mock_signals = [Mock()]
-        mock_get_surges.return_value = mock_signals
+        mock_get.return_value = mock_signals
 
         result = collector.get_docket_surges(200.0)
 
-        mock_get_surges.assert_called_once_with(200.0)
+        mock_get.assert_called_once_with(200.0)
         assert result == mock_signals
 
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.get_deadline_signals")
-    def test_get_deadline_signals(self, mock_get_deadlines, collector):
+    def test_get_deadline_signals(self, mock_get: Any, collector: DailySignalsCollectorV2) -> None:
         """Test getting deadline signals"""
         mock_signals = [Mock()]
-        mock_get_deadlines.return_value = mock_signals
+        mock_get.return_value = mock_signals
 
         result = collector.get_deadline_signals(7)
 
-        mock_get_deadlines.assert_called_once_with(7)
+        mock_get.assert_called_once_with(7)
         assert result == mock_signals
 
-    def test_keyword_issue_mapping_comprehensive(self, collector):
+    def test_keyword_issue_mapping_comprehensive(self, collector: DailySignalsCollectorV2) -> None:
         """Test that keyword mapping covers major categories"""
         mapping = collector.keyword_issue_mapping
 
@@ -594,7 +595,7 @@ class TestDailySignalsCollectorV2:
         assert "oversight" in mapping
         assert "accountability" in mapping
 
-    def test_priority_weights_ordering(self, collector):
+    def test_priority_weights_ordering(self, collector: DailySignalsCollectorV2) -> None:
         """Test that priority weights are ordered correctly"""
         weights = collector.priority_weights
 

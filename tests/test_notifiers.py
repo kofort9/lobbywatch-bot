@@ -7,18 +7,19 @@ import requests
 
 from bot.notifiers.base import NotificationError
 from bot.notifiers.slack import SlackNotifier
+from typing import Any, Dict, List, Optional
 
 
 class TestSlackNotifier:
     """Tests for Slack notifier."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test SlackNotifier initialization."""
         webhook_url = "https://hooks.slack.com/services/TEST/TEST/TEST"
         notifier = SlackNotifier(webhook_url)
         assert notifier.webhook_url == webhook_url
 
-    def test_send_success(self, mock_slack_webhook):
+    def test_send_success(self, mock_slack_webhook: Any) -> None:
         """Test successful message sending."""
         notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
 
@@ -34,7 +35,7 @@ class TestSlackNotifier:
         assert request.json()["username"] == "LobbyLens"
         assert "icon_emoji" in request.json()
 
-    def test_send_http_error(self, mock_slack_webhook):
+    def test_send_http_error(self, mock_slack_webhook: Any) -> None:
         """Test handling of HTTP errors."""
         mock_slack_webhook.post(
             "https://hooks.slack.com/services/TEST/TEST/TEST",
@@ -47,7 +48,7 @@ class TestSlackNotifier:
         with pytest.raises(NotificationError, match="Slack notification failed"):
             notifier.send("Test message")
 
-    def test_send_slack_error_response(self, mock_slack_webhook):
+    def test_send_slack_error_response(self, mock_slack_webhook: Any) -> None:
         """Test handling of Slack error responses."""
         mock_slack_webhook.post(
             "https://hooks.slack.com/services/TEST/TEST/TEST",
@@ -61,7 +62,7 @@ class TestSlackNotifier:
             notifier.send("Test message")
 
     @patch("requests.post")
-    def test_send_timeout(self, mock_post):
+    def test_send_timeout(self, mock_post: Any) -> None:
         """Test handling of request timeouts."""
         mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
 
@@ -75,7 +76,7 @@ class TestSlackNotifier:
         args, kwargs = mock_post.call_args
         assert kwargs["timeout"] == 30
 
-    def test_send_with_special_formatting(self, mock_slack_webhook):
+    def test_send_with_special_formatting(self, mock_slack_webhook: Any) -> None:
         """Test sending messages with Slack formatting."""
         notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
 
