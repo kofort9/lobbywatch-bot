@@ -167,9 +167,9 @@ def run_scheduled_digests(db_manager: DatabaseManager, slack_app: SlackApp,
 )
 @click.option(
     "--port",
-    default=3000,
+    default=None,
     type=int,
-    help="Port for web server mode"
+    help="Port for web server mode (defaults to Railway PORT or 8000)"
 )
 def main(mode: str, channel: str, dry_run: bool, skip_fetch: bool, 
          log_level: str, port: int) -> None:
@@ -208,6 +208,10 @@ def main(mode: str, channel: str, dry_run: bool, skip_fetch: bool,
                 logger.warning("SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set - Slack features will be disabled")
         
         app = create_web_server(slack_app)
+        
+        # Use Railway's PORT environment variable or default
+        if port is None:
+            port = int(os.environ.get('PORT', 8000))
         
         logger.info(f"🚀 Starting web server on port {port}")
         try:
