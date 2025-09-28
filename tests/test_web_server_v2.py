@@ -25,9 +25,9 @@ class TestWebServerV2:
 
     def test_create_web_server_v2(self) -> None:
         """Test web server creation"""
-        app = create_web_server_v2()
+        app = create_web_server()
         assert app is not None
-        assert app.name == "bot.web_server_v2"
+        assert app.name == "bot.web_server"
 
     def test_root_endpoint(self, client: Any) -> None:
         """Test root endpoint"""
@@ -98,7 +98,7 @@ class TestWebServerV2:
         data = response.get_json()
         assert data["status"] == "error"
 
-    @patch("bot.web_server_v2.run_daily_digest")
+    @patch("bot.run.run_daily_digest")
     def test_manual_digest_daily(self, mock_run_daily: Any, client: Any) -> None:
         """Test manual daily digest endpoint"""
         mock_run_daily.return_value = "Test Daily Digest"
@@ -118,7 +118,7 @@ class TestWebServerV2:
 
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
-    @patch("bot.web_server_v2.run_mini_digest")
+    @patch("bot.run.run_mini_digest")
     def test_manual_digest_mini_success(self, mock_run_mini: Any, client: Any) -> None:
         """Test manual mini digest endpoint with success"""
         mock_run_mini.return_value = "Test Mini Digest"
@@ -136,7 +136,7 @@ class TestWebServerV2:
 
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
-    @patch("bot.web_server_v2.run_mini_digest")
+    @patch("bot.run.run_mini_digest")
     def test_manual_digest_mini_no_digest(
         self, mock_run_mini: Any, client: Any
     ) -> None:
@@ -165,7 +165,7 @@ class TestWebServerV2:
         data = response.get_json()
         assert data["error"] == "Invalid digest type"
 
-    @patch("bot.web_server_v2.run_daily_digest")
+    @patch("bot.run.run_daily_digest")
     def test_manual_digest_error(self, mock_run_daily: Any, client: Any) -> None:
         """Test manual digest with error"""
         mock_run_daily.side_effect = Exception("Test error")
@@ -199,7 +199,7 @@ class TestWebServerV2:
         assert "/lobbypulse" in data["text"]
         assert "/watchlist" in data["text"]
 
-    @patch("bot.web_server_v2.run_daily_digest")
+    @patch("bot.run.run_daily_digest")
     def test_handle_slash_command_lobbypulse_daily(self,
         mock_run_daily: Any,
         client: Any) -> None:
@@ -223,7 +223,7 @@ class TestWebServerV2:
 
         mock_run_daily.assert_called_once_with(24, "test_channel")
 
-    @patch("bot.web_server_v2.run_mini_digest")
+    @patch("bot.run.run_mini_digest")
     def test_handle_slash_command_lobbypulse_mini_success(self,
         mock_run_mini: Any,
         client: Any) -> None:
@@ -247,7 +247,7 @@ class TestWebServerV2:
 
         mock_run_mini.assert_called_once_with(4, "test_channel")
 
-    @patch("bot.web_server_v2.run_mini_digest")
+    @patch("bot.run.run_mini_digest")
     def test_handle_slash_command_lobbypulse_mini_no_digest(
         self, mock_run_mini: Any, client: Any
     ) -> None:
@@ -269,7 +269,7 @@ class TestWebServerV2:
         assert data["response_type"] == "ephemeral"
         assert data["text"] == "No mini-digest - thresholds not met"
 
-    @patch("bot.web_server_v2.run_daily_digest")
+    @patch("bot.run.run_daily_digest")
     def test_handle_slash_command_lobbypulse_error(self,
         mock_run_daily: Any,
         client: Any) -> None:
