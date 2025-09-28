@@ -20,7 +20,12 @@ def create_web_server_v2() -> Flask:
     @app.route("/", methods=["GET"])
     def root():
         """Root endpoint."""
-        return jsonify({"service": "lobbylens-v2", "status": "running"})
+        return jsonify({
+            "service": "lobbylens-v2", 
+            "status": "running",
+            "version": "2.0.0",
+            "features": ["industry_snapshots", "priority_scoring", "mobile_formatting", "watchlist_alerts"]
+        })
 
     @app.route("/health", methods=["GET"])
     def health_check():
