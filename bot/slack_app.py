@@ -6,15 +6,15 @@ import json
 import logging
 import os
 import time
-from typing import Dict, List, Optional, Any
 import urllib.parse
+from typing import Any, Dict, List, Optional
 
 import requests
 
 from .config import settings
 from .database import DatabaseManager
-from .matching import MatchingService
 from .enhanced_digest import EnhancedDigestComputer
+from .matching import MatchingService
 
 logger = logging.getLogger(__name__)
 

@@ -3,8 +3,8 @@
 import logging
 import re
 import sqlite3
-from typing import Dict, List, Optional, Tuple, Any
 from difflib import SequenceMatcher
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

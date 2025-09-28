@@ -3,12 +3,12 @@ LobbyLens Signals v2 - Enhanced data model and rules engine
 Implements deterministic signal classification, urgency, priority scoring, and industry mapping.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any, Union
 import json
 import re
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 
 class SignalType(Enum):

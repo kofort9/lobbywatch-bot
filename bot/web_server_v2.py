@@ -2,9 +2,10 @@
 
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
+
 from bot.run_v2 import run_daily_digest, run_mini_digest
 from bot.signals_database_v2 import SignalsDatabaseV2
 

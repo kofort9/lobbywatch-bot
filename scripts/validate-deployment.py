@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Pre-deployment validation script for LobbyLens."""
 
-import os
-import sys
 import json
-import requests
+import os
 import subprocess
-from typing import List, Dict, Any
+import sys
+from typing import Any, Dict, List
+
+import requests
 
 
 class DeploymentValidator:
@@ -134,9 +135,9 @@ class DeploymentValidator:
         print("\n🌐 Validating web server...")
 
         try:
-            from bot.web_server import create_web_server
-            from bot.slack_app import SlackApp
             from bot.database import DatabaseManager
+            from bot.slack_app import SlackApp
+            from bot.web_server import create_web_server
 
             # Create test app
             db_manager = DatabaseManager(":memory:")

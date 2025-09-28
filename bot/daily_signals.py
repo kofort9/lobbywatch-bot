@@ -3,9 +3,9 @@
 import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 import requests
 from requests.adapters import HTTPAdapter

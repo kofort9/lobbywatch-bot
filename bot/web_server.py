@@ -2,9 +2,9 @@
 
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ def create_web_server(slack_app=None) -> Flask:
     app = Flask(__name__)
 
     # Import v2 components (will be consolidated)
-    from bot.signals_database_v2 import SignalsDatabaseV2
     from bot.run import run_daily_digest, run_mini_digest
+    from bot.signals_database_v2 import SignalsDatabaseV2
 
     database = SignalsDatabaseV2()
 

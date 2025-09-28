@@ -1,8 +1,9 @@
 """Tests for notification system."""
 
+from unittest.mock import Mock, patch
+
 import pytest
 import requests
-from unittest.mock import Mock, patch
 
 from bot.notifiers.base import NotificationError
 from bot.notifiers.slack import SlackNotifier

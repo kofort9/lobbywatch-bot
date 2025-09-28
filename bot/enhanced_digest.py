@@ -4,7 +4,7 @@ import json
 import logging
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Set, Any, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .database import DatabaseManager
 

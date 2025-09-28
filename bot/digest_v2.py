@@ -4,9 +4,11 @@ Implements the comprehensive digest format with character budgets and mobile-fri
 """
 
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 import pytz
-from bot.signals_v2 import SignalV2, SignalType, Urgency, SignalDeduplicator
+
+from bot.signals_v2 import SignalDeduplicator, SignalType, SignalV2, Urgency
 
 
 class DigestV2Formatter:

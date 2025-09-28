@@ -3,7 +3,9 @@
 import logging
 import os
 import sys
-from datetime import datetime, timezone, time as dt_time
+from datetime import datetime
+from datetime import time as dt_time
+from datetime import timezone
 from typing import Dict, List, Optional
 
 import click

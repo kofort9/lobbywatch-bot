@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .config import settings
-from .digest import compute_digest, DigestError
+from .digest import DigestError, compute_digest
 from .notifiers.base import NotificationError
 from .notifiers.slack import SlackNotifier
 
@@ -23,6 +23,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     import logging
     from datetime import datetime, timezone
     from typing import List, Optional
+
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2
@@ -55,6 +56,7 @@ def run_mini_digest(
     import logging
     from datetime import datetime, timezone
     from typing import List, Optional
+
     from bot.daily_signals_v2 import DailySignalsCollectorV2
     from bot.digest_v2 import DigestV2Formatter
     from bot.signals_database_v2 import SignalsDatabaseV2

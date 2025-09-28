@@ -8,6 +8,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from typing import List, Optional
+
 from bot.config import settings
 from bot.daily_signals_v2 import DailySignalsCollectorV2
 from bot.digest_v2 import DigestV2Formatter

@@ -2,10 +2,11 @@
 
 import logging
 import os
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
 import psycopg2
 import psycopg2.extras
-from urllib.parse import urlparse
 
 from .database import DatabaseManager
 

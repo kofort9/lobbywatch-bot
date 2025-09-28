@@ -3,13 +3,15 @@ LobbyLens Daily Signals v2 - Enhanced collector with v2 signal processing
 Integrates with the new signal model, rules engine, and database.
 """
 
-import requests
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any, Optional
 import logging
-from bot.signals_v2 import SignalV2, SignalsRulesEngine
-from bot.signals_database_v2 import SignalsDatabaseV2
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+import requests
+
 from bot.config import settings
+from bot.signals_database_v2 import SignalsDatabaseV2
+from bot.signals_v2 import SignalsRulesEngine, SignalV2
 
 logger = logging.getLogger(__name__)
 

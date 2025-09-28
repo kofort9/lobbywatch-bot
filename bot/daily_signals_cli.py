@@ -9,8 +9,8 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .config import settings
-from .database_postgres import create_database_manager
 from .daily_signals import DailySignalsCollector
+from .database_postgres import create_database_manager
 from .signals_database import SignalsDatabase
 from .signals_digest import SignalsDigestFormatter
 

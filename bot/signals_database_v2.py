@@ -3,11 +3,12 @@ LobbyLens Signals Database v2 - Enhanced schema for v2 signals
 Supports the new signal model with priority scoring, urgency, and industry tagging.
 """
 
-import sqlite3
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any, Optional
 import json
-from bot.signals_v2 import SignalV2, SignalType, Urgency
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+from bot.signals_v2 import SignalType, SignalV2, Urgency
 
 
 class SignalsDatabaseV2:

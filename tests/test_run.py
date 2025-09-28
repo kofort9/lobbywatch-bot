@@ -1,14 +1,14 @@
 """Tests for main runner functionality."""
 
 import os
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
 
-from bot.run import main, fetch_data, create_notifier, setup_logging
 from bot.config import Settings
 from bot.notifiers.base import NotificationError
+from bot.run import create_notifier, fetch_data, main, setup_logging
 
 
 class TestFetchData:

@@ -3,9 +3,10 @@ LobbyLens Test Fixtures v2 - Comprehensive test data for v2 signals
 Implements the test fixtures specified in the requirements.
 """
 
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
-from bot.signals_v2 import SignalV2, SignalType, Urgency
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
+
+from bot.signals_v2 import SignalType, SignalV2, Urgency
 
 
 class TestFixturesV2:
