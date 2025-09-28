@@ -11,8 +11,21 @@ import sys
 
 def main():
     """Start LobbyLens web server for Railway deployment."""
-    # Set default port for Railway
-    port = int(os.environ.get('PORT', 8000))
+    # Get port from environment, handling Railway's variable expansion
+    port_env = os.environ.get('PORT', '8000')
+    
+    # Railway sometimes passes '$PORT' as literal string, handle this case
+    if port_env == '$PORT':
+        print("Warning: Got literal '$PORT', using default port 8000")
+        port = 8000
+    else:
+        try:
+            port = int(port_env)
+        except (ValueError, TypeError):
+            print(f"Warning: Invalid PORT value '{port_env}', using default port 8000")
+            port = 8000
+    
+    print(f"Starting LobbyLens web server on port {port}")
     
     # Import and run the enhanced server mode
     from bot.enhanced_run import main as enhanced_main
