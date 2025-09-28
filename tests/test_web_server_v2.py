@@ -3,13 +3,13 @@ Tests for bot/web_server_v2.py
 """
 
 from typing import Any
-# from unittest.mock import patch
 
 import pytest
 
 from bot.web_server import create_web_server
 
 
+# from unittest.mock import patch
 class TestWebServerV2:
     """Test web_server_v2 module"""
 
@@ -120,7 +120,9 @@ class TestWebServerV2:
     #         mock_run_daily.assert_called_once_with(24, "test_channel")
 
     #     @patch("bot.run.run_mini_digest")
-    # def test_manual_digest_mini_success(self, mock_run_mini: Any, client: Any) -> None:
+    # def test_manual_digest_mini_success(
+    #     self, mock_run_mini: Any, client: Any
+    # ) -> None:
     #         """Test manual mini digest endpoint with success"""
     #         mock_run_mini.return_value = "Test Mini Digest"
 

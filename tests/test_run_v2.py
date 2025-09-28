@@ -265,7 +265,9 @@ class TestRunV2:
 
     # Verify
     #         mock_create_server.assert_called_once()
-    #         mock_app.run.assert_called_once_with(host="0.0.0.0", port=9000, debug=False)
+    #         mock_app.run.assert_called_once_with(
+    #             host="0.0.0.0", port=9000, debug=False
+    #         )
 
     @patch("bot.run.run_daily_digest")
     def test_main_daily_mode(self, mock_run_daily: Any) -> None:
@@ -478,4 +480,4 @@ class TestRunV2:
     #                 )
 
     # Verify arguments were added
-    #                 assert mock_parser.add_argument.call_count >= 5  # At least 5 arguments
+    #                 assert mock_parser.add_argument.call_count >= 5  # At least 5 args
