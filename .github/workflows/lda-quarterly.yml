@@ -1,0 +1,76 @@
+name: LDA Quarterly Update
+
+on:
+  schedule:
+    # Run on the 15th of each month at 08:00 UTC (quarterly filings are due 45 days after quarter end)
+    - cron: "0 8 15 * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Update mode'
+        required: true
+        default: 'update'
+        type: choice
+        options:
+        - update
+        - backfill
+      start_year:
+        description: 'Start year (for backfill mode)'
+        required: false
+        type: string
+      end_year:
+        description: 'End year (for backfill mode)'
+        required: false
+        type: string
+
+jobs:
+  lda-update:
+    name: Update LDA Data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run LDA quarterly update
+        if: ${{ github.event.inputs.mode != 'backfill' }}
+        env:
+          ENABLE_LDA_V1: true
+          LDA_DATA_SOURCE: api
+          LDA_API_KEY: ${{ secrets.LDA_API_KEY }}
+          LDA_API_BASE_URL: https://lda.senate.gov/api/v1/
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOG_LEVEL: INFO
+        run: |
+          python -m bot.lda_scheduler
+
+      - name: Run LDA backfill
+        if: ${{ github.event.inputs.mode == 'backfill' }}
+        env:
+          ENABLE_LDA_V1: true
+          LDA_DATA_SOURCE: api
+          LDA_API_KEY: ${{ secrets.LDA_API_KEY }}
+          LDA_API_BASE_URL: https://lda.senate.gov/api/v1/
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOG_LEVEL: INFO
+        run: |
+          python -m bot.lda_scheduler backfill ${{ github.event.inputs.start_year }} ${{ github.event.inputs.end_year }}
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lda-update-logs
+          path: "*.log"
+          retention-days: 7
