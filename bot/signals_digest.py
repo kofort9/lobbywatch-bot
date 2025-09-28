@@ -68,7 +68,7 @@ class SignalsDigestFormatter:
                 lines.append(self._format_surge_signal(signal))
         
         # E. New bills & actions (max 5) - grouped by bill
-        bill_actions = self._get_bill_actions(processed_signals)[:5]
+        bill_actions = self._group_signals_by_bill(processed_signals)[:5]
         if bill_actions:
             lines.append(f"\n📜 **New Bills & Actions** ({len(bill_actions)}):")
             for signal in bill_actions:
@@ -229,8 +229,10 @@ class SignalsDigestFormatter:
         elif source == 'congress':
             return 'bill'
         elif source == 'federal_register':
-            if 'rule' in title or 'regulation' in title:
+            if any(word in title for word in ['rule', 'regulation', 'final rule', 'proposed rule', 'interim final rule']):
                 return 'regulation'
+            elif any(word in title for word in ['hearing', 'meeting', 'conference', 'workshop']):
+                return 'hearing'
             else:
                 return 'notice'
         elif source == 'regulations_gov':
@@ -271,11 +273,124 @@ class SignalsDigestFormatter:
                 bills.append(signal)
         return sorted(bills, key=lambda x: x.get('priority_score', 0), reverse=True)
 
+    def _group_signals_by_bill(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Group signals by bill ID to avoid duplicates."""
+        bill_groups = {}
+        
+        for signal in signals:
+            if signal.get('signal_type') == 'bill':
+                bill_id = signal.get('bill_id', 'unknown')
+                if bill_id not in bill_groups:
+                    bill_groups[bill_id] = {
+                        'signals': [],
+                        'highest_priority': 0,
+                        'latest_timestamp': None
+                    }
+                
+                bill_groups[bill_id]['signals'].append(signal)
+                priority = signal.get('priority_score', 0)
+                if priority > bill_groups[bill_id]['highest_priority']:
+                    bill_groups[bill_id]['highest_priority'] = priority
+                
+                timestamp = signal.get('timestamp', '')
+                if not bill_groups[bill_id]['latest_timestamp'] or timestamp > bill_groups[bill_id]['latest_timestamp']:
+                    bill_groups[bill_id]['latest_timestamp'] = timestamp
+        
+        # Return the highest priority signal from each bill group
+        grouped_bills = []
+        for bill_id, group in bill_groups.items():
+            # Find the highest priority signal in this group
+            best_signal = max(group['signals'], key=lambda x: x.get('priority_score', 0))
+            grouped_bills.append(best_signal)
+        
+        return sorted(grouped_bills, key=lambda x: x.get('priority_score', 0), reverse=True)
+
+    def _group_signals_by_docket(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Group signals by docket ID to avoid duplicates."""
+        docket_groups = {}
+        
+        for signal in signals:
+            if signal.get('signal_type') == 'docket':
+                docket_id = signal.get('docket_id', 'unknown')
+                if docket_id not in docket_groups:
+                    docket_groups[docket_id] = {
+                        'signals': [],
+                        'highest_priority': 0,
+                        'total_comments': 0
+                    }
+                
+                docket_groups[docket_id]['signals'].append(signal)
+                priority = signal.get('priority_score', 0)
+                if priority > docket_groups[docket_id]['highest_priority']:
+                    docket_groups[docket_id]['highest_priority'] = priority
+                
+                # Sum up comment counts
+                metric_json = signal.get('metric_json', {})
+                comment_count = metric_json.get('comment_count', 0)
+                docket_groups[docket_id]['total_comments'] += comment_count
+        
+        # Return the highest priority signal from each docket group
+        grouped_dockets = []
+        for docket_id, group in docket_groups.items():
+            # Find the highest priority signal in this group
+            best_signal = max(group['signals'], key=lambda x: x.get('priority_score', 0))
+            # Update comment count to be the total for the group
+            best_signal['metric_json'] = best_signal.get('metric_json', {})
+            best_signal['metric_json']['comment_count'] = group['total_comments']
+            grouped_dockets.append(best_signal)
+        
+        return sorted(grouped_dockets, key=lambda x: x.get('priority_score', 0), reverse=True)
+
+    def _group_signals_by_agency(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Group low-priority signals by agency to reduce clutter."""
+        agency_groups = {}
+        
+        for signal in signals:
+            if signal.get('signal_type') == 'notice' and signal.get('priority_score', 0) < 2.0:
+                agency = signal.get('agency', 'Unknown Agency')
+                if agency not in agency_groups:
+                    agency_groups[agency] = {
+                        'signals': [],
+                        'total_count': 0,
+                        'issues': set()
+                    }
+                
+                agency_groups[agency]['signals'].append(signal)
+                agency_groups[agency]['total_count'] += 1
+                
+                # Collect issue codes
+                issue_codes = self._parse_issue_codes(signal.get('issue_codes', []))
+                agency_groups[agency]['issues'].update(issue_codes)
+        
+        # Create bundled signals for agencies with multiple low-priority notices
+        bundled_signals = []
+        for agency, group in agency_groups.items():
+            if group['total_count'] >= 3:  # Bundle if 3+ notices
+                bundled_signal = {
+                    'title': f"{agency}: {group['total_count']} administrative notices",
+                    'agency': agency,
+                    'signal_type': 'notice_bundle',
+                    'priority_score': 1.5,  # Slightly higher than individual notices
+                    'issue_codes': list(group['issues']),
+                    'link': f"https://www.federalregister.gov/agencies/{agency.lower().replace(' ', '-')}",
+                    'bundle_count': group['total_count']
+                }
+                bundled_signals.append(bundled_signal)
+            else:
+                # Keep individual signals if less than 3
+                bundled_signals.extend(group['signals'])
+        
+        return sorted(bundled_signals, key=lambda x: x.get('priority_score', 0), reverse=True)
+
     def _format_watchlist_signal(self, signal: Dict[str, Any]) -> str:
         """Format a watchlist signal."""
         title = signal.get('title', '')
         issues = self._format_issues(signal.get('issue_codes', []))
         link = signal.get('link', '')
+        
+        # Truncate title to avoid ellipses
+        if len(title) > 80:
+            title = title[:77] + "..."
         
         # Extract key info from title
         if 'hearing' in title.lower():
@@ -290,6 +405,10 @@ class SignalsDigestFormatter:
         title = signal.get('title', '')
         issues = self._format_issues(signal.get('issue_codes', []))
         link = signal.get('link', '')
+        
+        # Truncate title to avoid ellipses
+        if len(title) > 80:
+            title = title[:77] + "..."
         
         # Add signal type prefix
         signal_type = signal.get('signal_type', '')
@@ -332,7 +451,20 @@ class SignalsDigestFormatter:
         link = signal.get('link', '')
         bill_id = signal.get('bill_id', '')
         
+        # Truncate title to avoid ellipses
+        if len(title) > 60:
+            title = title[:57] + "..."
+        
         return f"• {bill_id} — {title} • Issues: {issues} • <{link}|Congress>"
+
+    def _format_bundled_notice_signal(self, signal: Dict[str, Any]) -> str:
+        """Format a bundled notice signal."""
+        title = signal.get('title', '')
+        issues = self._format_issues(signal.get('issue_codes', []))
+        link = signal.get('link', '')
+        bundle_count = signal.get('bundle_count', 0)
+        
+        return f"• {title} • Issues: {issues} • <{link}|FR search>"
 
     def _format_issues(self, issue_codes) -> str:
         """Format issue codes for display."""
