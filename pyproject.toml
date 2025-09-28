@@ -41,6 +41,7 @@ dev = [
 [project.scripts]
 lobbylens = "bot.run:main"
 lobbylens-enhanced = "bot.enhanced_run:main"
+lobbylens-signals = "bot.daily_signals_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["bot*"]
