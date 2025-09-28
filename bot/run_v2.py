@@ -5,6 +5,7 @@ Integrates the complete v2 system with rules engine, database, and digest format
 
 import argparse
 import logging
+import os
 from datetime import datetime, timezone
 from typing import List, Optional
 from bot.config import settings
@@ -123,8 +124,12 @@ def run_quarterly_lda_ingest() -> None:
     logger.info("Quarterly LDA ingest would run here")
 
 
-def run_web_server(port: int = 8000) -> None:
+def run_web_server(port: int = None) -> None:
     """Run web server for Slack integration"""
+    # Use Railway's dynamic port if available
+    if port is None:
+        port = int(os.environ.get('PORT', 8000))
+    
     logger.info(f"Starting web server on port {port}")
     
     from bot.web_server_v2 import create_web_server_v2
