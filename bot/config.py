@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     )  # Postgres for production
 
     # API Keys (Legacy - no longer available)
-    opensecrets_api_key: Optional[str] = Field(default=None, alias="OPENSECRETS_API_KEY")
+    opensecrets_api_key: Optional[str] = Field(
+        default=None, alias="OPENSECRETS_API_KEY"
+    )
     propublica_api_key: Optional[str] = Field(default=None, alias="PROPUBLICA_API_KEY")
 
     # Daily Signals API Keys
