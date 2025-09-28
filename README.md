@@ -1,18 +1,52 @@
 # 🔍 LobbyLens
 
-A daily messaging bot that summarizes fresh U.S. lobbying activity from OpenSecrets and ProPublica APIs, sending concise digests via Slack.
+A quarterly lobbying analysis bot with daily regulatory signals, providing comprehensive insights into U.S. lobbying activity and related government actions.
+
+> **📋 Project Pivot Note (v2)**: Originally designed for real-time lobbying data, LobbyLens has evolved to work with the reality that official LDA data is quarterly and real-time APIs are no longer available. We now provide quarterly deep-dives on actual lobbying data plus daily signals from adjacent government sources (bills, hearings, regulations, etc.).
 
 ![Tests](https://github.com/your-username/lobbylens/workflows/Tests%20and%20Code%20Quality/badge.svg)
 ![Daily Digest](https://github.com/your-username/lobbylens/workflows/LobbyLens%20Daily%20Digest/badge.svg)
 
 ## Features
 
-- 📋 **Daily Digest**: New filings, top registrants, and issue activity trends
-- 📊 **Smart Analytics**: Week-over-week issue code surge detection  
+### Quarterly Analysis (LDA Data)
+- 📊 **Quarterly Reports**: Deep analysis of actual lobbying disclosure data
+- 🏢 **Client & Registrant Analysis**: Top spenders, new registrations, issue trends
+- 📈 **Trend Detection**: Quarter-over-quarter changes in lobbying activity
+- 📋 **CSV Exports**: Downloadable data for further analysis
+
+### Daily Signals (Adjacent Sources)
+- 📰 **Daily Digest**: Bills, hearings, regulations, and regulatory actions
+- 🎯 **Smart Filtering**: Watchlist-based alerts and threshold triggers
+- 📊 **Priority Scoring**: Deterministic scoring based on source, timing, and relevance
+- 🔍 **Issue Mapping**: Automatic categorization using rule-based mappings
+
+### Platform Features
 - 🚀 **Slack Integration**: Clean, formatted messages with direct links
-- ⚙️ **Automated**: Runs daily via GitHub Actions at 8:00 AM PT
-- 🔒 **Secure**: API keys and webhooks stored as GitHub secrets
-- 🧪 **Well Tested**: Comprehensive test suite with 90%+ coverage
+- ⚙️ **Automated Scheduling**: Quarterly reports + daily digests
+- 🔒 **Secure**: Environment-based configuration
+- 🧪 **Well Tested**: Comprehensive test suite with deterministic logic
+
+## Data Sources & Cadence
+
+### Quarterly Data (LDA)
+- **Source**: Senate/House LDA bulk files (XML/CSV)
+- **Refresh**: Quarterly (when new data is published)
+- **Content**: Actual lobbying filings, clients, registrants, amounts, issue codes
+- **Output**: Comprehensive quarterly reports with CSV exports
+
+### Daily Signals (Adjacent Sources)
+- **Congress API**: Bills, votes, hearings, committee actions
+- **Federal Register API**: Rules, notices, regulatory actions by agency
+- **Regulations.gov API**: Dockets, comment counts, regulatory surges
+- **Refresh**: Daily (8 AM PT) + Mini (4 PM PT if thresholds hit)
+- **Content**: Government actions, regulatory changes, bill movements
+
+### Issue Mapping (No AI)
+- **Agency → Issue Codes**: FCC→TEC, HHS→HCR, etc.
+- **Committee → Issue Codes**: Finance→FIN, Energy & Commerce→ENE/TEC
+- **Bill Keywords → Issue Codes**: Deterministic keyword mapping
+- **Priority Scoring**: Rule-based scoring with configurable weights
 
 ## Quick Start
 
@@ -63,9 +97,17 @@ Add these secrets in your GitHub repository settings (`Settings > Secrets and va
 
 | Secret Name | Description | Required |
 |-------------|-------------|----------|
-| `SLACK_WEBHOOK_URL` | Slack incoming webhook URL | ✅ Yes |
-| `OPENSECRETS_API_KEY` | OpenSecrets API key | ⚠️ Recommended |
-| `PROPUBLICA_API_KEY` | ProPublica Congress API key | ⚠️ Recommended |
+| `SLACK_BOT_TOKEN` | Slack bot token for enhanced features | ✅ Yes |
+| `SLACK_SIGNING_SECRET` | Slack signing secret for request verification | ✅ Yes |
+| `LOBBYLENS_CHANNELS` | Comma-separated Slack channel IDs | ✅ Yes |
+
+### Optional API Keys (for Daily Signals)
+
+| Secret Name | Description | Required |
+|-------------|-------------|----------|
+| `CONGRESS_API_KEY` | Congress API key for bills/hearings | ⚠️ Recommended |
+| `FEDERAL_REGISTER_API_KEY` | Federal Register API key | ⚠️ Recommended |
+| `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | ⚠️ Recommended |
 
 ### Workflows
 
@@ -134,12 +176,39 @@ Options:
 Updated at 15:00 UTC
 ```
 
+## Testing Plan
+
+### Quarterly Testing
+- **Fixture Data**: Download most recent LDA quarter (Senate + House bulk files)
+- **Local Processing**: Import into Postgres, run normalization, generate reports
+- **Output Validation**: Review CSVs and quarterly report for accuracy
+- **Slack Dry-Run**: Format mock quarterly summary (no posting)
+
+### Daily Signals Testing
+- **Live API Testing**: Use 24h window with real APIs or canned fixtures
+- **Scoring Validation**: Verify priority scoring sorts items correctly
+- **Watchlist Testing**: Inject known hits to test trigger logic
+- **Surge Detection**: Test comment surge detection with test deltas
+- **Slack Dry-Run**: Render digest blocks, ensure proper section capping
+
+### Local Development
+```bash
+# Test quarterly pipeline
+python -m bot.quarterly --dry-run
+
+# Test daily signals
+python -m bot.daily_signals --dry-run
+
+# Test full integration
+python -m bot.enhanced_run --mode server --dry-run
+```
+
 ## Development
 
 ### Prerequisites
 
 - Python 3.10+
-- SQLite3
+- PostgreSQL (for production) or SQLite (for development)
 - Git
 
 ### Setup
