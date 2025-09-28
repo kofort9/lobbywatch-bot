@@ -359,7 +359,10 @@ class EnhancedDigestComputer:
             header = f"*🔍 LobbyLens Daily Digest* — {now.strftime('%Y-%m-%d')}"
 
         if watchlist_count > 0:
-            header += f" • 🎯 {watchlist_count} watchlist match{'es' if watchlist_count != 1 else ''}"
+            header += (
+                f" • 🎯 {watchlist_count} watchlist "
+                f"match{'es' if watchlist_count != 1 else ''}"
+            )
 
         lines.append(header)
 

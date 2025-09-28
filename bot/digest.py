@@ -299,7 +299,8 @@ class DigestComputer:
         # Add helpful links footer
         lines.append(f"\n_Updated at {now.strftime('%H:%M UTC')}_")
         lines.append(
-            f"\n📚 *Learn more:* <https://www.opensecrets.org/federal-lobbying|OpenSecrets Lobbying> • "
+            f"\n📚 *Learn more:* "
+            f"<https://www.opensecrets.org/federal-lobbying|OpenSecrets Lobbying> • "
             f"<https://lda.congress.gov/|Lobbying Disclosure> • "
             f"<https://www.propublica.org/series/lobbying|ProPublica Coverage>"
         )

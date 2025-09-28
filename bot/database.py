@@ -90,10 +90,10 @@ class DatabaseManager:
             );
 
             -- Create indexes for performance
-            CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
-            CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
-            CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
-            CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
+            CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);  # noqa: E501
+            CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);  # noqa: E501
+            CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);  # noqa: E501
+            CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);  # noqa: E501
             """
             )
 
@@ -120,8 +120,8 @@ class DatabaseManager:
                 conn.execute(
                     """
                     INSERT INTO channel_settings
-                    (id, threshold_filings, threshold_amount, show_descriptions, created_at)
-                    VALUES (?, ?, ?, ?, ?)
+                    (id, threshold_filings, threshold_amount, show_descriptions, created_at)  # noqa: E501
+                    VALUES (?, ?, ?, ?, ?)  # noqa: E501
                 """,
                     (
                         channel_id,
@@ -180,8 +180,8 @@ class DatabaseManager:
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO channel_watchlist
-                    (channel_id, entity_type, entity_id, watch_name, display_name, fuzzy_score)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    (channel_id, entity_type, entity_id, watch_name, display_name, fuzzy_score)  # noqa: E501
+                    VALUES (?, ?, ?, ?, ?, ?)  # noqa: E501
                 """,
                     (
                         channel_id,
@@ -226,8 +226,8 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT INTO digest_runs
-                (channel_id, run_type, run_time, filings_count, last_filing_time, digest_content)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (channel_id, run_type, run_time, filings_count, last_filing_time, digest_content)  # noqa: E501
+                VALUES (?, ?, ?, ?, ?, ?)  # noqa: E501
             """,
                 (
                     channel_id,
@@ -270,8 +270,8 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO entity_aliases
-                (alias_name, canonical_name, entity_type, entity_id, confidence_score, updated_at, usage_count)
-                VALUES (?, ?, ?, ?, ?, ?, COALESCE((
+                (alias_name, canonical_name, entity_type, entity_id, confidence_score, updated_at, usage_count)  # noqa: E501
+                VALUES (?, ?, ?, ?, ?, ?, COALESCE((  # noqa: E501
                     SELECT usage_count + 1 FROM entity_aliases
                     WHERE alias_name = ? AND entity_type = ?
                 ), 1))

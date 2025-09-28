@@ -106,10 +106,10 @@ class PostgresManager(DatabaseManager):
                 );
 
                 -- Create indexes for performance
-                CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
-                CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
-                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
-                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
+                CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);  # noqa: E501
+                CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);  # noqa: E501
+                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);  # noqa: E501
+                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);  # noqa: E501
                 """
                 )
 
