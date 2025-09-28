@@ -565,7 +565,10 @@ class TestDigestV2Formatter:
         """Test mobile title formatting for long titles."""
         formatter = DigestV2Formatter()
 
-        title = "This is a very long title that should be broken into multiple lines for better mobile readability"
+        title = (
+            "This is a very long title that should be broken into multiple lines "
+            "for better mobile readability"
+        )
         result = formatter._format_title_for_mobile(title, 60)
 
         # Should be broken into multiple lines
@@ -585,7 +588,11 @@ class TestDigestV2Formatter:
         """Test summary formatting for long summaries."""
         formatter = DigestV2Formatter()
 
-        summary = "This is a very long summary that should be truncated to fit within the character limit for better readability and mobile display and this is even more text to make it longer than the limit"
+        summary = (
+            "This is a very long summary that should be truncated to fit within the "
+            "character limit for better readability and mobile display and this is "
+            "even more text to make it longer than the limit"
+        )
         result = formatter._format_summary(summary, 160)
 
         # Should be truncated

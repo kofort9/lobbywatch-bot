@@ -28,7 +28,7 @@ jobs:
           
       - name: Run linting with flake8
         run: |
-          flake8 bot tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 bot tests --count --select=E9,F63,F7,F82 --show-source --statistics --max-line-length=88
           flake8 bot tests --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
           
       - name: Check formatting with black

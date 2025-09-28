@@ -1,6 +1,7 @@
 """
 LobbyLens Digest v2 - Enhanced formatting with industry snapshots and threading
-Implements the comprehensive digest format with character budgets and mobile-friendly formatting.
+Implements the comprehensive digest format with character budgets and mobile-friendly
+formatting.
 """
 
 from datetime import datetime, timezone
@@ -76,7 +77,8 @@ class DigestV2Formatter:
         total_items = len(processed_signals)
         if total_items > 20:
             lines.append(
-                f"\n+ {total_items - 20} more items in thread · /lobbylens help · Updated {self._get_pt_time()}"
+                f"\n+ {total_items - 20} more items in thread · /lobbylens help · "
+                f"Updated {self._get_pt_time()}"
             )
         else:
             lines.append(f"\n/lobbylens help · Updated {self._get_pt_time()}")
@@ -108,7 +110,8 @@ class DigestV2Formatter:
         lines = []
         lines.append(f"⚡ **Mini Signals Alert** — {self._get_pt_time()}")
         lines.append(
-            f"_{len(processed_signals)} signals in last 4h, {len(high_priority)} high-priority_"
+            f"_{len(processed_signals)} signals in last 4h, "
+            f"{len(high_priority)} high-priority_"
         )
 
         for signal in high_priority:
@@ -234,7 +237,12 @@ class DigestV2Formatter:
         dockets_count = len([s for s in signals if s.signal_type == SignalType.DOCKET])
         watchlist_hits = len([s for s in signals if s.watchlist_hit])
 
-        return f"🔍 **LobbyLens — Daily Signals** ({date_str}) · {hours_back}h\nMini-stats: Bills {bills_count} · FR {fr_count} · Dockets {dockets_count} · Watchlist hits {watchlist_hits}"
+        return (
+            f"🔍 **LobbyLens — Daily Signals** ({date_str}) · {hours_back}h\n"
+            f"Mini-stats: Bills {bills_count} · FR {fr_count} · "
+            f"Dockets {dockets_count} "
+            f"· Watchlist hits {watchlist_hits}"
+        )
 
     def _format_watchlist_signal(self, signal: SignalV2) -> str:
         """Format watchlist alert signal"""
@@ -244,7 +252,11 @@ class DigestV2Formatter:
         # Format summary
         summary = self._format_summary(signal.summary, 160)
 
-        return f"• {industry} **{signal.title}** • {urgency}\n  {summary} • Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|View>"
+        return (
+            f"• {industry} **{signal.title}** • {urgency}\n  {summary} • "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|View>"
+        )
 
     def _format_what_changed_signal(self, signal: SignalV2) -> str:
         """Format what changed signal"""
@@ -270,7 +282,11 @@ class DigestV2Formatter:
         # Format title with mobile-friendly line breaks
         title = self._format_title_for_mobile(signal.title, 60)
 
-        return f"• {industry} {prefix} — {title} • {urgency}\n  Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|View>"
+        return (
+            f"• {industry} {prefix} — {title} • {urgency}\n  "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|View>"
+        )
 
     def _format_industry_signal(self, signal: SignalV2) -> str:
         """Format industry snapshot signal"""
@@ -280,7 +296,11 @@ class DigestV2Formatter:
         # Format title with mobile-friendly line breaks
         title = self._format_title_for_mobile(signal.title, 60)
 
-        return f"• {industry} {title} • {urgency}\n  Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|View>"
+        return (
+            f"• {industry} {title} • {urgency}\n  "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|View>"
+        )
 
     def _format_deadline_signal(self, signal: SignalV2) -> str:
         """Format deadline signal"""
@@ -302,7 +322,11 @@ class DigestV2Formatter:
         # Format title with mobile-friendly line breaks
         title = self._format_title_for_mobile(signal.title, 60)
 
-        return f"• {industry} {title} • Deadline: {deadline_str}\n  Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|View>"
+        return (
+            f"• {industry} {title} • Deadline: {deadline_str}\n  "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|View>"
+        )
 
     def _format_docket_surge_signal(self, signal: SignalV2) -> str:
         """Format docket surge signal"""
@@ -328,7 +352,12 @@ class DigestV2Formatter:
         # Format title with mobile-friendly line breaks
         title = self._format_title_for_mobile(signal.title, 60)
 
-        return f"• {industry} Docket Surge — {title} • {urgency}\n  {surge_str} • {deadline_str} • Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|Regulations.gov>"
+        return (
+            f"• {industry} Docket Surge — {title} • {urgency}\n  "
+            f"{surge_str} • {deadline_str} • "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|Regulations.gov>"
+        )
 
     def _format_bill_action_signal(self, signal: SignalV2) -> str:
         """Format bill action signal"""
@@ -351,7 +380,12 @@ class DigestV2Formatter:
         # Format title with mobile-friendly line breaks
         title = self._format_title_for_mobile(signal.title, 60)
 
-        return f"• {industry} Bill Action — {title} • {urgency}\n  Last action: {action_str} • Issues: {self._format_issue_codes(signal.issue_codes)} • <{signal.url}|Congress>"
+        return (
+            f"• {industry} Bill Action — {title} • {urgency}\n  "
+            f"Last action: {action_str} • "
+            f"Issues: {self._format_issue_codes(signal.issue_codes)} • "
+            f"<{signal.url}|Congress>"
+        )
 
     def _format_mini_signal(self, signal: SignalV2) -> str:
         """Format mini-digest signal"""
@@ -407,4 +441,8 @@ class DigestV2Formatter:
         """Format empty digest"""
         now = datetime.now(timezone.utc)
         date_str = now.strftime("%Y-%m-%d")
-        return f"🔍 **LobbyLens — Daily Signals** ({date_str}) · 24h\n\n*No fresh government activity detected.*\n\n/lobbylens help · Updated {self._get_pt_time()}"
+        return (
+            f"🔍 **LobbyLens — Daily Signals** ({date_str}) · 24h\n\n"
+            f"*No fresh government activity detected.*\n\n"
+            f"/lobbylens help · Updated {self._get_pt_time()}"
+        )

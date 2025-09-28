@@ -205,7 +205,10 @@ class DailySignalsCollector:
         ).strftime("%Y-%m-%d")
 
         # Recent bills
-        bills_url = f"https://api.congress.gov/v3/bill?format=json&api_key={api_key}&updateDate={since_date}"
+        bills_url = (
+            f"https://api.congress.gov/v3/bill?format=json&api_key={api_key}"
+            f"&updateDate={since_date}"
+        )
 
         try:
             response = self.session.get(bills_url, timeout=30)
@@ -240,7 +243,10 @@ class DailySignalsCollector:
         ).strftime("%Y-%m-%d")
 
         # Recent documents (no API key needed)
-        docs_url = f"https://www.federalregister.gov/api/v1/documents.json?publication_date[gte]={since_date}"
+        docs_url = (
+            f"https://www.federalregister.gov/api/v1/documents.json"
+            f"?publication_date[gte]={since_date}"
+        )
 
         try:
             response = self.session.get(docs_url, timeout=30)
@@ -287,7 +293,10 @@ class DailySignalsCollector:
         # Recent dockets (use X-Api-Key header as per API docs)
         # Try a simpler query first - just get recent dockets without date
         # filter
-        dockets_url = f"https://api.regulations.gov/v4/dockets?sort=-lastModifiedDate&page[size]=20"
+        dockets_url = (
+            "https://api.regulations.gov/v4/dockets"
+            "?sort=-lastModifiedDate&page[size]=20"
+        )
 
         try:
             headers = {"X-Api-Key": api_key}
@@ -390,7 +399,7 @@ class DailySignalsCollector:
         return list(issues)
 
     def _detect_comment_surge(self, docket_id: str, current_count: int) -> bool:
-        """Detect if there's a comment surge (simplified - would need historical data)."""
+        """Detect if there's a comment surge (simplified - needs historical data)."""
         # This is a simplified version - in practice, you'd compare with
         # historical data
         return current_count > 100  # Threshold for surge detection

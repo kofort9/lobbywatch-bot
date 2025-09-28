@@ -1,6 +1,7 @@
 """
 LobbyLens Signals v2 - Enhanced data model and rules engine
-Implements deterministic signal classification, urgency, priority scoring, and industry mapping.
+Implements deterministic signal classification, urgency, priority scoring, and industry
+mapping.
 """
 
 import json
