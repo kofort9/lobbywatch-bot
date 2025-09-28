@@ -3,10 +3,6 @@
 # import json  # Unused import
 from datetime import datetime, timedelta, timezone
 
-# from unittest.mock import patch  # Unused import
-
-# import pytest  # Unused import
-
 from bot.signals_v2 import (
     SignalDeduplicator,
     SignalsRulesEngine,
@@ -14,6 +10,11 @@ from bot.signals_v2 import (
     SignalV2,
     Urgency,
 )
+
+# from unittest.mock import patch  # Unused import
+
+# import pytest  # Unused import
+
 
 
 class TestSignalV2:
