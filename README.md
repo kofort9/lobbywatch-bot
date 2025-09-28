@@ -101,6 +101,16 @@ Options:
   --help           Show this message and exit
 ```
 
+### Slack Commands
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/lobbypulse` | Generate fresh lobbying digest | `/lobbypulse [daily\|mini\|help]` |
+| `/watchlist` | Manage watchlist entities | `/watchlist add\|remove\|list [name]` |
+| `/threshold` | Set alert thresholds | `/threshold set [number]` |
+| `/summary` | Toggle digest descriptions | `/summary set [on\|off]` |
+| `/lobbylens` | General bot help | `/lobbylens [help]` |
+
 ## Sample Output
 
 ```

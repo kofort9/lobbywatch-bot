@@ -363,7 +363,13 @@ class SlackApp:
         else:
             return {
                 "response_type": "ephemeral",
-                "text": "Available commands:\n• `/lobbylens digest` - Generate manual digest\n• `/watchlist` - Manage watchlist\n• `/threshold` - Set alert thresholds\n• `/summary` - Toggle filing descriptions",
+                "text": "🔍 **LobbyLens Commands:**\n"
+                "• `/lobbypulse` - Generate fresh lobbying digest\n"
+                "• `/watchlist` - Manage watchlist entities\n"
+                "• `/threshold` - Set alert thresholds\n"
+                "• `/summary` - Toggle filing descriptions\n"
+                "• `/lobbylens digest` - Generate manual digest\n\n"
+                "_Use `/lobbypulse help` for detailed usage._",
             }
 
     def handle_message_event(
