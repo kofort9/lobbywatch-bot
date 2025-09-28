@@ -114,51 +114,11 @@ def fetch_data() -> tuple[int, int]:
     Returns:
         Tuple of (successful_fetches, failed_fetches)
     """
-    successful = 0
-    failed = 0
-
-    # Try OpenSecrets
-    if settings.opensecrets_api_key:
-        try:
-            logger.info("Fetching from OpenSecrets API...")
-            # Import lazily to avoid hard dependency
-            from lobbywatch.sources import opensecrets
-
-            result = opensecrets.fetch_recent_lobbying(limit=200)
-            logger.info(f"OpenSecrets: Fetched {len(result) if result else 0} records")
-            successful += 1
-        except ImportError:
-            logger.warning(
-                "lobbywatch.sources.opensecrets not available - install lobbywatch package"
-            )
-            failed += 1
-        except Exception as e:
-            logger.error(f"OpenSecrets fetch failed: {e}")
-            failed += 1
-    else:
-        logger.info("OpenSecrets API key not configured, skipping")
-
-    # Try ProPublica
-    if settings.propublica_api_key:
-        try:
-            logger.info("Fetching from ProPublica API...")
-            from lobbywatch.sources import propublica
-
-            result = propublica.fetch_latest_lobbying(limit=200)
-            logger.info(f"ProPublica: Fetched {len(result) if result else 0} records")
-            successful += 1
-        except ImportError:
-            logger.warning(
-                "lobbywatch.sources.propublica not available - install lobbywatch package"
-            )
-            failed += 1
-        except Exception as e:
-            logger.error(f"ProPublica fetch failed: {e}")
-            failed += 1
-    else:
-        logger.info("ProPublica API key not configured, skipping")
-
-    return successful, failed
+    # Note: Legacy data fetching removed due to API changes.
+    # The v2 system now uses direct government API calls instead of
+    # the lobbywatch package which relied on deprecated OpenSecrets/ProPublica APIs.
+    logger.info("Legacy data fetching disabled - using v2 system for fresh data")
+    return 0, 0
 
 
 def create_notifier() -> SlackNotifier:

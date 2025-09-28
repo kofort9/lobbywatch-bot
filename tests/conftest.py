@@ -20,7 +20,7 @@ def temp_db() -> Generator[Path, None, None]:
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = Path(f.name)
 
-    # Create test schema matching expected lobbywatch structure
+    # Create test schema matching LobbyLens database structure
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys=ON;")
 

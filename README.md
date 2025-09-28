@@ -73,8 +73,9 @@ cp .env.example .env
 
 ### 4. Get API Keys
 
-- **OpenSecrets**: Register at https://www.opensecrets.org/api/admin/index.php?function=signup
-- **ProPublica**: Get a key at https://www.propublica.org/datastore/api/propublica-congress-api
+- **Congress API**: Get a key at https://api.congress.gov/sign-up/
+- **Federal Register**: No API key required (free service)
+- **Regulations.gov**: Get a key at https://open.gsa.gov/api/regulationsgov/
 
 ### 5. Run Locally
 
@@ -126,8 +127,9 @@ You can manually trigger the daily digest from the GitHub Actions tab using "Run
 |----------|---------|-------------|
 | `DATABASE_FILE` | `lobbywatch.db` | SQLite database path |
 | `SLACK_WEBHOOK_URL` | - | Slack webhook URL (required) |
-| `OPENSECRETS_API_KEY` | - | OpenSecrets API key |
-| `PROPUBLICA_API_KEY` | - | ProPublica API key |
+| `CONGRESS_API_KEY` | - | Congress API key for bills/hearings |
+| `FEDERAL_REGISTER_API_KEY` | - | Federal Register API key (optional) |
+| `REGULATIONS_GOV_API_KEY` | - | Regulations.gov API key |
 | `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARN, ERROR) |
 | `DRY_RUN` | `false` | Generate digest without sending |
 
@@ -285,7 +287,7 @@ lobbylens/
 
 ## Database Schema
 
-LobbyLens expects a SQLite database with the following schema (compatible with [lobbywatch](https://github.com/your-username/lobbywatch)):
+LobbyLens uses a custom database schema designed for both quarterly LDA analysis and daily signals:
 
 ```sql
 -- Core entities (clients, registrants)
@@ -294,11 +296,20 @@ entity(id, name, type)
 -- Issue codes (HCR, TAX, DEF, etc.)
 issue(id, code, description)
 
--- Filing records
+-- Filing records (quarterly LDA data)
 filing(id, client_id, registrant_id, filing_date, created_at, amount, url, description)
 
 -- Filing-issue relationships (many-to-many)
 filing_issue(id, filing_id, issue_id)
+
+-- Daily signal events (v2 system)
+signal_event(id, source, source_id, ts, title, link, agency, committee, bill_id, rin, docket_id, issue_codes, metric_json, priority_score, created_at)
+
+-- Channel-specific settings
+channel_settings(channel_id, threshold, show_summaries, created_at)
+
+-- Watchlist management
+watchlist(channel_id, entity_type, name, display_name, entity_id, fuzzy_score, created_at)
 ```
 
 ## Troubleshooting
@@ -311,13 +322,14 @@ filing_issue(id, filing_id, issue_id)
 - Check GitHub Actions logs for errors
 
 **Database not found:**
-- Ensure `lobbywatch` package is installed
-- Run initial data fetch manually
-- Check `DATABASE_FILE` path
+- Database is created automatically on first run
+- Check `DATABASE_FILE` path in configuration
+- Ensure proper file permissions
 
 **API rate limits:**
-- OpenSecrets: 200 requests/day
-- ProPublica: 5000 requests/day
+- Congress API: 5000 requests/day
+- Federal Register: No rate limit (be respectful)
+- Regulations.gov: 1000 requests/day
 - Consider reducing fetch limits in code
 
 **Memory issues:**
@@ -363,4 +375,4 @@ MIT License - see LICENSE file for details.
 
 - [OpenSecrets.org](https://www.opensecrets.org/) for lobbying data API
 - [ProPublica](https://www.propublica.org/) for Congress API
-- Built on the `lobbywatch` data processing foundation# Redeploy trigger
+- Built with direct government API integrations for real-time data

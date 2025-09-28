@@ -58,9 +58,10 @@ SLACK_SIGNING_SECRET=your-signing-secret
 # Channels for automated digests (comma-separated IDs)
 LOBBYLENS_CHANNELS=C1234567890,C0987654321
 
-# API keys (same as before)
-OPENSECRETS_API_KEY=your-key
-PROPUBLICA_API_KEY=your-key
+# API keys for daily signals
+CONGRESS_API_KEY=your-key
+FEDERAL_REGISTER_API_KEY=your-key
+REGULATIONS_GOV_API_KEY=your-key
 ```
 
 ## 📊 Enhanced Digests
@@ -242,10 +243,13 @@ Enhanced mode supports both scheduled and server deployments:
 ### Environment Variables
 
 ```bash
-# Core (same as before)
+# Core database
 DATABASE_FILE=lobbywatch.db
-OPENSECRETS_API_KEY=key
-PROPUBLICA_API_KEY=key
+
+# Daily signals API keys
+CONGRESS_API_KEY=key
+FEDERAL_REGISTER_API_KEY=key
+REGULATIONS_GOV_API_KEY=key
 
 # Enhanced Features
 SLACK_BOT_TOKEN=xoxb-token           # Required for enhanced mode

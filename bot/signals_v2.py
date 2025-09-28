@@ -192,20 +192,20 @@ class SignalsRulesEngine:
         combined_text = f"{title_lower} {summary_lower}"
 
         if signal.source == "federal_register":
-            if "final rule" in combined_text:
-                return SignalType.FINAL_RULE
-            elif "interim final rule" in combined_text:
+            if "interim final rule" in combined_text:
                 return SignalType.INTERIM_FINAL_RULE
+            elif "final rule" in combined_text:
+                return SignalType.FINAL_RULE
             elif any(term in combined_text for term in ["proposed rule", "nprm"]):
                 return SignalType.PROPOSED_RULE
             else:
                 return SignalType.NOTICE
 
         elif signal.source == "congress":
-            if any(term in combined_text for term in ["hearing", "hearing scheduled"]):
-                return SignalType.HEARING
-            elif "markup" in combined_text:
+            if "markup" in combined_text:
                 return SignalType.MARKUP
+            elif any(term in combined_text for term in ["hearing", "hearing scheduled"]):
+                return SignalType.HEARING
             elif signal.action_type in ["floor_vote", "conference_action"]:
                 return SignalType.BILL  # Special handling in priority scoring
             else:

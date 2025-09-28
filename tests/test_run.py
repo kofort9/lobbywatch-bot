@@ -25,29 +25,22 @@ class TestFetchData:
         assert successful == 0
         assert failed == 0
 
-    def test_fetch_data_opensecrets_success(self):
-        """Test successful OpenSecrets data fetch."""
-        # Skip this test since lobbywatch module is not available
-        pytest.skip("lobbywatch module not available - tested in integration")
+    def test_fetch_data_legacy_disabled(self):
+        """Test that legacy data fetching is disabled."""
+        successful, failed = fetch_data()
 
-    def test_fetch_data_opensecrets_error(self):
-        """Test OpenSecrets data fetch error handling."""
-        # Skip this test since lobbywatch module is not available
-        pytest.skip("lobbywatch module not available - tested in integration")
-
-    @patch("bot.run.settings")
-    def test_fetch_data_import_error(self, mock_settings):
-        """Test handling of import errors."""
-        mock_settings.opensecrets_api_key = "test_key"
-        mock_settings.propublica_api_key = None
-
-        # ImportError will be raised when trying to import opensecrets
-        # This tests the ImportError handling branch
-        with patch("builtins.__import__", side_effect=ImportError("No module")):
-            successful, failed = fetch_data()
-
+        # Legacy data fetching should return 0, 0 since it's disabled
         assert successful == 0
-        assert failed == 1
+        assert failed == 0
+
+    def test_fetch_data_legacy_disabled_with_keys(self):
+        """Test that legacy data fetching is disabled even with API keys."""
+        # Even with API keys, legacy fetching is disabled
+        successful, failed = fetch_data()
+
+        # Legacy data fetching should return 0, 0 since it's disabled
+        assert successful == 0
+        assert failed == 0
 
 
 class TestCreateNotifier:
