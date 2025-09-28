@@ -30,10 +30,10 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    # database = SignalsDatabaseV2()  # Unused variable
+    database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
+    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)
@@ -54,10 +54,10 @@ def run_mini_digest(
     # Initialize components
     collector = DailySignalsCollectorV2(settings.model_dump())
     formatter = DigestV2Formatter()
-    # database = SignalsDatabaseV2()  # Unused variable
+    database = SignalsDatabaseV2()
 
     # Get watchlist for channel
-    # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # Unused variable
+    watchlist = [item["name"] for item in database.get_watchlist(channel_id)]
 
     # Collect signals
     signals = collector.collect_all_signals(hours_back)

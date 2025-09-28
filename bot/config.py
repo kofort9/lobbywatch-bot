@@ -11,57 +11,53 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database
-    database_file: str = Field(default="lobbywatch.db", alias="DATABASE_FILE")
+    database_file: str = Field(default="lobbywatch.db")
     database_url: Optional[str] = Field(
-        default=None, alias="DATABASE_URL"
+        default=None
     )  # Postgres for production
 
     # API Keys (Legacy - no longer available)
-    opensecrets_api_key: Optional[str] = Field(
-        default=None, alias="OPENSECRETS_API_KEY"
-    )
-    propublica_api_key: Optional[str] = Field(default=None, alias="PROPUBLICA_API_KEY")
+    opensecrets_api_key: Optional[str] = Field(default=None)
+    propublica_api_key: Optional[str] = Field(default=None)
 
     # Daily Signals API Keys
-    congress_api_key: Optional[str] = Field(default=None, alias="CONGRESS_API_KEY")
-    federal_register_api_key: Optional[str] = Field(
-        default=None, alias="FEDERAL_REGISTER_API_KEY"
-    )
-    regulations_gov_api_key: Optional[str] = Field(
-        default=None, alias="REGULATIONS_GOV_API_KEY"
-    )
+    congress_api_key: Optional[str] = Field(default=None)
+    federal_register_api_key: Optional[str] = Field(default=None)
+    regulations_gov_api_key: Optional[str] = Field(default=None)
 
     # Slack Configuration
     slack_webhook_url: Optional[str] = Field(
-        default=None, alias="SLACK_WEBHOOK_URL"
+        default=None
     )  # Legacy webhook support
     slack_bot_token: Optional[str] = Field(
-        default=None, alias="SLACK_BOT_TOKEN"
+        default=None
     )  # Enhanced app features
     slack_signing_secret: Optional[str] = Field(
-        default=None, alias="SLACK_SIGNING_SECRET"
+        default=None
     )  # Request verification
 
     # Enhanced Features
     lobbylens_channels: Optional[str] = Field(
-        default=None, alias="LOBBYLENS_CHANNELS"
+        default=None
     )  # Comma-separated channel IDs
 
     # Production Settings
     environment: str = Field(
-        default="development", alias="ENVIRONMENT"
+        default="development"
     )  # development, staging, production
     admin_users: Optional[str] = Field(
-        default=None, alias="ADMIN_USERS"
+        default=None
     )  # Comma-separated Slack user IDs
 
     # Bot Configuration
-    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    dry_run: bool = Field(default=False, alias="DRY_RUN")
+    log_level: str = Field(default="INFO")
+    dry_run: bool = Field(default=False)
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"
+    }
 
     @property
     def notifier_type(self) -> Optional[Literal["slack"]]:
