@@ -114,14 +114,13 @@ class DailySignalsCollector:
             except Exception as e:
                 logger.error(f"Failed to collect Congress signals: {e}")
         
-        # Collect from Federal Register
-        if self.config.get('federal_register_api_key'):
-            try:
-                fr_signals = self._collect_federal_register_signals(hours_back)
-                signals.extend(fr_signals)
-                logger.info(f"Collected {len(fr_signals)} signals from Federal Register")
-            except Exception as e:
-                logger.error(f"Failed to collect Federal Register signals: {e}")
+        # Collect from Federal Register (no API key needed)
+        try:
+            fr_signals = self._collect_federal_register_signals(hours_back)
+            signals.extend(fr_signals)
+            logger.info(f"Collected {len(fr_signals)} signals from Federal Register")
+        except Exception as e:
+            logger.error(f"Failed to collect Federal Register signals: {e}")
         
         # Collect from Regulations.gov
         if self.config.get('regulations_gov_api_key'):
@@ -173,12 +172,11 @@ class DailySignalsCollector:
     def _collect_federal_register_signals(self, hours_back: int) -> List[SignalEvent]:
         """Collect signals from Federal Register API."""
         signals = []
-        api_key = self.config['federal_register_api_key']
         
         since_date = (datetime.now() - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
         
-        # Recent documents
-        docs_url = f"https://www.federalregister.gov/api/v1/documents.json?api_key={api_key}&publication_date[gte]={since_date}"
+        # Recent documents (no API key needed)
+        docs_url = f"https://www.federalregister.gov/api/v1/documents.json?publication_date[gte]={since_date}"
         
         try:
             response = self.session.get(docs_url, timeout=30)
