@@ -84,9 +84,12 @@ class TestCreateNotifier:
 
     def test_create_notifier_no_config(self):
         """Test error when no notifier is configured."""
-        with patch.dict(os.environ, {}, clear=True):
+        with patch("bot.config.Settings") as mock_settings_class:
+            mock_settings = mock_settings_class.return_value
+            mock_settings.slack_webhook_url = None
+            mock_settings.notifier_type = None
+            
             settings = Settings()
-
             with patch("bot.run.settings", settings):
                 with pytest.raises(ValueError, match="No Slack notifier configured"):
                     create_notifier()

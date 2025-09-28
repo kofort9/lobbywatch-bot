@@ -10,7 +10,7 @@ import os
 import sys
 
 
-def main():
+def main() -> None:
     """Start LobbyLens v2 web server for Railway deployment."""
     print("Starting LobbyLens v2 web server...")
     print("Version: 2.0.0")

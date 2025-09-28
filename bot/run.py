@@ -87,7 +87,7 @@ def run_mini_digest(
         or len(watchlist_hits) >= 1
     ):
         # Format mini digest
-        digest = formatter.format_mini_digest(signals, hours_back)
+        digest = formatter.format_mini_digest(signals)
         return digest
     else:
         logger.info("Mini-digest thresholds not met")
@@ -173,7 +173,7 @@ def create_notifier() -> SlackNotifier:
     settings.validate_notifier_config()
 
     if settings.notifier_type == "slack":
-        return SlackNotifier(settings.slack_webhook_url)
+        return SlackNotifier(settings.slack_webhook_url or "")
 
     raise ValueError("No supported notifier configured")
 

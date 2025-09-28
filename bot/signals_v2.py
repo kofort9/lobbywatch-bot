@@ -163,7 +163,7 @@ class SignalsRulesEngine:
         SignalType.NOTICE: 1.0,
     }
 
-    def __init__(self, watchlist: List[str] = None):
+    def __init__(self, watchlist: Optional[List[str]] = None):
         self.watchlist = watchlist or []
 
     def process_signal(self, signal: SignalV2) -> SignalV2:
@@ -454,7 +454,7 @@ class SignalDeduplicator:
     def deduplicate_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Deduplicate and group signals"""
         # Group by stable_id
-        grouped = {}
+        grouped: Dict[str, List[SignalV2]] = {}
         for signal in signals:
             if signal.stable_id not in grouped:
                 grouped[signal.stable_id] = []
@@ -474,7 +474,7 @@ class SignalDeduplicator:
 
     def group_bills(self, signals: List[SignalV2]) -> Dict[str, List[SignalV2]]:
         """Group signals by bill_id"""
-        bills = {}
+        bills: Dict[str, List[SignalV2]] = {}
         for signal in signals:
             if signal.bill_id:
                 if signal.bill_id not in bills:
@@ -484,7 +484,7 @@ class SignalDeduplicator:
 
     def group_dockets(self, signals: List[SignalV2]) -> Dict[str, List[SignalV2]]:
         """Group signals by docket_id (extracted from stable_id)"""
-        dockets = {}
+        dockets: Dict[str, List[SignalV2]] = {}
         for signal in signals:
             if signal.source == "regulations_gov":
                 # Extract docket_id from stable_id (format: docket_id-doc_id)

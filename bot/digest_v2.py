@@ -14,7 +14,7 @@ from bot.signals_v2 import SignalDeduplicator, SignalType, SignalV2, Urgency
 class DigestV2Formatter:
     """Enhanced digest formatter with v2 features"""
 
-    def __init__(self, watchlist: List[str] = None):
+    def __init__(self, watchlist: Optional[List[str]] = None):
         self.watchlist = watchlist or []
         self.deduplicator = SignalDeduplicator()
         self.pt_tz = pytz.timezone("America/Los_Angeles")
@@ -134,7 +134,7 @@ class DigestV2Formatter:
 
     def _get_industry_snapshots(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get top 1-2 signals per industry (max 12 lines total)"""
-        industry_groups = {}
+        industry_groups: Dict[str, List[SignalV2]] = {}
         for signal in signals:
             industry = signal.industry_tag or "Government"
             if industry not in industry_groups:

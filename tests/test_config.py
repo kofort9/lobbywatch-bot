@@ -10,8 +10,16 @@ from bot.config import Settings
 
 def test_settings_defaults():
     """Test default settings values."""
-    # Clear environment variables for this test
-    with patch.dict(os.environ, {}, clear=True):
+    # Mock the Settings class to avoid .env file loading
+    with patch("bot.config.Settings") as mock_settings_class:
+        mock_settings = mock_settings_class.return_value
+        mock_settings.database_file = "lobbywatch.db"
+        mock_settings.log_level = "INFO"
+        mock_settings.dry_run = False
+        mock_settings.opensecrets_api_key = None
+        mock_settings.propublica_api_key = None
+        mock_settings.slack_webhook_url = None
+        
         settings = Settings()
 
         assert settings.database_file == "lobbywatch.db"
@@ -47,7 +55,11 @@ def test_settings_from_env():
 def test_notifier_type_detection():
     """Test notifier type detection logic."""
     # No notifier configured
-    with patch.dict(os.environ, {}, clear=True):
+    with patch("bot.config.Settings") as mock_settings_class:
+        mock_settings = mock_settings_class.return_value
+        mock_settings.slack_webhook_url = None
+        mock_settings.notifier_type = None
+        
         settings = Settings()
         assert settings.notifier_type is None
 
@@ -59,7 +71,11 @@ def test_notifier_type_detection():
 def test_validate_notifier_config():
     """Test notifier configuration validation."""
     # No notifier configured - should raise error
-    with patch.dict(os.environ, {}, clear=True):
+    with patch("bot.config.Settings") as mock_settings_class:
+        mock_settings = mock_settings_class.return_value
+        mock_settings.slack_webhook_url = None
+        mock_settings.notifier_type = None
+        
         settings = Settings()
         with pytest.raises(ValueError, match="No Slack notifier configured"):
             settings.validate_notifier_config()

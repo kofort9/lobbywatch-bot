@@ -9,7 +9,7 @@ from flask import Flask, jsonify, make_response, request
 logger = logging.getLogger(__name__)
 
 
-def create_web_server(slack_app=None) -> Flask:
+def create_web_server(slack_app: Optional[Any] = None) -> Flask:
     """Create Flask web server for v2 Slack integration."""
 
     app = Flask(__name__)
@@ -102,7 +102,7 @@ def create_web_server(slack_app=None) -> Flask:
             # Get digest type from request
             data = request.get_json() or {}
             digest_type = data.get("type", "daily")
-            hours_back = data.get("hours", 24)
+            hours_back = int(data.get("hours", 24))
 
             if digest_type == "daily":
                 digest = run_daily_digest(hours_back, channel_id)
