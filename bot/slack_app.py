@@ -35,19 +35,31 @@ class SlackApp:
         self.pending_confirmations = {}
     
     def verify_slack_request(self, headers: Dict[str, str], body: str) -> bool:
-        """Verify that request came from Slack."""
+        """Verify that request came from Slack with proper signature validation."""
         if not self.signing_secret:
-            logger.warning("SLACK_SIGNING_SECRET not set, skipping verification")
-            return True
+            # In production, this should be an error
+            if settings.is_production():
+                logger.error("SLACK_SIGNING_SECRET not set in production!")
+                return False
+            else:
+                logger.warning("SLACK_SIGNING_SECRET not set, skipping verification (dev mode)")
+                return True
         
         timestamp = headers.get('X-Slack-Request-Timestamp', '')
         signature = headers.get('X-Slack-Signature', '')
         
         if not timestamp or not signature:
+            logger.warning("Missing Slack signature headers")
             return False
         
-        # Check timestamp is recent (within 5 minutes)
-        if abs(time.time() - int(timestamp)) > 300:
+        try:
+            # Check timestamp is recent (within 5 minutes)
+            request_timestamp = int(timestamp)
+            if abs(time.time() - request_timestamp) > 300:
+                logger.warning("Slack request timestamp too old")
+                return False
+        except ValueError:
+            logger.warning("Invalid Slack request timestamp")
             return False
         
         # Create signature
@@ -58,7 +70,11 @@ class SlackApp:
             hashlib.sha256
         ).hexdigest()
         
-        return hmac.compare_digest(expected_signature, signature)
+        is_valid = hmac.compare_digest(expected_signature, signature)
+        if not is_valid:
+            logger.warning("Invalid Slack request signature")
+        
+        return is_valid
     
     def post_message(self, channel: str, text: str, thread_ts: str = None) -> Dict[str, Any]:
         """Post message to Slack channel."""
@@ -220,8 +236,20 @@ class SlackApp:
                 'text': f"❌ **{search_term}** not found in watchlist."
             }
     
+    def _is_admin_user(self, user_id: str) -> bool:
+        """Check if user is admin."""
+        admin_users = settings.get_admin_users()
+        return not admin_users or user_id in admin_users  # If no admins configured, everyone is admin
+    
     def _handle_threshold_command(self, text: str, channel_id: str, user_id: str) -> Dict[str, str]:
         """Handle /threshold command."""
+        # Admin check for threshold changes
+        if text and not self._is_admin_user(user_id):
+            return {
+                'response_type': 'ephemeral',
+                'text': '❌ Only admins can modify thresholds. Contact your channel admin.'
+            }
+        
         if not text:
             settings = self.db_manager.get_channel_settings(channel_id)
             return {
@@ -265,6 +293,13 @@ class SlackApp:
     
     def _handle_summary_command(self, text: str, channel_id: str, user_id: str) -> Dict[str, str]:
         """Handle /summary command."""
+        # Admin check for summary setting changes  
+        if text and not self._is_admin_user(user_id):
+            return {
+                'response_type': 'ephemeral',
+                'text': '❌ Only admins can modify summary settings. Contact your channel admin.'
+            }
+        
         if not text or text.lower() not in ['on', 'off']:
             settings = self.db_manager.get_channel_settings(channel_id)
             status = 'ON' if settings['show_descriptions'] else 'OFF'

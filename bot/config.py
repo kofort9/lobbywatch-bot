@@ -1,7 +1,7 @@
 """Configuration management for LobbyLens bot."""
 
 import os
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -9,8 +9,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Database
+    # Database  
     database_file: str = Field(default="lobbywatch.db", env="DATABASE_FILE")
+    database_url: Optional[str] = Field(default=None, env="DATABASE_URL")  # Postgres for production
     
     # API Keys
     opensecrets_api_key: Optional[str] = Field(default=None, env="OPENSECRETS_API_KEY")
@@ -23,6 +24,10 @@ class Settings(BaseSettings):
     
     # Enhanced Features
     lobbylens_channels: Optional[str] = Field(default=None, env="LOBBYLENS_CHANNELS")  # Comma-separated channel IDs
+    
+    # Production Settings
+    environment: str = Field(default="development", env="ENVIRONMENT")  # development, staging, production
+    admin_users: Optional[str] = Field(default=None, env="ADMIN_USERS")  # Comma-separated Slack user IDs
     
     # Bot Configuration
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
@@ -50,6 +55,16 @@ class Settings(BaseSettings):
     def has_enhanced_features(self) -> bool:
         """Check if enhanced Slack app features are available."""
         return bool(self.slack_bot_token and self.slack_signing_secret)
+    
+    def is_production(self) -> bool:
+        """Check if running in production mode."""
+        return self.environment.lower() == "production"
+    
+    def get_admin_users(self) -> List[str]:
+        """Get list of admin user IDs."""
+        if not self.admin_users:
+            return []
+        return [user.strip() for user in self.admin_users.split(',') if user.strip()]
 
 
 # Global settings instance

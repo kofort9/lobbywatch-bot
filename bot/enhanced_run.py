@@ -12,6 +12,7 @@ from rich.logging import RichHandler
 
 from .config import settings
 from .database import DatabaseManager
+from .database_postgres import create_database_manager
 from .enhanced_digest import EnhancedDigestComputer
 from .slack_app import SlackApp
 
@@ -185,11 +186,11 @@ def main(mode: str, channel: str, dry_run: bool, skip_fetch: bool,
     logger.info(f"🔍 Starting LobbyLens in {mode} mode...")
     
     # Initialize database and ensure enhanced schema
-    db_manager = DatabaseManager(settings.database_file)
     try:
+        db_manager = create_database_manager(settings.database_url)
         db_manager.ensure_enhanced_schema()
     except Exception as e:
-        logger.error(f"Failed to initialize database schema: {e}")
+        logger.error(f"Failed to initialize database: {e}")
         sys.exit(1)
     
     # Initialize Slack app
