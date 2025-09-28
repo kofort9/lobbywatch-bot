@@ -1,6 +1,6 @@
 """Tests for main runner functionality."""
 
-import os
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -9,8 +9,6 @@ from click.testing import CliRunner
 from bot.config import Settings
 from bot.notifiers.base import NotificationError
 from bot.run import create_notifier, fetch_data, main, setup_logging
-from typing import Any, Dict, List, Optional
-
 
 class TestFetchData:
     """Tests for data fetching functionality."""
@@ -43,7 +41,6 @@ class TestFetchData:
         assert successful == 0
         assert failed == 0
 
-
 class TestCreateNotifier:
     """Tests for notifier creation."""
 
@@ -63,7 +60,6 @@ class TestCreateNotifier:
         # The actual error handling is tested in integration tests
         pytest.skip("Settings class loads from .env file - tested in integration")
 
-
 class TestSetupLogging:
     """Tests for logging setup."""
 
@@ -81,7 +77,6 @@ class TestSetupLogging:
         # Python logging will handle invalid levels gracefully
         with pytest.raises(AttributeError):
             setup_logging("INVALID")
-
 
 class TestMainCommand:
     """Tests for main CLI command."""

@@ -4,12 +4,10 @@ from datetime import datetime, timedelta, timezone
 
 from bot.digest_v2 import DigestV2Formatter
 from bot.signals_v2 import SignalType, SignalV2, Urgency
-from typing import Any, Dict, List, Optional
 
 # from unittest.mock import patch  # Unused import
 
 # import pytest  # Unused import
-
 
 class TestDigestV2Formatter:
     """Tests for DigestV2Formatter."""

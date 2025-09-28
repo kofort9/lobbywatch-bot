@@ -11,7 +11,6 @@ import pytest
 from bot.daily_signals_v2 import DailySignalsCollectorV2
 from bot.signals_v2 import SignalV2
 
-
 class TestDailySignalsCollectorV2:
     """Test DailySignalsCollectorV2 class"""
 
@@ -29,7 +28,9 @@ class TestDailySignalsCollectorV2:
         return ["Google", "privacy", "AI"]
 
     @pytest.fixture
-    def collector(self, config: Dict[str, str], watchlist: List[str]) -> DailySignalsCollectorV2:
+    def collector(
+        self, config: Dict[str, str], watchlist: List[str]
+    ) -> DailySignalsCollectorV2:
         """Create collector instance"""
         return DailySignalsCollectorV2(config, watchlist)
 
@@ -82,7 +83,13 @@ class TestDailySignalsCollectorV2:
     @patch("bot.daily_signals_v2.SignalsRulesEngine.process_signal")
     @patch("bot.daily_signals_v2.SignalsDatabaseV2.store_signals")
     def test_collect_all_signals_success(
-        self, mock_store: Any, mock_process: Any, mock_reg_gov: Any, mock_fr: Any, mock_congress: Any, collector: DailySignalsCollectorV2
+        self,
+        mock_store: Any,
+        mock_process: Any,
+        mock_reg_gov: Any,
+        mock_fr: Any,
+        mock_congress: Any,
+        collector: DailySignalsCollectorV2,
     ) -> None:
         """Test successful collection of all signals"""
         # Mock signal data

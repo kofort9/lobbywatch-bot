@@ -1,6 +1,5 @@
 """Pytest configuration and fixtures."""
 
-import json
 import sqlite3
 import tempfile
 from datetime import datetime, timedelta
@@ -12,7 +11,6 @@ import requests_mock
 
 from bot.config import Settings
 from bot.notifiers.slack import SlackNotifier
-
 
 @pytest.fixture
 def temp_db() -> Generator[Path, None, None]:
@@ -68,7 +66,6 @@ def temp_db() -> Generator[Path, None, None]:
         yield db_path
     finally:
         db_path.unlink(missing_ok=True)
-
 
 @pytest.fixture
 def populated_db(temp_db: Path) -> Path:
@@ -170,7 +167,8 @@ def populated_db(temp_db: Path) -> Path:
         ),
     ]
     conn.executemany(
-        "INSERT INTO filing (id, client_id, registrant_id, filing_date, created_at, amount, url, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO filing (id, client_id, registrant_id, filing_date, created_at, "
+        "amount, url, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         filings,
     )
 
@@ -193,14 +191,12 @@ def populated_db(temp_db: Path) -> Path:
 
     return temp_db
 
-
 @pytest.fixture
 def temp_state_dir(tmp_path: Path) -> Path:
     """Create temporary state directory."""
     state_dir = tmp_path / "state"
     state_dir.mkdir()
     return state_dir
-
 
 @pytest.fixture
 def test_settings(temp_db: Path, temp_state_dir: Path) -> Settings:
@@ -214,7 +210,6 @@ def test_settings(temp_db: Path, temp_state_dir: Path) -> Settings:
         dry_run=False,
     )
 
-
 @pytest.fixture
 def mock_slack_webhook() -> Any:
     """Mock Slack webhook requests."""
@@ -222,12 +217,10 @@ def mock_slack_webhook() -> Any:
         m.post("https://hooks.slack.com/services/TEST/TEST/TEST", text="ok")
         yield m
 
-
 @pytest.fixture
 def slack_notifier() -> SlackNotifier:
     """Create a test Slack notifier."""
     return SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
-
 
 @pytest.fixture
 def sample_digest_data() -> Dict[str, Any]:

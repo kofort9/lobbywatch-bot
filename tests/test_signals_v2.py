@@ -3,8 +3,6 @@
 # import json  # Unused import
 from datetime import datetime, timedelta, timezone
 
-from typing import Any, Dict, List, Optional
-
 from bot.signals_v2 import (
     SignalDeduplicator,
     SignalsRulesEngine,
@@ -16,7 +14,6 @@ from bot.signals_v2 import (
 # from unittest.mock import patch  # Unused import
 
 # import pytest  # Unused import
-
 
 class TestSignalV2:
     """Tests for SignalV2 data model."""
@@ -152,7 +149,6 @@ class TestSignalV2:
         assert signal.signal_type is None
         assert signal.urgency is None
         assert signal.industry_tag is None
-
 
 class TestSignalsRulesEngine:
     """Tests for SignalsRulesEngine rules processing."""
@@ -669,7 +665,6 @@ class TestSignalsRulesEngine:
         assert processed_signal.priority_score > 0
         assert processed_signal.industry_tag == "Tech"
         assert processed_signal.watchlist_hit is True  # "Apple" in title
-
 
 class TestSignalDeduplicator:
     """Tests for SignalDeduplicator."""

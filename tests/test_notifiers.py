@@ -1,5 +1,6 @@
 """Tests for notification system."""
 
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -7,8 +8,6 @@ import requests
 
 from bot.notifiers.base import NotificationError
 from bot.notifiers.slack import SlackNotifier
-from typing import Any, Dict, List, Optional
-
 
 class TestSlackNotifier:
     """Tests for Slack notifier."""

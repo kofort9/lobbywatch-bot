@@ -2,13 +2,12 @@
 Tests for bot/web_server_v2.py
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 
-from bot.web_server_v2 import create_web_server_v2
-from typing import Any, Dict, List, Optional
-
+from bot.web_server import create_web_server
 
 class TestWebServerV2:
     """Test web_server_v2 module"""
@@ -16,7 +15,7 @@ class TestWebServerV2:
     @pytest.fixture
     def app(self) -> Any:
         """Create Flask app for testing"""
-        return create_web_server_v2()
+        return create_web_server()
 
     @pytest.fixture
     def client(self, app: Any) -> Any:

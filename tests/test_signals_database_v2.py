@@ -5,13 +5,12 @@ import sqlite3
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from bot.signals_database_v2 import SignalsDatabaseV2
 from bot.signals_v2 import SignalType, SignalV2, Urgency
-from typing import Any, Dict, List, Optional
-
 
 class TestSignalsDatabaseV2:
     """Tests for SignalsDatabaseV2."""
