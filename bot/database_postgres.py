@@ -14,35 +14,35 @@ logger = logging.getLogger(__name__)
 
 class PostgresManager(DatabaseManager):
     """PostgreSQL-specific database manager for production."""
-    
+
     def __init__(self, database_url: str):
         """Initialize PostgreSQL manager.
-        
+
         Args:
             database_url: PostgreSQL connection URL
         """
         self.database_url = database_url
         self.db_path = database_url  # For compatibility with parent class
-        
+
     def get_connection(self):
         """Get PostgreSQL connection with proper settings."""
         try:
             conn = psycopg2.connect(
-                self.database_url,
-                cursor_factory=psycopg2.extras.RealDictCursor
+                self.database_url, cursor_factory=psycopg2.extras.RealDictCursor
             )
             conn.autocommit = False
             return conn
         except Exception as e:
             logger.error(f"Failed to connect to PostgreSQL: {e}")
             raise
-    
+
     def ensure_enhanced_schema(self) -> None:
         """Ensure enhanced schema exists for LobbyLens features."""
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Create enhanced tables for LobbyLens features
-                cursor.execute("""
+                cursor.execute(
+                    """
                 -- Channel-specific settings and state
                 CREATE TABLE IF NOT EXISTS channel_settings (
                     id TEXT PRIMARY KEY,
@@ -107,24 +107,25 @@ class PostgresManager(DatabaseManager):
                 CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
                 CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
                 CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
-                """)
-                
+                """
+                )
+
                 conn.commit()
                 logger.info("Enhanced PostgreSQL schema ensured")
 
 
 def create_database_manager(database_url: Optional[str] = None) -> DatabaseManager:
     """Factory function to create appropriate database manager."""
-    
+
     # Use DATABASE_URL if provided (Railway/Heroku style)
     if not database_url:
-        database_url = os.getenv('DATABASE_URL')
-    
-    if database_url and database_url.startswith('postgres'):
+        database_url = os.getenv("DATABASE_URL")
+
+    if database_url and database_url.startswith("postgres"):
         logger.info("Using PostgreSQL database manager")
         return PostgresManager(database_url)
     else:
         # Fall back to SQLite
-        database_file = os.getenv('DATABASE_FILE', 'lobbywatch.db')
+        database_file = os.getenv("DATABASE_FILE", "lobbywatch.db")
         logger.info(f"Using SQLite database manager: {database_file}")
         return DatabaseManager(database_file)

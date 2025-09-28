@@ -16,6 +16,7 @@ from .notifiers.slack import SlackNotifier
 
 console = Console()
 
+
 # Configure logging
 def setup_logging(level: str) -> None:
     """Set up logging with Rich handler."""
@@ -23,98 +24,105 @@ def setup_logging(level: str) -> None:
         level=getattr(logging, level.upper()),
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, rich_tracebacks=True)]
+        handlers=[RichHandler(console=console, rich_tracebacks=True)],
     )
+
 
 logger = logging.getLogger(__name__)
 
 
 def fetch_data() -> tuple[int, int]:
     """Fetch fresh data from configured sources.
-    
+
     Returns:
         Tuple of (successful_fetches, failed_fetches)
     """
     successful = 0
     failed = 0
-    
+
     # Try OpenSecrets
     if settings.opensecrets_api_key:
         try:
             logger.info("Fetching from OpenSecrets API...")
             # Import lazily to avoid hard dependency
             from lobbywatch.sources import opensecrets
+
             result = opensecrets.fetch_recent_lobbying(limit=200)
             logger.info(f"OpenSecrets: Fetched {len(result) if result else 0} records")
             successful += 1
         except ImportError:
-            logger.warning("lobbywatch.sources.opensecrets not available - install lobbywatch package")
+            logger.warning(
+                "lobbywatch.sources.opensecrets not available - install lobbywatch package"
+            )
             failed += 1
         except Exception as e:
             logger.error(f"OpenSecrets fetch failed: {e}")
             failed += 1
     else:
         logger.info("OpenSecrets API key not configured, skipping")
-    
+
     # Try ProPublica
     if settings.propublica_api_key:
         try:
             logger.info("Fetching from ProPublica API...")
             from lobbywatch.sources import propublica
+
             result = propublica.fetch_latest_lobbying(limit=200)
             logger.info(f"ProPublica: Fetched {len(result) if result else 0} records")
             successful += 1
         except ImportError:
-            logger.warning("lobbywatch.sources.propublica not available - install lobbywatch package")
+            logger.warning(
+                "lobbywatch.sources.propublica not available - install lobbywatch package"
+            )
             failed += 1
         except Exception as e:
             logger.error(f"ProPublica fetch failed: {e}")
             failed += 1
     else:
         logger.info("ProPublica API key not configured, skipping")
-    
+
     return successful, failed
 
 
 def create_notifier() -> SlackNotifier:
     """Create and return configured notifier.
-    
+
     Returns:
         Configured SlackNotifier instance
-        
+
     Raises:
         ValueError: If no notifier is properly configured
     """
     settings.validate_notifier_config()
-    
+
     if settings.notifier_type == "slack":
         return SlackNotifier(settings.slack_webhook_url)
-    
+
     raise ValueError("No supported notifier configured")
 
 
 @click.command()
 @click.option(
-    "--dry-run", 
-    is_flag=True, 
+    "--dry-run",
+    is_flag=True,
     default=False,
-    help="Generate digest but don't send notification"
+    help="Generate digest but don't send notification",
 )
 @click.option(
-    "--skip-fetch", 
-    is_flag=True, 
+    "--skip-fetch",
+    is_flag=True,
     default=False,
-    help="Skip data fetching, only generate digest from existing data"
+    help="Skip data fetching, only generate digest from existing data",
 )
 @click.option(
     "--log-level",
     default="INFO",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
-    help="Set logging level"
+    help="Set logging level",
 )
 def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
     """Run LobbyLens daily digest bot.
-    
+
     Fetches fresh lobbying data and sends daily digest via Slack.
     """
     # Override config with CLI options
@@ -122,64 +130,72 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
         settings.dry_run = True
     if log_level:
         settings.log_level = log_level
-        
+
     setup_logging(settings.log_level)
-    
+
     logger.info("🔍 Starting LobbyLens daily digest bot...")
-    
+
     # Track errors for summary
     errors = []
-    
+
     # 1. Fetch fresh data (unless skipped)
     if not skip_fetch:
         try:
             successful_fetches, failed_fetches = fetch_data()
             if failed_fetches > 0:
                 errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
-            logger.info(f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed")
+            logger.info(
+                f"Data fetch complete: {successful_fetches} successful, {failed_fetches} failed"
+            )
         except Exception as e:
             error_msg = f"Critical error during data fetch: {e}"
             logger.error(error_msg)
             errors.append(error_msg)
     else:
         logger.info("Skipping data fetch (--skip-fetch specified)")
-    
+
     # 2. Compute digest
     try:
         logger.info("Computing daily digest...")
         digest_text = compute_digest(settings.database_file)
-        
+
         if errors:
             # Append error summary to digest
-            error_summary = "\\n⚠️ *Errors during processing:*\\n" + "\\n".join(f"• {err}" for err in errors)
+            error_summary = "\\n⚠️ *Errors during processing:*\\n" + "\\n".join(
+                f"• {err}" for err in errors
+            )
             digest_text += error_summary
-            
+
     except DigestError as e:
         logger.error(f"Failed to compute digest: {e}")
         # Send error notification instead
-        digest_text = f"🚨 *LobbyLens Digest Error*\\n\\nFailed to generate daily digest: {e}"
+        digest_text = (
+            f"🚨 *LobbyLens Digest Error*\\n\\nFailed to generate daily digest: {e}"
+        )
         if errors:
-            digest_text += "\\n\\nAdditional errors:\\n" + "\\n".join(f"• {err}" for err in errors)
+            digest_text += "\\n\\nAdditional errors:\\n" + "\\n".join(
+                f"• {err}" for err in errors
+            )
     except Exception as e:
         logger.error(f"Unexpected error computing digest: {e}")
         traceback.print_exc()
         digest_text = f"🚨 *LobbyLens Critical Error*\\n\\nUnexpected error: {e}"
-    
+
     # 3. Send notification
     if settings.dry_run:
         console.print("\\n[yellow]DRY RUN - Would send this digest:[/yellow]")
-        console.print("\\n" + "="*50)
+        console.print("\\n" + "=" * 50)
         console.print(digest_text)
-        console.print("="*50 + "\\n")
+        console.print("=" * 50 + "\\n")
         logger.info("✅ Dry run completed successfully")
         return
-    
+
     try:
         logger.info("Sending digest notification...")
         notifier = create_notifier()
         notifier.send(digest_text)
         logger.info("✅ Daily digest sent successfully")
-        
+
     except NotificationError as e:
         logger.error(f"Failed to send notification: {e}")
         console.print(f"[red]❌ Notification failed:[/red] {e}")
