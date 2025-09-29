@@ -16,8 +16,9 @@ This document lists all GitHub repository secrets required for automated daily V
 | Secret Name | Description | Required For | How to Get |
 |-------------|-------------|--------------|------------|
 | `CONGRESS_API_KEY` | Congress.gov API key | V2 Daily | https://api.congress.gov/sign-up/ |
-| `FEDERAL_REGISTER_API_KEY` | Federal Register API key (optional) | V2 Daily | No key required (free service) |
 | `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | V2 Daily | https://open.gsa.gov/api/regulationsgov/ |
+
+**Note:** Federal Register API doesn't require an API key (free service), so no secret needed.
 
 ### **LDA V1 Quarterly System**
 | Secret Name | Description | Required For | Example Value |
@@ -26,11 +27,12 @@ This document lists all GitHub repository secrets required for automated daily V
 | `LDA_API_KEY` | U.S. Senate LDA API key | LDA V1 | `37cdd62e714fd57d6cad079da319c85cc1880e9d` |
 | `LOBBYLENS_ADMIN_USER_ID` | Admin user ID for DM alerts | LDA V1 | `U09HCH4AQ1H` |
 
-### **Legacy V1 System (Fallback)**
-| Secret Name | Description | Required For | Status |
-|-------------|-------------|--------------|--------|
-| `OPENSECRETS_API_KEY` | OpenSecrets API key | Legacy fallback | Optional |
-| `PROPUBLICA_API_KEY` | ProPublica API key | Legacy fallback | Optional |
+### **Legacy V1 System (Removed)**
+| Secret Name | Description | Status |
+|-------------|-------------|--------|
+| ~~`OPENSECRETS_API_KEY`~~ | OpenSecrets API key | ❌ Removed (not needed) |
+| ~~`PROPUBLICA_API_KEY`~~ | ProPublica API key | ❌ Removed (not needed) |
+| ~~`FEDERAL_REGISTER_API_KEY`~~ | Federal Register API key | ❌ Removed (free service) |
 
 ## 🕐 **Scheduling Configuration**
 
@@ -96,12 +98,13 @@ Based on your `.env` file, you already have:
 - ✅ `LDA_API_KEY` - configured
 - ✅ `LOBBYLENS_ADMIN_USER_ID` - configured
 
-**Still need to add to GitHub Secrets:**
-- `CONGRESS_API_KEY`
-- `FEDERAL_REGISTER_API_KEY` (optional)
-- `REGULATIONS_GOV_API_KEY`
-- `SLACK_WEBHOOK_URL`
-- `LOBBYLENS_CHANNELS`
+**GitHub Secrets Status:**
+- ✅ `CONGRESS_API_KEY` - added
+- ✅ `REGULATIONS_GOV_API_KEY` - added
+- ✅ `SLACK_WEBHOOK_URL` - added
+- ✅ `LOBBYLENS_CHANNELS` - added
+
+**Ready for testing!** 🚀
 
 ## 📞 **Support**
 
