@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Comprehensive test of LDA V1 MVP functionality."""
 
-from bot.slack_app import SlackApp
+# from bot.slack_app import SlackApp  # Unused
 from bot.lda_etl import LDAETLPipeline
 from bot.lda_digest import LDADigestComputer
 from bot.database import DatabaseManager

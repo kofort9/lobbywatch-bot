@@ -12,13 +12,13 @@ Architecture:
 # V2: Enhanced Runner Tests (Current Active System)
 # =============================================================================
 
-from typing import Any, List
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 
 from bot.config import Settings
-from bot.run import fetch_data, run_daily_digest, run_mini_digest, setup_logging
+from bot.run import fetch_data, run_daily_digest, setup_logging
 
 
 class TestFetchData:

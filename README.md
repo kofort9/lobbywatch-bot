@@ -206,7 +206,7 @@ cp .env.example .env
 ### 4. Get API Keys
 
 - **Congress API**: Get a key at https://api.congress.gov/sign-up/
-- **Federal Register**: No API key required (free service)
+- **Regulations.gov API**: Get a key at https://api.data.gov/signup/
 - **Regulations.gov**: Get a key at https://open.gsa.gov/api/regulationsgov/
 
 ### 5. Run Locally
@@ -239,7 +239,6 @@ Add these secrets in your GitHub repository settings (`Settings > Secrets and va
 | Secret Name | Description | Required |
 |-------------|-------------|----------|
 | `CONGRESS_API_KEY` | Congress API key for bills/hearings | ⚠️ Recommended |
-| `FEDERAL_REGISTER_API_KEY` | Federal Register API key | ⚠️ Recommended |
 | `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | ⚠️ Recommended |
 
 ### Workflows
@@ -266,7 +265,6 @@ You can manually trigger the daily digest from the GitHub Actions tab using "Run
 | `ENABLE_LDA_V1` | `false` | Enable LDA V1 features |
 | `LDA_API_KEY` | - | U.S. Senate LDA API key |
 | `CONGRESS_API_KEY` | - | Congress API key for bills/hearings |
-| `FEDERAL_REGISTER_API_KEY` | - | Federal Register API key (optional) |
 | `REGULATIONS_GOV_API_KEY` | - | Regulations.gov API key |
 | `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARN, ERROR) |
 | `DRY_RUN` | `false` | Generate digest without sending |
@@ -548,6 +546,6 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- [OpenSecrets.org](https://www.opensecrets.org/) for lobbying data API
-- [ProPublica](https://www.propublica.org/) for Congress API
+- [U.S. Senate LDA API](https://lda.senate.gov/api/) for lobbying data
+- [Congress API](https://api.congress.gov/) for bills and hearings
 - Built with direct government API integrations for real-time data
