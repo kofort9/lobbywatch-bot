@@ -544,7 +544,8 @@ class LegacySignalsProcessor:
         import logging
 
         logging.warning(
-            "Using legacy V1 SignalsProcessor. Consider upgrading to SignalsRulesEngine."
+            "Using legacy V1 SignalsProcessor. Consider upgrading to "
+            "SignalsRulesEngine."
         )
 
     def process_signals(self, signals: List[Dict]) -> List[Dict]:

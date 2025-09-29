@@ -276,7 +276,10 @@ class DigestFormatter:
         total_signals = len(signals)
         high_priority = len([s for s in signals if s.priority_score >= 3.0])
 
-        return f"🔍 **LobbyLens Daily Digest** — {date_str}\n_{total_signals} signals, {high_priority} high priority_"
+        return (
+            f"🔍 **LobbyLens Daily Digest** — {date_str}\n"
+            f"_{total_signals} signals, {high_priority} high priority_"
+        )
 
     def _format_watchlist_signal(self, signal: SignalV2) -> str:
         """Format a watchlist alert signal."""
@@ -464,7 +467,8 @@ class DigestFormatter:
 
     def _get_front_page_what_changed(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get signals for front page 'What Changed' section (max 5, priority ≥ 3.0)."""
-        # Filter for high priority only (≥ 3.0) - includes proposed rules, hearings, markups
+        # Filter for high priority only (≥ 3.0) - includes proposed rules, hearings,
+        # markups
         high_priority = [
             s
             for s in signals
@@ -477,7 +481,9 @@ class DigestFormatter:
         return sorted(bundled_signals, key=lambda s: s.priority_score, reverse=True)
 
     def _bundle_similar_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
-        """Bundle similar signals (e.g., FAA Airworthiness Directives) into single entries."""
+        """Bundle similar signals (e.g., FAA Airworthiness Directives) into single
+        entries.
+        """
         from collections import defaultdict
 
         # Group by agency and normalized topic
@@ -532,7 +538,8 @@ class DigestFormatter:
 
         # Create bundled title
         count = len(signals)
-        bundled_title = f"{agency} {topic} — {count} {'directives' if 'directive' in topic.lower() else 'items'} today"
+        item_type = "directives" if "directive" in topic.lower() else "items"
+        bundled_title = f"{agency} {topic} — {count} {item_type} today"
 
         # Create bundled signal
         return SignalV2(
@@ -594,7 +601,9 @@ class DigestFormatter:
         return sorted_industries
 
     def _get_outlier(self, signals: List[SignalV2]) -> Optional[SignalV2]:
-        """Get the single outlier signal based on comment surge, absolute delta, or industry impact."""
+        """Get the single outlier signal based on comment surge, absolute delta, or
+        industry impact.
+        """
         if not signals:
             return None
 
@@ -610,7 +619,8 @@ class DigestFormatter:
             return max(surge_candidates, key=lambda s: s.comment_surge_pct)
 
         # 2. Highest absolute delta (≥300 comments / 24h)
-        # Note: This would require comment count data, which we don't have in current schema
+        # Note: This would require comment count data, which we don't have in current
+        # schema
         # For now, skip this criterion
 
         # 3. Widest industry impact (multiple issue codes)
@@ -655,7 +665,8 @@ class DigestFormatter:
 
         stats_str = (
             f"Bills {mini_stats['bills']} · FR {mini_stats['fr']} · "
-            f"Dockets {mini_stats['dockets']} · High-priority {mini_stats['high_priority']}"
+            f"Dockets {mini_stats['dockets']} · "
+            f"High-priority {mini_stats['high_priority']}"
         )
 
         return (
@@ -664,7 +675,8 @@ class DigestFormatter:
         )
 
     def _format_front_page_signal(self, signal: SignalV2) -> str:
-        """Format a signal for the front page with type tag and why-it-matters clause."""
+        """Format a signal for the front page with type tag and why-it-matters clause.
+        """
         # Add type tag
         type_tag = self._get_signal_type_tag(signal)
 
@@ -678,7 +690,10 @@ class DigestFormatter:
         link_text = "View all" if hasattr(signal, "bundled_count") else "View"
         source_emoji = "FR" if signal.source == "federal_register" else "C"
 
-        return f"• {type_tag} — {title_truncated} • {why_matters} • <{source_emoji}|{link_text}>"
+        return (
+            f"• {type_tag} — {title_truncated} • {why_matters} • "
+            f"<{source_emoji}|{link_text}>"
+        )
 
     def _get_signal_type_tag(self, signal: SignalV2) -> str:
         """Get signal type tag for display."""
