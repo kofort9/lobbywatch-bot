@@ -16,7 +16,7 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
 
     # Import v2 components (will be consolidated)
     from bot.run import run_daily_digest, run_mini_digest
-    from bot.signals_database_v2 import SignalsDatabaseV2
+    from bot.signals_database import SignalsDatabaseV2
 
     database = SignalsDatabaseV2()
 

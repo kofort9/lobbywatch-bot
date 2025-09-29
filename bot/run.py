@@ -11,7 +11,7 @@ from rich.logging import RichHandler
 
 from .config import settings
 
-# Legacy digest imports removed - V2 system uses digest_v2.py
+# V2 System - Enhanced digest with consolidated modules (no version suffixes)
 from .notifiers.base import NotificationError
 from .notifiers.slack import SlackNotifier
 
@@ -24,17 +24,17 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     import logging
 
     # Removed unused imports
-    from bot.daily_signals_v2 import DailySignalsCollectorV2
-    from bot.digest_v2 import DigestV2Formatter
+    from bot.daily_signals import DailySignalsCollector
+    from bot.digest import DigestFormatter
 
-    # from bot.signals_database_v2 import SignalsDatabaseV2  # Unused for now
+    # from bot.signals_database import SignalsDatabaseV2  # Unused for now
 
     logger = logging.getLogger(__name__)
     logger.info(f"Running daily digest for last {hours_back} hours")
 
     # Initialize components
-    collector = DailySignalsCollectorV2(settings.model_dump())
-    formatter = DigestV2Formatter()
+    collector = DailySignalsCollector(settings.model_dump())
+    formatter = DigestFormatter()
     # database = SignalsDatabaseV2()  # Unused for now
 
     # Get watchlist for channel
@@ -57,17 +57,17 @@ def run_mini_digest(
     import logging
 
     # Removed unused imports
-    from bot.daily_signals_v2 import DailySignalsCollectorV2
-    from bot.digest_v2 import DigestV2Formatter
+    from bot.daily_signals import DailySignalsCollector
+    from bot.digest import DigestFormatter
 
-    # from bot.signals_database_v2 import SignalsDatabaseV2  # Unused for now
+    # from bot.signals_database import SignalsDatabaseV2  # Unused for now
 
     logger = logging.getLogger(__name__)
     logger.info(f"Running mini digest for last {hours_back} hours")
 
     # Initialize components
-    collector = DailySignalsCollectorV2(settings.model_dump())
-    formatter = DigestV2Formatter()
+    collector = DailySignalsCollector(settings.model_dump())
+    formatter = DigestFormatter()
     # database = SignalsDatabaseV2()  # Unused for now
 
     # Get watchlist for channel
