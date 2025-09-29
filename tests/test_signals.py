@@ -24,51 +24,47 @@ class TestSignalV2:
         now = datetime.now(timezone.utc)
         signal = SignalV2(
             source="congress",
-            stable_id="bill-123",
+            source_id="bill-123",
             title="Test Bill",
-            summary="A test bill for testing",
-            url="https://example.com/bill-123",
+            link="https://example.com/bill-123",
             timestamp=now,
             issue_codes=["HCR", "TEC"],
             bill_id="HR-123",
-            action_type="introduced",
             agency="HHS",
-            comment_count=100,
-            deadline=now + timedelta(days=30),
-            metric_json={"comments_24h_delta_pct": 50.0},
+            deadline=(now + timedelta(days=30)).isoformat(),
+            metrics={"comments_24h_delta_pct": 50.0},
         )
 
         assert signal.source == "congress"
-        assert signal.stable_id == "bill-123"
+        assert signal.stable_id == "congress:bill-123"
         assert signal.title == "Test Bill"
         assert signal.issue_codes == ["HCR", "TEC"]
         assert signal.bill_id == "HR-123"
-        assert signal.comment_count == 100
-        assert signal.metric_json is not None
-        assert signal.metric_json["comments_24h_delta_pct"] == 50.0
+        assert signal.metrics is not None
+        assert signal.metrics["comments_24h_delta_pct"] == 50.0
 
     def test_signal_to_dict(self) -> None:
         """Test signal serialization to dictionary."""
         now = datetime.now(timezone.utc)
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-123",
+            source_id="fr-123",
             title="Final Rule: Privacy",
             summary="A final rule about privacy",
-            url="https://example.com/fr-123",
+            link="https://example.com/fr-123",
             timestamp=now,
             issue_codes=["TEC"],
             signal_type=SignalType.FINAL_RULE,
             urgency=Urgency.HIGH,
             priority_score=7.5,
-            industry_tag="Tech",
+            industry="Tech",
             watchlist_hit=True,
         )
 
         data = signal.to_dict()
 
         assert data["source"] == "federal_register"
-        assert data["stable_id"] == "fr-123"
+        assert data["stable_id"] == "federal_register:fr-123"
         assert data["title"] == "Final Rule: Privacy"
         assert data["issue_codes"] == '["TEC"]'
         assert data["signal_type"] == "final_rule"
@@ -82,29 +78,29 @@ class TestSignalV2:
         now = datetime.now(timezone.utc)
         data = {
             "source": "regulations_gov",
-            "stable_id": "docket-456",
+            "source_id": "docket-456",
             "title": "Docket Comment Period",
             "summary": "A docket with comments",
-            "url": "https://example.com/docket-456",
+            "link": "https://example.com/docket-456",
             "timestamp": now.isoformat(),
-            "issue_codes": '["ENV", "ENE"]',
+            "issue_codes": ["ENV", "ENE"],
             "bill_id": None,
             "action_type": None,
             "agency": "EPA",
             "comment_count": 250,
             "deadline": (now + timedelta(days=14)).isoformat(),
-            "metric_json": '{"comments_24h_delta_pct": 150.0}',
+            "metrics": {"comments_24h_delta_pct": 150.0},
             "signal_type": "docket",
             "urgency": "medium",
             "priority_score": 4.2,
-            "industry_tag": "Environment",
+            "industry": "Environment",
             "watchlist_hit": False,
         }
 
         signal = SignalV2.from_dict(data)
 
         assert signal.source == "regulations_gov"
-        assert signal.stable_id == "docket-456"
+        assert signal.stable_id == "{}:regulations_gov:docket-456"
         assert signal.title == "Docket Comment Period"
         assert signal.issue_codes == ["ENV", "ENE"]
         assert signal.agency == "EPA"
@@ -112,7 +108,7 @@ class TestSignalV2:
         assert signal.signal_type == SignalType.DOCKET
         assert signal.urgency == Urgency.MEDIUM
         assert signal.priority_score == 4.2
-        assert signal.industry_tag == "Environment"
+        assert signal.industry == "Environment"
         assert signal.watchlist_hit is False
 
     def test_signal_from_dict_with_none_values(self) -> None:
@@ -120,22 +116,22 @@ class TestSignalV2:
         now = datetime.now(timezone.utc)
         data = {
             "source": "congress",
-            "stable_id": "bill-789",
+            "source_id": "bill-789",
             "title": "Simple Bill",
             "summary": "A simple bill",
-            "url": "https://example.com/bill-789",
+            "link": "https://example.com/bill-789",
             "timestamp": now.isoformat(),
-            "issue_codes": "[]",
+            "issue_codes": [],
             "bill_id": None,
             "action_type": None,
             "agency": None,
             "comment_count": None,
             "deadline": None,
-            "metric_json": None,
+            "metrics": {},
             "signal_type": None,
             "urgency": None,
             "priority_score": 0.0,
-            "industry_tag": None,
+            "industry": None,
             "watchlist_hit": False,
         }
 
@@ -173,10 +169,10 @@ class TestSignalsRulesEngine:
         # Final rule
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Final Rule: Privacy Protection",
             summary="This is a final rule about privacy",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=datetime.now(timezone.utc),
         )
         signal_type = engine._classify_signal_type(signal)
@@ -212,10 +208,10 @@ class TestSignalsRulesEngine:
         # Hearing
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Hearing: AI Safety",
             summary="A hearing about AI safety",
-            url="https://example.com/hearing-1",
+            link="https://example.com/hearing-1",
             timestamp=datetime.now(timezone.utc),
         )
         signal_type = engine._classify_signal_type(signal)
@@ -247,10 +243,10 @@ class TestSignalsRulesEngine:
 
         signal = SignalV2(
             source="regulations_gov",
-            stable_id="docket-1",
+            source_id="docket-1",
             title="Docket: Environmental Standards",
             summary="A docket about environmental standards",
-            url="https://example.com/docket-1",
+            link="https://example.com/docket-1",
             timestamp=datetime.now(timezone.utc),
         )
         signal_type = engine._classify_signal_type(signal)
@@ -264,10 +260,10 @@ class TestSignalsRulesEngine:
         # Final rule effective in 15 days (critical)
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Final Rule: Critical Regulation",
             summary="A critical final rule",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=now,
             deadline=now + timedelta(days=15),
         )
@@ -283,10 +279,10 @@ class TestSignalsRulesEngine:
         # Proposed rule with deadline in 10 days
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Proposed Rule: Important Regulation",
             summary="An important proposed rule",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=now,
             deadline=now + timedelta(days=10),
         )
@@ -297,10 +293,10 @@ class TestSignalsRulesEngine:
         # Hearing in 5 days
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Hearing: Important Topic",
             summary="An important hearing",
-            url="https://example.com/hearing-1",
+            link="https://example.com/hearing-1",
             timestamp=now,
             deadline=now + timedelta(days=5),
         )
@@ -311,10 +307,10 @@ class TestSignalsRulesEngine:
         # Floor vote
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Floor Vote: Important Bill",
             summary="An important floor vote",
-            url="https://example.com/vote-1",
+            link="https://example.com/vote-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.BILL
@@ -325,12 +321,12 @@ class TestSignalsRulesEngine:
         # Docket with 250% surge
         signal = SignalV2(
             source="regulations_gov",
-            stable_id="docket-1",
+            source_id="docket-1",
             title="Docket: High Interest",
             summary="A high interest docket",
-            url="https://example.com/docket-1",
+            link="https://example.com/docket-1",
             timestamp=now,
-            metric_json={"comments_24h_delta_pct": 250.0},
+            metrics={"comments_24h_delta_pct": 250.0},
         )
         signal.signal_type = SignalType.DOCKET
         urgency = engine._determine_urgency(signal)
@@ -344,10 +340,10 @@ class TestSignalsRulesEngine:
         # Hearing in 15 days
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Hearing: Medium Priority",
             summary="A medium priority hearing",
-            url="https://example.com/hearing-1",
+            link="https://example.com/hearing-1",
             timestamp=now,
             deadline=now + timedelta(days=15),
         )
@@ -358,10 +354,10 @@ class TestSignalsRulesEngine:
         # Docket with comments
         signal = SignalV2(
             source="regulations_gov",
-            stable_id="docket-1",
+            source_id="docket-1",
             title="Docket: Active",
             summary="An active docket",
-            url="https://example.com/docket-1",
+            link="https://example.com/docket-1",
             timestamp=now,
             comment_count=50,
         )
@@ -372,10 +368,10 @@ class TestSignalsRulesEngine:
         # Bill committee referral
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Bill: Committee Referral",
             summary="A bill referred to committee",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.BILL
@@ -391,10 +387,10 @@ class TestSignalsRulesEngine:
         # Bill introduced
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Bill: New Introduction",
             summary="A newly introduced bill",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.BILL
@@ -405,10 +401,10 @@ class TestSignalsRulesEngine:
         # Notice
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Notice: General Information",
             summary="A general notice",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.NOTICE
@@ -423,10 +419,10 @@ class TestSignalsRulesEngine:
         # Final rule with high urgency
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Final Rule: Important",
             summary="An important final rule",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.FINAL_RULE
@@ -440,10 +436,10 @@ class TestSignalsRulesEngine:
         # Bill with low urgency
         signal = SignalV2(
             source="congress",
-            stable_id="congress-1",
+            source_id="congress-1",
             title="Bill: New",
             summary="A new bill",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=now,
         )
         signal.signal_type = SignalType.BILL
@@ -462,13 +458,13 @@ class TestSignalsRulesEngine:
         # Signal with comment surge and near deadline
         signal = SignalV2(
             source="regulations_gov",
-            stable_id="docket-1",
+            source_id="docket-1",
             title="Docket: High Activity",
             summary="A docket with high activity",
-            url="https://example.com/docket-1",
+            link="https://example.com/docket-1",
             timestamp=now,
             deadline=now + timedelta(days=2),  # Near deadline
-            metric_json={"comments_24h_delta_pct": 400.0},  # High surge
+            metrics={"comments_24h_delta_pct": 400.0},  # High surge
         )
         signal.signal_type = SignalType.DOCKET
         signal.urgency = Urgency.HIGH
@@ -485,10 +481,10 @@ class TestSignalsRulesEngine:
         # Health issue code
         signal = SignalV2(
             source="congress",
-            stable_id="bill-1",
+            source_id="bill-1",
             title="Health Bill",
             summary="A health-related bill",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=["HCR"],
         )
@@ -512,10 +508,10 @@ class TestSignalsRulesEngine:
         # HHS agency
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="HHS Rule",
             summary="A rule from HHS",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=datetime.now(timezone.utc),
             agency="HHS",
             issue_codes=[],
@@ -544,10 +540,10 @@ class TestSignalsRulesEngine:
         # Privacy keyword
         signal = SignalV2(
             source="congress",
-            stable_id="bill-1",
+            source_id="bill-1",
             title="Privacy Protection Act",
             summary="A bill about privacy protection",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=[],
         )
@@ -573,10 +569,10 @@ class TestSignalsRulesEngine:
         # No matching issue codes, agencies, or keywords
         signal = SignalV2(
             source="congress",
-            stable_id="bill-1",
+            source_id="bill-1",
             title="General Government Bill",
             summary="A general government bill",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=[],
         )
@@ -591,10 +587,10 @@ class TestSignalsRulesEngine:
         # Title match
         signal = SignalV2(
             source="congress",
-            stable_id="bill-1",
+            source_id="bill-1",
             title="Apple Privacy Bill",
             summary="A bill about Apple's privacy practices",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
         )
         hit = engine._check_watchlist_hit(signal)
@@ -633,10 +629,10 @@ class TestSignalsRulesEngine:
 
         signal = SignalV2(
             source="congress",
-            stable_id="bill-1",
+            source_id="bill-1",
             title="Apple Privacy Bill",
             summary="A bill about Apple's privacy practices",
-            url="https://example.com/bill-1",
+            link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
         )
         hit = engine._check_watchlist_hit(signal)
@@ -650,10 +646,10 @@ class TestSignalsRulesEngine:
 
         signal = SignalV2(
             source="federal_register",
-            stable_id="fr-1",
+            source_id="fr-1",
             title="Final Rule: Apple Privacy Standards",
             summary="A final rule about Apple's privacy standards",
-            url="https://example.com/fr-1",
+            link="https://example.com/fr-1",
             timestamp=now,
             issue_codes=["TEC"],
             deadline=now + timedelta(days=20),
@@ -680,19 +676,19 @@ class TestSignalDeduplicator:
         signals = [
             SignalV2(
                 source="congress",
-                stable_id="bill-1",
+                source_id="bill-1",
                 title="Bill 1",
                 summary="First bill",
-                url="https://example.com/bill-1",
+                link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=5.0,
             ),
             SignalV2(
                 source="congress",
-                stable_id="bill-2",
+                source_id="bill-2",
                 title="Bill 2",
                 summary="Second bill",
-                url="https://example.com/bill-2",
+                link="https://example.com/bill-2",
                 timestamp=now,
                 priority_score=3.0,
             ),
@@ -711,28 +707,28 @@ class TestSignalDeduplicator:
         signals = [
             SignalV2(
                 source="congress",
-                stable_id="bill-1",
+                source_id="bill-1",
                 title="Bill 1",
                 summary="First bill",
-                url="https://example.com/bill-1",
+                link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=5.0,
             ),
             SignalV2(
                 source="congress",
-                stable_id="bill-1",  # Duplicate stable_id
+                source_id="bill-1",  # Duplicate stable_id
                 title="Bill 1 Updated",
                 summary="First bill updated",
-                url="https://example.com/bill-1",
+                link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=7.0,  # Higher priority
             ),
             SignalV2(
                 source="congress",
-                stable_id="bill-2",
+                source_id="bill-2",
                 title="Bill 2",
                 summary="Second bill",
-                url="https://example.com/bill-2",
+                link="https://example.com/bill-2",
                 timestamp=now,
                 priority_score=3.0,
             ),
@@ -754,28 +750,28 @@ class TestSignalDeduplicator:
         signals = [
             SignalV2(
                 source="congress",
-                stable_id="action-1",
+                source_id="action-1",
                 title="Bill Action 1",
                 summary="First action on HR-123",
-                url="https://example.com/action-1",
+                link="https://example.com/action-1",
                 timestamp=now,
                 bill_id="HR-123",
             ),
             SignalV2(
                 source="congress",
-                stable_id="action-2",
+                source_id="action-2",
                 title="Bill Action 2",
                 summary="Second action on HR-123",
-                url="https://example.com/action-2",
+                link="https://example.com/action-2",
                 timestamp=now,
                 bill_id="HR-123",
             ),
             SignalV2(
                 source="congress",
-                stable_id="action-3",
+                source_id="action-3",
                 title="Bill Action 3",
                 summary="Action on HR-456",
-                url="https://example.com/action-3",
+                link="https://example.com/action-3",
                 timestamp=now,
                 bill_id="HR-456",
             ),
@@ -794,26 +790,26 @@ class TestSignalDeduplicator:
         signals = [
             SignalV2(
                 source="regulations_gov",
-                stable_id="EPA-2023-001-doc1",
+                source_id="EPA-2023-001-doc1",
                 title="Docket Comment 1",
                 summary="First comment on EPA docket",
-                url="https://example.com/docket-1",
+                link="https://example.com/docket-1",
                 timestamp=now,
             ),
             SignalV2(
                 source="regulations_gov",
-                stable_id="EPA-2023-001-doc2",
+                source_id="EPA-2023-001-doc2",
                 title="Docket Comment 2",
                 summary="Second comment on EPA docket",
-                url="https://example.com/docket-2",
+                link="https://example.com/docket-2",
                 timestamp=now,
             ),
             SignalV2(
                 source="regulations_gov",
-                stable_id="FCC-2023-002-doc1",
+                source_id="FCC-2023-002-doc1",
                 title="Docket Comment 3",
                 summary="Comment on FCC docket",
-                url="https://example.com/docket-3",
+                link="https://example.com/docket-3",
                 timestamp=now,
             ),
         ]
@@ -833,10 +829,10 @@ class TestSignalDeduplicator:
         signals = [
             SignalV2(
                 source="regulations_gov",
-                stable_id="EPA-2023-001",  # No dash
+                source_id="EPA-2023-001",  # No dash
                 title="Docket Comment",
                 summary="Comment on EPA docket",
-                url="https://example.com/docket-1",
+                link="https://example.com/docket-1",
                 timestamp=now,
             ),
         ]

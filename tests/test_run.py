@@ -58,7 +58,7 @@ class TestCreateNotifier:
 
     def test_create_notifier_slack(self) -> None:
         """Test creating Slack notifier."""
-        settings = Settings(slack_webhook_url="https://hooks.slack.com/test")
+        settings = Settings(slack_webhook_link="https://hooks.slack.com/test")
 
         with patch("bot.run.settings", settings):
             # notifier = create_notifier()
