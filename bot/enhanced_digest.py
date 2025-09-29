@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .database import DatabaseManager
+from .utils import slack_link
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +93,9 @@ class EnhancedDigestComputer:
         entry = f"• {client} → {registrant} ({amount}){description}"
 
         # Add view link if URL available
-        if filing["url"]:
-            entry += f" • <{filing['url']}|View>"
+        link = slack_link(filing["url"], "Filing")
+        if link:
+            entry += f" • {link}"
 
         # Bold if watchlist match
         if is_watchlist:

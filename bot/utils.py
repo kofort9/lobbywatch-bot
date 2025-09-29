@@ -126,6 +126,22 @@ def normalize_entity_name(name: str) -> str:
     return normalized
 
 
+def slack_link(url: Optional[str], label: str = "Link") -> str:
+    """Return a valid Slack mrkdwn link or an empty string if url missing.
+
+    Args:
+        url: The URL to link to (can be None)
+        label: The display label for the link
+
+    Returns:
+        Slack mrkdwn formatted link or empty string if no URL
+    """
+    if not url or not url.strip():
+        return ""
+    # Slack mrkdwn: <url|label>
+    return f"<{url}|{label}>"
+
+
 def derive_quarter_from_date(filing_date: str) -> Tuple[str, int]:
     """Derive quarter and year from filing date.
 

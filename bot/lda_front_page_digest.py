@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .database import DatabaseManager
 
 # from .lda_issue_codes import get_issue_description  # Unused
-from .utils import format_amount
+from .utils import format_amount, slack_link
 
 logger = logging.getLogger(__name__)
 
@@ -791,10 +791,8 @@ class LDAFrontPageDigest:
 
         # URL
         url = item.get("url", "")
-        if url:
-            url_part = f" • <{url}|Filing>"
-        else:
-            url_part = ""
+        link = slack_link(url, "Filing")
+        url_part = f" • {link}" if link else ""
 
         return (
             f"• {client} → {registrant} ({amount}) • "
@@ -817,10 +815,8 @@ class LDAFrontPageDigest:
 
         # URL
         url = item.get("url", "")
-        if url:
-            url_part = f" • <{url}|Filing>"
-        else:
-            url_part = ""
+        link = slack_link(url, "Filing")
+        url_part = f" • {link}" if link else ""
 
         return f"• {client} → {registrant} ({amount}) • Issues: {issue_str}{url_part}"
 

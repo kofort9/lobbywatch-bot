@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 import pytz
 
 from bot.signals import SignalDeduplicator, SignalType, SignalV2
+from bot.utils import slack_link
 
 
 class DigestFormatter:
@@ -698,14 +699,24 @@ class DigestFormatter:
         # Add why-it-matters clause
         why_matters = self._get_why_matters_clause(signal)
 
-        # Format with link
-        link_text = "View all" if hasattr(signal, "bundled_count") else "View"
-        source_emoji = "FR" if signal.source == "federal_register" else "C"
+        # Determine label by source
+        if signal.source == "federal_register":
+            label = "FR"
+        elif signal.source == "regulations_gov":
+            label = "Docket" if signal.docket_id else "Document"
+        elif signal.source == "congress":
+            label = "Congress"
+        else:
+            label = "View"
 
-        return (
-            f"• {type_tag} — {title_truncated} • {why_matters} • "
-            f"<{source_emoji}|{link_text}>"
-        )
+        # Create link using helper
+        link = slack_link(signal.link, label)
+
+        # Format line - only include link if it exists
+        if link:
+            return f"• {type_tag} — {title_truncated} • {why_matters} • {link}"
+        else:
+            return f"• {type_tag} — {title_truncated} • {why_matters}"
 
     def _get_signal_type_tag(self, signal: SignalV2) -> str:
         """Get signal type tag for display."""

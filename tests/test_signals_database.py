@@ -504,7 +504,8 @@ class TestSignalsDatabaseV2:
         assert stats["by_source"]["federal_register"] == 1
         assert stats["by_source"]["regulations_gov"] == 1
         # Note: by_urgency, by_industry, and watchlist_hits are not in the actual stats
-        # The actual stats only include: total_signals, recent_signals_24h, high_priority_24h, average_priority, by_source
+        # The actual stats only include: total_signals, recent_signals_24h,
+        # high_priority_24h, average_priority, by_source
 
     def test_signal_serialization_roundtrip(self, temp_db: Any) -> None:
         """Test that signal serialization and deserialization works correctly."""

@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from bot.signals import SignalV2
+from bot.utils import slack_link
 
 logger = logging.getLogger(__name__)
 
@@ -479,13 +480,17 @@ class FRDigestFormatter:
         # Get why it matters clause
         why_matters = self._get_why_matters_clause(signal)
 
-        # Get real link
-        link = self._get_real_link(signal)
+        # Get real link using helper
+        link = slack_link(signal.link, "FR")
 
         # Format with industry tag
         industry_tag = f"[{signal.industry}]" if signal.industry else "[Other]"
 
-        return f"• {industry_tag} {type_tag} — {title} — {why_matters} • <{link}|FR>"
+        # Format line - only include link if it exists
+        if link:
+            return f"• {industry_tag} {type_tag} — {title} — {why_matters} • {link}"
+        else:
+            return f"• {industry_tag} {type_tag} — {title} — {why_matters}"
 
     def _get_why_matters_clause(self, signal: SignalV2) -> str:
         """Get deterministic why-it-matters clause."""
@@ -538,22 +543,6 @@ class FRDigestFormatter:
 
         return " • ".join(clauses[:2])  # Max 2 clauses
 
-    def _get_real_link(self, signal: SignalV2) -> str:
-        """Get real link (html_url with pdf_url fallback)."""
-        # Use html_url if available, otherwise pdf_url
-        link = signal.link or signal.url or ""
-
-        # If no link available, create a search URL
-        if not link:
-            agency = signal.agency or "Unknown"
-            today = datetime.now().strftime("%Y-%m-%d")
-            link = (
-                f"https://www.federalregister.gov/search?"
-                f"publication_date={today}&agency={agency.replace(' ', '+')}"
-            )
-
-        return link
-
     def _format_industry_snapshot_item(
         self, industry: str, counts: Dict[str, int]
     ) -> str:
@@ -574,9 +563,12 @@ class FRDigestFormatter:
 
     def _format_faa_ads_bundle(self, faa_ads: SignalV2) -> str:
         """Format FAA ADs bundle."""
-        link = self._get_real_link(faa_ads)
+        link = slack_link(faa_ads.link, "FAA")
 
-        return f"• {faa_ads.title} • <{link}|FAA>"
+        if link:
+            return f"• {faa_ads.title} • {link}"
+        else:
+            return f"• {faa_ads.title}"
 
     def _format_outlier_item(self, signal: SignalV2) -> str:
         """Format outlier item."""
@@ -584,9 +576,12 @@ class FRDigestFormatter:
         if len(title) > 80:
             title = title[:77] + "..."
 
-        link = self._get_real_link(signal)
+        link = slack_link(signal.link, "FR")
 
-        return f"• {title} • <{link}|FR>"
+        if link:
+            return f"• {title} • {link}"
+        else:
+            return f"• {title}"
 
     def _format_footer(self) -> str:
         """Format footer."""

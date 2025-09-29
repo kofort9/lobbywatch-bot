@@ -384,7 +384,7 @@ class DailySignalsCollector:
                     doc["publication_date"] + "T00:00:00+00:00"
                 ),
                 title=title,
-                link=doc.get("html_url", ""),
+                link=doc.get("html_url") or doc.get("pdf_url") or "",
                 agency=", ".join(doc.get("agency_names", [])),
                 committee=None,
                 bill_id=None,
@@ -432,7 +432,7 @@ class DailySignalsCollector:
                     attributes.get("lastModifiedDate", "").replace("Z", "+00:00")
                 ),
                 title=title,
-                link=f"https://www.regulations.gov/document/{doc.get('id', '')}",
+                link=self._get_regulations_gov_link(attributes),
                 agency=attributes.get("agencyId", ""),
                 committee=None,
                 bill_id=None,
@@ -448,6 +448,17 @@ class DailySignalsCollector:
         except Exception as e:
             logger.error(f"Error creating Regulations.gov signal: {e}")
             return None
+
+    def _get_regulations_gov_link(self, attributes: Dict[str, Any]) -> str:
+        """Get the appropriate Regulations.gov link for a document."""
+        docket_id = attributes.get("docketId")
+        document_id = attributes.get("documentId")
+        if docket_id:
+            return f"https://www.regulations.gov/docket/{docket_id}"
+        elif document_id:
+            return f"https://www.regulations.gov/document/{document_id}"
+        else:
+            return ""
 
     def _collect_committee_activities(
         self, committee: Dict[str, Any], hours_back: int
