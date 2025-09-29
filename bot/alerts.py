@@ -14,7 +14,15 @@ class AlertManager:
     
     def __init__(self, slack_token: Optional[str] = None):
         self.slack_token = slack_token or os.getenv("SLACK_BOT_TOKEN")
-        self.alerts_channel = os.getenv("LOBBYLENS_ALERTS_CHANNEL", "#lobbylens-alerts")
+        
+        # Support both DM and channel alerts
+        self.admin_user_id = os.getenv("LOBBYLENS_ADMIN_USER_ID")  # For DM alerts
+        self.alerts_channel = os.getenv("LOBBYLENS_ALERTS_CHANNEL", "#lobbylens-alerts")  # For channel alerts
+        
+        # Prefer DM if admin user ID is set, otherwise use channel
+        self.alert_target = self.admin_user_id if self.admin_user_id else self.alerts_channel
+        self.alert_type = "dm" if self.admin_user_id else "channel"
+        
         self.enabled = os.getenv("ENABLE_ALERTS", "true").lower() == "true"
     
     def send_etl_error_alert(self, etl_result: Dict[str, Any]) -> bool:
@@ -60,8 +68,8 @@ class AlertManager:
                 timestamp=timestamp
             )
             
-            # Send to alerts channel
-            return self._send_slack_message(self.alerts_channel, alert_text)
+            # Send to configured target (DM or channel)
+            return self._send_slack_message(self.alert_target, alert_text)
             
         except Exception as e:
             logger.error(f"Failed to send ETL error alert: {e}")
@@ -95,8 +103,8 @@ class AlertManager:
             
             alert_text = f"{emoji} **{title}**\n\n{message}\n\n_Time: {timestamp}_"
             
-            # Send to alerts channel
-            return self._send_slack_message(self.alerts_channel, alert_text)
+            # Send to configured target (DM or channel)
+            return self._send_slack_message(self.alert_target, alert_text)
             
         except Exception as e:
             logger.error(f"Failed to send operational alert: {e}")
@@ -186,24 +194,27 @@ _Automated alert from LobbyLens ETL_"""
             logger.error(f"Exception sending Slack alert: {e}")
             return False
     
-    def test_alerts_channel(self) -> bool:
-        """Test that alerts can be sent to the configured channel.
+    def test_alerts_system(self) -> bool:
+        """Test that alerts can be sent to the configured target (DM or channel).
         
         Returns:
             True if test message sent successfully, False otherwise
         """
+        target_desc = f"DM to user {self.admin_user_id}" if self.alert_type == "dm" else f"channel {self.alerts_channel}"
+        
         test_message = f"""🧪 **LobbyLens Alert System Test**
 
-This is a test message to verify the alerts channel is configured correctly.
+This is a test message to verify alerts are configured correctly.
 
-**Channel:** {self.alerts_channel}
+**Alert Type:** {self.alert_type.upper()}
+**Target:** {target_desc}
 **Time:** {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}
 
 If you see this message, alerts are working! 🎉
 
 _Test message from LobbyLens Alert System_"""
         
-        return self._send_slack_message(self.alerts_channel, test_message)
+        return self._send_slack_message(self.alert_target, test_message)
 
 
 # Global instance
