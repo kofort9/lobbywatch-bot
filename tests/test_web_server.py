@@ -1,5 +1,5 @@
 """
-Tests for bot/web_server_v2.py
+Tests for bot/web_server.py - Web server functionality
 """
 
 from typing import Any

@@ -1,16 +1,24 @@
-"""Tests for main runner functionality."""
+"""
+Tests for bot/run.py - Main runner functionality
 
-from typing import Any
-from unittest.mock import patch
+This module tests both V1 (basic) and V2 (enhanced) runner systems.
+
+Architecture:
+- V1: Basic runner tests (legacy)
+- V2: Enhanced runner tests with V2 signal processing
+"""
+
+# =============================================================================
+# V2: Enhanced Runner Tests (Current Active System)
+# =============================================================================
+
+from typing import Any, List
+from unittest.mock import Mock, patch
 
 import pytest
 
 from bot.config import Settings
-
-# from bot.notifiers.base import NotificationError
-from bot.run import fetch_data, setup_logging
-
-# from click.testing import CliRunner
+from bot.run import fetch_data, setup_logging, run_daily_digest, run_mini_digest
 
 
 class TestFetchData:
@@ -254,3 +262,40 @@ class TestMainCommand:
         #     "Errors during processing" in sent_message or
         #     "Test digest" in sent_message
         # )
+
+
+class TestRunV2Functions:
+    """Test V2 runner functions (enhanced system)."""
+
+    @patch("bot.run.DailySignalsCollector")
+    @patch("bot.run.DigestFormatter")
+    def test_run_daily_digest_success(
+        self,
+        mock_formatter_class: Any,
+        mock_collector_class: Any,
+    ) -> None:
+        """Test successful daily digest run."""
+        # Mock components
+        mock_collector = Mock()
+        mock_formatter = Mock()
+
+        mock_collector_class.return_value = mock_collector
+        mock_formatter_class.return_value = mock_formatter
+
+        # Mock data
+        mock_signals = [Mock()]
+        mock_digest = "Test Daily Digest"
+
+        mock_collector.collect_signals.return_value = mock_signals
+        mock_formatter.format_daily_digest.return_value = mock_digest
+
+        # Test
+        result = run_daily_digest(hours_back=24, channel_id="test_channel")
+
+        # Verify
+        mock_collector_class.assert_called_once()
+        mock_formatter_class.assert_called_once()
+        mock_collector.collect_signals.assert_called_once_with(24)
+        mock_formatter.format_daily_digest.assert_called_once_with(mock_signals, 24)
+
+        assert result == mock_digest

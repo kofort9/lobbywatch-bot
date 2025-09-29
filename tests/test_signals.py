@@ -1,9 +1,9 @@
-"""Tests for bot/signals_v2.py - Enhanced signal model and rules engine."""
+"""Tests for bot/signals.py - Enhanced signal model and rules engine."""
 
 # import json  # Unused import
 from datetime import datetime, timedelta, timezone
 
-from bot.signals_v2 import (
+from bot.signals import (
     SignalDeduplicator,
     SignalsRulesEngine,
     SignalType,

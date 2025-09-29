@@ -1,4 +1,4 @@
-"""Tests for bot/signals_database_v2.py - Enhanced database for v2 signals."""
+"""Tests for bot/signals_database.py - Enhanced database for signals."""
 
 # import json  # Unused import
 import sqlite3
@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from bot.signals_database_v2 import SignalsDatabaseV2
-from bot.signals_v2 import SignalType, SignalV2, Urgency
+from bot.signals_database import SignalsDatabaseV2
+from bot.signals import SignalType, SignalV2, Urgency
 
 
 class TestSignalsDatabaseV2:
