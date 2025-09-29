@@ -50,7 +50,6 @@ class TestSignalV2:
             source="federal_register",
             source_id="fr-123",
             title="Final Rule: Privacy",
-            summary="A final rule about privacy",
             link="https://example.com/fr-123",
             timestamp=now,
             issue_codes=["TEC"],
@@ -80,14 +79,12 @@ class TestSignalV2:
             "source": "regulations_gov",
             "source_id": "docket-456",
             "title": "Docket Comment Period",
-            "summary": "A docket with comments",
             "link": "https://example.com/docket-456",
             "timestamp": now.isoformat(),
             "issue_codes": ["ENV", "ENE"],
             "bill_id": None,
             "action_type": None,
             "agency": "EPA",
-            "comment_count": 250,
             "deadline": (now + timedelta(days=14)).isoformat(),
             "metrics": {"comments_24h_delta_pct": 150.0},
             "signal_type": "docket",
@@ -100,11 +97,10 @@ class TestSignalV2:
         signal = SignalV2.from_dict(data)
 
         assert signal.source == "regulations_gov"
-        assert signal.stable_id == "{}:regulations_gov:docket-456"
+        assert signal.stable_id == "regulations_gov:docket-456"
         assert signal.title == "Docket Comment Period"
         assert signal.issue_codes == ["ENV", "ENE"]
         assert signal.agency == "EPA"
-        assert signal.comment_count == 250
         assert signal.signal_type == SignalType.DOCKET
         assert signal.urgency == Urgency.MEDIUM
         assert signal.priority_score == 4.2
@@ -118,7 +114,6 @@ class TestSignalV2:
             "source": "congress",
             "source_id": "bill-789",
             "title": "Simple Bill",
-            "summary": "A simple bill",
             "link": "https://example.com/bill-789",
             "timestamp": now.isoformat(),
             "issue_codes": [],
@@ -138,14 +133,12 @@ class TestSignalV2:
         signal = SignalV2.from_dict(data)
 
         assert signal.bill_id is None
-        assert signal.action_type is None
         assert signal.agency is None
-        assert signal.comment_count is None
         assert signal.deadline is None
-        assert signal.metric_json is None
+        assert signal.metrics == {}
         assert signal.signal_type is None
         assert signal.urgency is None
-        assert signal.industry_tag is None
+        assert signal.industry is None
 
 
 class TestSignalsRulesEngine:
@@ -171,7 +164,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Final Rule: Privacy Protection",
-            summary="This is a final rule about privacy",
             link="https://example.com/fr-1",
             timestamp=datetime.now(timezone.utc),
         )
@@ -210,7 +202,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Hearing: AI Safety",
-            summary="A hearing about AI safety",
             link="https://example.com/hearing-1",
             timestamp=datetime.now(timezone.utc),
         )
@@ -245,7 +236,6 @@ class TestSignalsRulesEngine:
             source="regulations_gov",
             source_id="docket-1",
             title="Docket: Environmental Standards",
-            summary="A docket about environmental standards",
             link="https://example.com/docket-1",
             timestamp=datetime.now(timezone.utc),
         )
@@ -262,7 +252,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Final Rule: Critical Regulation",
-            summary="A critical final rule",
             link="https://example.com/fr-1",
             timestamp=now,
             deadline=now + timedelta(days=15),
@@ -281,7 +270,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Proposed Rule: Important Regulation",
-            summary="An important proposed rule",
             link="https://example.com/fr-1",
             timestamp=now,
             deadline=now + timedelta(days=10),
@@ -295,7 +283,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Hearing: Important Topic",
-            summary="An important hearing",
             link="https://example.com/hearing-1",
             timestamp=now,
             deadline=now + timedelta(days=5),
@@ -309,7 +296,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Floor Vote: Important Bill",
-            summary="An important floor vote",
             link="https://example.com/vote-1",
             timestamp=now,
         )
@@ -323,7 +309,6 @@ class TestSignalsRulesEngine:
             source="regulations_gov",
             source_id="docket-1",
             title="Docket: High Interest",
-            summary="A high interest docket",
             link="https://example.com/docket-1",
             timestamp=now,
             metrics={"comments_24h_delta_pct": 250.0},
@@ -342,7 +327,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Hearing: Medium Priority",
-            summary="A medium priority hearing",
             link="https://example.com/hearing-1",
             timestamp=now,
             deadline=now + timedelta(days=15),
@@ -356,10 +340,8 @@ class TestSignalsRulesEngine:
             source="regulations_gov",
             source_id="docket-1",
             title="Docket: Active",
-            summary="An active docket",
             link="https://example.com/docket-1",
             timestamp=now,
-            comment_count=50,
         )
         signal.signal_type = SignalType.DOCKET
         urgency = engine._determine_urgency(signal)
@@ -370,7 +352,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Bill: Committee Referral",
-            summary="A bill referred to committee",
             link="https://example.com/bill-1",
             timestamp=now,
         )
@@ -389,7 +370,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Bill: New Introduction",
-            summary="A newly introduced bill",
             link="https://example.com/bill-1",
             timestamp=now,
         )
@@ -403,7 +383,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Notice: General Information",
-            summary="A general notice",
             link="https://example.com/fr-1",
             timestamp=now,
         )
@@ -421,7 +400,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Final Rule: Important",
-            summary="An important final rule",
             link="https://example.com/fr-1",
             timestamp=now,
         )
@@ -438,7 +416,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="congress-1",
             title="Bill: New",
-            summary="A new bill",
             link="https://example.com/bill-1",
             timestamp=now,
         )
@@ -460,7 +437,6 @@ class TestSignalsRulesEngine:
             source="regulations_gov",
             source_id="docket-1",
             title="Docket: High Activity",
-            summary="A docket with high activity",
             link="https://example.com/docket-1",
             timestamp=now,
             deadline=now + timedelta(days=2),  # Near deadline
@@ -483,7 +459,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="bill-1",
             title="Health Bill",
-            summary="A health-related bill",
             link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=["HCR"],
@@ -510,7 +485,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="HHS Rule",
-            summary="A rule from HHS",
             link="https://example.com/fr-1",
             timestamp=datetime.now(timezone.utc),
             agency="HHS",
@@ -542,7 +516,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="bill-1",
             title="Privacy Protection Act",
-            summary="A bill about privacy protection",
             link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=[],
@@ -571,7 +544,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="bill-1",
             title="General Government Bill",
-            summary="A general government bill",
             link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
             issue_codes=[],
@@ -589,7 +561,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="bill-1",
             title="Apple Privacy Bill",
-            summary="A bill about Apple's privacy practices",
             link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
         )
@@ -631,7 +602,6 @@ class TestSignalsRulesEngine:
             source="congress",
             source_id="bill-1",
             title="Apple Privacy Bill",
-            summary="A bill about Apple's privacy practices",
             link="https://example.com/bill-1",
             timestamp=datetime.now(timezone.utc),
         )
@@ -648,7 +618,6 @@ class TestSignalsRulesEngine:
             source="federal_register",
             source_id="fr-1",
             title="Final Rule: Apple Privacy Standards",
-            summary="A final rule about Apple's privacy standards",
             link="https://example.com/fr-1",
             timestamp=now,
             issue_codes=["TEC"],
@@ -678,7 +647,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="bill-1",
                 title="Bill 1",
-                summary="First bill",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=5.0,
@@ -687,7 +655,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="bill-2",
                 title="Bill 2",
-                summary="Second bill",
                 link="https://example.com/bill-2",
                 timestamp=now,
                 priority_score=3.0,
@@ -709,7 +676,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="bill-1",
                 title="Bill 1",
-                summary="First bill",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=5.0,
@@ -718,7 +684,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="bill-1",  # Duplicate stable_id
                 title="Bill 1 Updated",
-                summary="First bill updated",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=7.0,  # Higher priority
@@ -727,7 +692,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="bill-2",
                 title="Bill 2",
-                summary="Second bill",
                 link="https://example.com/bill-2",
                 timestamp=now,
                 priority_score=3.0,
@@ -752,7 +716,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="action-1",
                 title="Bill Action 1",
-                summary="First action on HR-123",
                 link="https://example.com/action-1",
                 timestamp=now,
                 bill_id="HR-123",
@@ -761,7 +724,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="action-2",
                 title="Bill Action 2",
-                summary="Second action on HR-123",
                 link="https://example.com/action-2",
                 timestamp=now,
                 bill_id="HR-123",
@@ -770,7 +732,6 @@ class TestSignalDeduplicator:
                 source="congress",
                 source_id="action-3",
                 title="Bill Action 3",
-                summary="Action on HR-456",
                 link="https://example.com/action-3",
                 timestamp=now,
                 bill_id="HR-456",
@@ -792,7 +753,6 @@ class TestSignalDeduplicator:
                 source="regulations_gov",
                 source_id="EPA-2023-001-doc1",
                 title="Docket Comment 1",
-                summary="First comment on EPA docket",
                 link="https://example.com/docket-1",
                 timestamp=now,
             ),
@@ -800,7 +760,6 @@ class TestSignalDeduplicator:
                 source="regulations_gov",
                 source_id="EPA-2023-001-doc2",
                 title="Docket Comment 2",
-                summary="Second comment on EPA docket",
                 link="https://example.com/docket-2",
                 timestamp=now,
             ),
@@ -808,7 +767,6 @@ class TestSignalDeduplicator:
                 source="regulations_gov",
                 source_id="FCC-2023-002-doc1",
                 title="Docket Comment 3",
-                summary="Comment on FCC docket",
                 link="https://example.com/docket-3",
                 timestamp=now,
             ),
@@ -831,7 +789,6 @@ class TestSignalDeduplicator:
                 source="regulations_gov",
                 source_id="EPA-2023-001",  # No dash
                 title="Docket Comment",
-                summary="Comment on EPA docket",
                 link="https://example.com/docket-1",
                 timestamp=now,
             ),

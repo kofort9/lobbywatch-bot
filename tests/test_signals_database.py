@@ -70,14 +70,11 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="bill-123",
             title="Test Bill",
-            summary="A test bill",
             link="https://example.com/bill-123",
             timestamp=now,
             issue_codes=["HCR"],
             bill_id="HR-123",
-            action_type="introduced",
             agency="HHS",
-            comment_count=100,
             deadline=now + timedelta(days=30),
             metrics={"comments_24h_delta_pct": 50.0},
             signal_type=SignalType.BILL,
@@ -107,7 +104,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="bill-123",
             title="Original Bill",
-            summary="Original summary",
             link="https://example.com/bill-123",
             timestamp=now,
             priority_score=3.0,
@@ -117,7 +113,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="bill-123",  # Same stable_id
             title="Updated Bill",
-            summary="Updated summary",
             link="https://example.com/bill-123",
             timestamp=now,
             priority_score=7.0,  # Higher priority
@@ -165,7 +160,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="old-bill",
             title="Old Bill",
-            summary="An old bill",
             link="https://example.com/old-bill",
             timestamp=now - timedelta(hours=25),  # 25 hours ago
             priority_score=3.0,
@@ -175,7 +169,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="recent-bill",
             title="Recent Bill",
-            summary="A recent bill",
             link="https://example.com/recent-bill",
             timestamp=now - timedelta(hours=12),  # 12 hours ago
             priority_score=5.0,
@@ -223,7 +216,7 @@ class TestSignalsDatabaseV2:
 
         # Add watchlist items
         assert temp_db.add_watchlist_item(channel_id, "Apple") is True
-        assert temp_db.add_watchlist_item(channel_id, "Google") is True
+        assert temp_db.add_watchlist_item(channel_id) is True
         assert temp_db.add_watchlist_item(channel_id, "privacy") is True
 
         # Get watchlist
@@ -234,7 +227,7 @@ class TestSignalsDatabaseV2:
         assert any(item["name"] == "privacy" for item in watchlist)
 
         # Remove watchlist item
-        assert temp_db.remove_watchlist_item(channel_id, "Google") is True
+        assert temp_db.remove_watchlist_item(channel_id) is True
 
         # Verify removal
         watchlist = temp_db.get_watchlist(channel_id)
@@ -256,7 +249,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-1",
                 title="Apple Privacy Bill",
-                summary="A bill about Apple's privacy practices",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 priority_score=5.0,
@@ -265,7 +257,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-2",
                 title="Google Data Bill",
-                summary="A bill about Google's data practices",
                 link="https://example.com/bill-2",
                 timestamp=now,
                 priority_score=4.0,
@@ -274,7 +265,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-3",
                 title="Privacy Protection Act",
-                summary="A bill about privacy protection",
                 link="https://example.com/bill-3",
                 timestamp=now,
                 priority_score=6.0,
@@ -299,7 +289,6 @@ class TestSignalsDatabaseV2:
                 source="regulations_gov",
                 source_id="docket-1",
                 title="Low Surge Docket",
-                summary="A docket with low surge",
                 link="https://example.com/docket-1",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
@@ -310,7 +299,6 @@ class TestSignalsDatabaseV2:
                 source="regulations_gov",
                 source_id="docket-2",
                 title="High Surge Docket",
-                summary="A docket with high surge",
                 link="https://example.com/docket-2",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
@@ -321,7 +309,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-1",
                 title="Regular Bill",
-                summary="A regular bill",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 signal_type=SignalType.BILL,
@@ -344,7 +331,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-1",
                 title="Past Deadline Bill",
-                summary="A bill with past deadline",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 deadline=now - timedelta(days=1),  # Past deadline
@@ -353,7 +339,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-2",
                 title="Near Deadline Bill",
-                summary="A bill with near deadline",
                 link="https://example.com/bill-2",
                 timestamp=now,
                 deadline=now + timedelta(days=3),  # Within 7 days
@@ -362,7 +347,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-3",
                 title="Future Deadline Bill",
-                summary="A bill with future deadline",
                 link="https://example.com/bill-3",
                 timestamp=now,
                 deadline=now + timedelta(days=10),  # Beyond 7 days
@@ -385,7 +369,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="health-1",
                 title="Health Bill 1",
-                summary="First health bill",
                 link="https://example.com/health-1",
                 timestamp=now,
                 industry="Health",
@@ -395,7 +378,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="health-2",
                 title="Health Bill 2",
-                summary="Second health bill",
                 link="https://example.com/health-2",
                 timestamp=now,
                 industry="Health",
@@ -405,7 +387,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="tech-1",
                 title="Tech Bill",
-                summary="A tech bill",
                 link="https://example.com/tech-1",
                 timestamp=now,
                 industry="Tech",
@@ -464,7 +445,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="old-bill",
             title="Old Bill",
-            summary="An old bill",
             link="https://example.com/old-bill",
             timestamp=now - timedelta(days=35),  # 35 days old
             priority_score=3.0,
@@ -474,7 +454,6 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="recent-bill",
             title="Recent Bill",
-            summary="A recent bill",
             link="https://example.com/recent-bill",
             timestamp=now - timedelta(days=10),  # 10 days old
             priority_score=5.0,
@@ -506,7 +485,6 @@ class TestSignalsDatabaseV2:
                 source="congress",
                 source_id="bill-1",
                 title="Health Bill",
-                summary="A health bill",
                 link="https://example.com/bill-1",
                 timestamp=now,
                 signal_type=SignalType.BILL,
@@ -519,7 +497,6 @@ class TestSignalsDatabaseV2:
                 source="federal_register",
                 source_id="fr-1",
                 title="Tech Rule",
-                summary="A tech rule",
                 link="https://example.com/fr-1",
                 timestamp=now,
                 signal_type=SignalType.FINAL_RULE,
@@ -532,7 +509,6 @@ class TestSignalsDatabaseV2:
                 source="regulations_gov",
                 source_id="docket-1",
                 title="Env Docket",
-                summary="An environment docket",
                 link="https://example.com/docket-1",
                 timestamp=now,
                 signal_type=SignalType.DOCKET,
@@ -568,14 +544,11 @@ class TestSignalsDatabaseV2:
             source="congress",
             source_id="bill-123",
             title="Test Bill",
-            summary="A test bill with special characters: éñü",
             link="https://example.com/bill-123",
             timestamp=now,
             issue_codes=["HCR", "TEC"],
             bill_id="HR-123",
-            action_type="introduced",
             agency="HHS",
-            comment_count=100,
             deadline=now + timedelta(days=30),
             metrics={
                 "comments_24h_delta_pct": 50.0,
