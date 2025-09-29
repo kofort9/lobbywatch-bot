@@ -19,15 +19,15 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from bot.signals_database import SignalsDatabaseV2
 from bot.signals import SignalsRulesEngine, SignalV2
+from bot.signals_database import SignalsDatabaseV2
 
 logger = logging.getLogger(__name__)
 
 
 class DailySignalsCollector:
     """Enhanced daily signals collector with V2 features.
-    
+
     This is the current active system for daily government activity monitoring.
     Features:
     - Multi-source API integration (Congress, Federal Register, Regulations.gov)
@@ -79,7 +79,6 @@ class DailySignalsCollector:
             "telecommunications": "TEC",
             "software": "TEC",
             "cloud computing": "TEC",
-            
             # Healthcare
             "healthcare": "HCR",
             "health care": "HCR",
@@ -91,7 +90,6 @@ class DailySignalsCollector:
             "fda": "HCR",
             "clinical trial": "HCR",
             "public health": "HCR",
-            
             # Defense
             "defense": "DEF",
             "military": "DEF",
@@ -100,7 +98,6 @@ class DailySignalsCollector:
             "homeland security": "DEF",
             "veterans": "DEF",
             "armed forces": "DEF",
-            
             # Finance
             "banking": "FIN",
             "financial": "FIN",
@@ -110,7 +107,6 @@ class DailySignalsCollector:
             "lending": "FIN",
             "mortgage": "FIN",
             "insurance": "FIN",
-            
             # Environment
             "environment": "ENV",
             "climate": "ENV",
@@ -119,21 +115,18 @@ class DailySignalsCollector:
             "clean air": "ENV",
             "water quality": "ENV",
             "renewable energy": "ENV",
-            
             # Education
             "education": "EDU",
             "school": "EDU",
             "university": "EDU",
             "student": "EDU",
             "teacher": "EDU",
-            
             # Transportation
             "transportation": "TRA",
             "highway": "TRA",
             "aviation": "TRA",
             "railroad": "TRA",
             "shipping": "TRA",
-            
             # Energy
             "energy": "FUE",
             "oil": "FUE",
@@ -141,7 +134,6 @@ class DailySignalsCollector:
             "coal": "FUE",
             "nuclear": "FUE",
             "renewable": "FUE",
-            
             # Agriculture
             "agriculture": "AGR",
             "farm": "AGR",
@@ -153,9 +145,9 @@ class DailySignalsCollector:
     def collect_signals(self, hours_back: int = 24) -> List[SignalV2]:
         """Collect signals from all sources for the specified time period."""
         logger.info(f"Collecting signals from last {hours_back} hours")
-        
+
         all_signals = []
-        
+
         # Collect from each source
         try:
             congress_signals = self._collect_congress_signals(hours_back)
@@ -198,13 +190,13 @@ class DailySignalsCollector:
 
         # Bills
         try:
-            bills_url = f"https://api.congress.gov/v3/bill"
+            bills_url = "https://api.congress.gov/v3/bill"
             params = {
                 "api_key": self.congress_api_key,
                 "limit": 100,
                 "sort": "updateDate+desc",
             }
-            
+
             response = self.session.get(bills_url, params=params)
             response.raise_for_status()
             data = response.json()
@@ -213,7 +205,7 @@ class DailySignalsCollector:
                 update_date = datetime.fromisoformat(
                     bill["updateDate"].replace("Z", "+00:00")
                 )
-                
+
                 if update_date >= cutoff_time:
                     signal = self._create_bill_signal(bill)
                     if signal:
@@ -224,12 +216,12 @@ class DailySignalsCollector:
 
         # Committee activities
         try:
-            committees_url = f"https://api.congress.gov/v3/committee"
+            committees_url = "https://api.congress.gov/v3/committee"
             params = {
                 "api_key": self.congress_api_key,
                 "limit": 50,
             }
-            
+
             response = self.session.get(committees_url, params=params)
             response.raise_for_status()
             data = response.json()
@@ -249,7 +241,9 @@ class DailySignalsCollector:
     def _collect_federal_register_signals(self, hours_back: int) -> List[SignalV2]:
         """Collect signals from Federal Register API."""
         signals = []
-        cutoff_date = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).strftime("%Y-%m-%d")
+        cutoff_date = (
+            datetime.now(timezone.utc) - timedelta(hours=hours_back)
+        ).strftime("%Y-%m-%d")
 
         try:
             url = "https://www.federalregister.gov/api/v1/documents.json"
@@ -280,7 +274,9 @@ class DailySignalsCollector:
             return []
 
         signals = []
-        cutoff_date = (datetime.now(timezone.utc) - timedelta(hours=hours_back)).strftime("%Y-%m-%d")
+        cutoff_date = (
+            datetime.now(timezone.utc) - timedelta(hours=hours_back)
+        ).strftime("%Y-%m-%d")
 
         try:
             url = "https://api.regulations.gov/v4/documents"
@@ -311,10 +307,10 @@ class DailySignalsCollector:
             bill_number = bill.get("number", "")
             bill_type = bill.get("type", "")
             title = bill.get("title", "")
-            
+
             # Determine issue codes from title and bill type
             issue_codes = self._extract_issue_codes(title)
-            
+
             # Create metrics
             metrics = {
                 "bill_type": bill_type,
@@ -335,7 +331,11 @@ class DailySignalsCollector:
                     bill["updateDate"].replace("Z", "+00:00")
                 ),
                 title=f"{bill_type} {bill_number}: {title}",
-                link=f"https://www.congress.gov/bill/{bill.get('congress', '')}-congress/{bill_type.lower()}-bill/{bill_number}",
+                link=(
+                    f"https://www.congress.gov/bill/"
+                    f"{bill.get('congress', '')}-congress/"
+                    f"{bill_type.lower()}-bill/{bill_number}"
+                ),
                 agency="Congress",
                 committee=None,
                 bill_id=f"{bill_type}{bill_number}",
@@ -352,15 +352,17 @@ class DailySignalsCollector:
             logger.error(f"Error creating bill signal: {e}")
             return None
 
-    def _create_federal_register_signal(self, doc: Dict[str, Any]) -> Optional[SignalV2]:
+    def _create_federal_register_signal(
+        self, doc: Dict[str, Any]
+    ) -> Optional[SignalV2]:
         """Create a signal from a Federal Register document."""
         try:
             title = doc.get("title", "")
             doc_type = doc.get("type", "")
-            
+
             # Determine issue codes
             issue_codes = self._extract_issue_codes(title)
-            
+
             # Create metrics
             metrics = {
                 "document_type": doc_type,
@@ -405,10 +407,10 @@ class DailySignalsCollector:
             attributes = doc.get("attributes", {})
             title = attributes.get("title", "")
             doc_type = attributes.get("documentType", "")
-            
+
             # Determine issue codes
             issue_codes = self._extract_issue_codes(title)
-            
+
             # Create metrics
             metrics = {
                 "document_type": doc_type,
@@ -452,7 +454,7 @@ class DailySignalsCollector:
     ) -> List[SignalV2]:
         """Collect activities for a specific committee."""
         signals = []
-        
+
         try:
             committee_code = committee.get("systemCode", "")
             if not committee_code:
@@ -475,7 +477,9 @@ class DailySignalsCollector:
                 # Check if hearing is recent enough
                 hearing_date = hearing.get("date")
                 if hearing_date:
-                    hearing_datetime = datetime.fromisoformat(hearing_date + "T00:00:00+00:00")
+                    hearing_datetime = datetime.fromisoformat(
+                        hearing_date + "T00:00:00+00:00"
+                    )
                     if hearing_datetime >= cutoff_time:
                         signal = self._create_hearing_signal(hearing, committee)
                         if signal:
@@ -493,10 +497,10 @@ class DailySignalsCollector:
         try:
             title = hearing.get("title", "")
             committee_name = committee.get("name", "")
-            
+
             # Determine issue codes
             issue_codes = self._extract_issue_codes(title + " " + committee_name)
-            
+
             # Create metrics
             metrics = {
                 "committee_code": committee.get("systemCode", ""),
@@ -557,7 +561,7 @@ class DailySignalsCollector:
     ) -> float:
         """Calculate priority score for a signal."""
         base_score = self.priority_weights.get(signal_type, 1.0)
-        
+
         # Boost for watchlist matches
         watchlist_boost = 0.0
         if self.watchlist:
@@ -565,21 +569,26 @@ class DailySignalsCollector:
             for entity in self.watchlist:
                 if entity.lower() in title_lower:
                     watchlist_boost += 2.0
-        
+
         # Boost for multiple issue codes
         issue_boost = len(issue_codes) * 0.5
-        
+
         # Boost for high-impact keywords
         impact_keywords = [
-            "final rule", "emergency", "immediate", "urgent", 
-            "national security", "public health", "safety"
+            "final rule",
+            "emergency",
+            "immediate",
+            "urgent",
+            "national security",
+            "public health",
+            "safety",
         ]
         impact_boost = 0.0
         title_lower = title.lower()
         for keyword in impact_keywords:
             if keyword in title_lower:
                 impact_boost += 1.0
-        
+
         total_score = base_score + watchlist_boost + issue_boost + impact_boost
         return round(total_score, 2)
 
@@ -601,20 +610,25 @@ class DailySignalsCollector:
 # Note: V1 system is deprecated but maintained for backward compatibility.
 # New implementations should use the V2 system above.
 
+
 class LegacyDailySignalsCollector:
     """Legacy V1 signals collector (deprecated).
-    
+
     This is maintained for backward compatibility only.
     New code should use DailySignalsCollector (V2) above.
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        logger.warning("Using legacy V1 DailySignalsCollector. Consider upgrading to V2.")
-    
+        logger.warning(
+            "Using legacy V1 DailySignalsCollector. Consider upgrading to V2."
+        )
+
     def collect_signals(self) -> List[Dict[str, Any]]:
         """Legacy signal collection (deprecated)."""
-        logger.warning("Legacy collect_signals called. Use V2 DailySignalsCollector instead.")
+        logger.warning(
+            "Legacy collect_signals called. Use V2 DailySignalsCollector instead."
+        )
         return []
 
 

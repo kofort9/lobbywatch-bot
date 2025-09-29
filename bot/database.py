@@ -283,7 +283,7 @@ class DatabaseManager:
         try:
             with self.get_connection() as conn:
                 conn.execute(
-                """
+                    """
                 INSERT OR REPLACE INTO channel_watchlist
                 (channel_id, entity_type, entity_id, watch_name, display_name, fuzzy_score)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -329,7 +329,7 @@ class DatabaseManager:
         """Record a digest run for tracking."""
         with self.get_connection() as conn:
             conn.execute(
-            """
+                """
             INSERT INTO digest_runs
             (channel_id, run_type, run_time, filings_count, last_filing_time, digest_content)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -373,7 +373,7 @@ class DatabaseManager:
         """Add or update entity alias mapping."""
         with self.get_connection() as conn:
             conn.execute(
-            """
+                """
             INSERT OR REPLACE INTO entity_aliases
             (alias_name, canonical_name, entity_type, entity_id, confidence_score, updated_at, usage_count)
             VALUES (?, ?, ?, ?, ?, ?, COALESCE((

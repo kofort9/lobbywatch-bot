@@ -22,7 +22,7 @@ from bot.signals import SignalV2
 
 class SignalsDatabaseV2:
     """Enhanced database manager for V2 signals.
-    
+
     This is the current active system for signal storage.
     Features:
     - Enhanced schema with priority scoring and urgency
@@ -69,10 +69,18 @@ class SignalsDatabaseV2:
 
         # Create indexes for performance
         cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_ts ON signal_event(ts)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_source ON signal_event(source)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_agency ON signal_event(agency)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_created ON signal_event(created_at)")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_signal_source ON signal_event(source)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_signal_agency ON signal_event(agency)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_signal_created ON signal_event(created_at)"
+        )
 
         conn.commit()
         conn.close()
@@ -86,7 +94,7 @@ class SignalsDatabaseV2:
         cur = conn.cursor()
 
         saved_count = 0
-        
+
         for signal in signals:
             try:
                 cur.execute(
@@ -131,7 +139,7 @@ class SignalsDatabaseV2:
     ) -> List[SignalV2]:
         """Get recent signals from database."""
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
-        
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -164,7 +172,7 @@ class SignalsDatabaseV2:
     ) -> List[SignalV2]:
         """Get signals from specific source."""
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
-        
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -200,7 +208,7 @@ class SignalsDatabaseV2:
             return []
 
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
-        
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -208,7 +216,7 @@ class SignalsDatabaseV2:
         # Build query for watchlist matches
         watchlist_conditions = []
         params = [cutoff_time.isoformat()]
-        
+
         for entity in watchlist:
             watchlist_conditions.append("title LIKE ? OR agency LIKE ?")
             params.extend([f"%{entity}%", f"%{entity}%"])
@@ -242,7 +250,7 @@ class SignalsDatabaseV2:
             return []
 
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
-        
+
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -250,7 +258,7 @@ class SignalsDatabaseV2:
         # Build query for issue code matches
         issue_conditions = []
         params = [cutoff_time.isoformat()]
-        
+
         for code in issue_codes:
             issue_conditions.append("issue_codes LIKE ?")
             params.append(f'%"{code}"%')
@@ -286,32 +294,36 @@ class SignalsDatabaseV2:
         total_signals = cur.fetchone()[0]
 
         # Signals by source
-        cur.execute("""
+        cur.execute(
+            """
             SELECT source, COUNT(*) as count 
             FROM signal_event 
             GROUP BY source 
             ORDER BY count DESC
-        """)
+        """
+        )
         by_source = dict(cur.fetchall())
 
         # Recent signals (last 24h)
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
         cur.execute(
             "SELECT COUNT(*) FROM signal_event WHERE ts >= ?",
-            (cutoff_time.isoformat(),)
+            (cutoff_time.isoformat(),),
         )
         recent_signals = cur.fetchone()[0]
 
         # High priority signals (last 24h)
         cur.execute(
             "SELECT COUNT(*) FROM signal_event WHERE ts >= ? AND priority_score >= 3.0",
-            (cutoff_time.isoformat(),)
+            (cutoff_time.isoformat(),),
         )
         high_priority = cur.fetchone()[0]
 
         # Average priority score
-        cur.execute("SELECT AVG(priority_score) FROM signal_event WHERE ts >= ?", 
-                   (cutoff_time.isoformat(),))
+        cur.execute(
+            "SELECT AVG(priority_score) FROM signal_event WHERE ts >= ?",
+            (cutoff_time.isoformat(),),
+        )
         avg_priority = cur.fetchone()[0] or 0.0
 
         conn.close()
@@ -327,14 +339,11 @@ class SignalsDatabaseV2:
     def cleanup_old_signals(self, days_to_keep: int = 30) -> int:
         """Clean up old signals beyond retention period."""
         cutoff_time = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
-        
+
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
 
-        cur.execute(
-            "DELETE FROM signal_event WHERE ts < ?",
-            (cutoff_time.isoformat(),)
-        )
+        cur.execute("DELETE FROM signal_event WHERE ts < ?", (cutoff_time.isoformat(),))
 
         deleted_count = cur.rowcount
         conn.commit()
@@ -345,11 +354,13 @@ class SignalsDatabaseV2:
     def _row_to_signal(self, row: sqlite3.Row) -> SignalV2:
         """Convert database row to SignalV2 object."""
         from bot.signals import SignalType, Urgency
-        
+
         # Parse JSON fields
         issue_codes = json.loads(row["issue_codes"]) if row["issue_codes"] else []
         metrics = json.loads(row["metric_json"]) if row["metric_json"] else {}
-        watchlist_matches = json.loads(row["watchlist_matches"]) if row["watchlist_matches"] else []
+        watchlist_matches = (
+            json.loads(row["watchlist_matches"]) if row["watchlist_matches"] else []
+        )
 
         # Parse timestamp
         timestamp = datetime.fromisoformat(row["ts"])
@@ -382,28 +393,36 @@ class SignalsDatabaseV2:
 # V1: Basic Signals Database (Legacy - Maintained for Compatibility)
 # =============================================================================
 
+
 class LegacySignalsDatabase:
     """Legacy V1 signals database (deprecated).
-    
+
     This is maintained for backward compatibility only.
     New code should use SignalsDatabaseV2 above.
     """
-    
+
     def __init__(self, db_path: str = "signals.db"):
         self.db_path = db_path
         import logging
-        logging.warning("Using legacy V1 SignalsDatabase. Consider upgrading to SignalsDatabaseV2.")
-    
+
+        logging.warning(
+            "Using legacy V1 SignalsDatabase. Consider upgrading to SignalsDatabaseV2."
+        )
+
     def save_signals(self, signals: List[Dict]) -> int:
         """Legacy signal saving (deprecated)."""
         import logging
+
         logging.warning("Legacy save_signals called. Use V2 SignalsDatabaseV2 instead.")
         return 0
-    
+
     def get_recent_signals(self, hours_back: int = 24) -> List[Dict]:
         """Legacy signal retrieval (deprecated)."""
         import logging
-        logging.warning("Legacy get_recent_signals called. Use V2 SignalsDatabaseV2 instead.")
+
+        logging.warning(
+            "Legacy get_recent_signals called. Use V2 SignalsDatabaseV2 instead."
+        )
         return []
 
 

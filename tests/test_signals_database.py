@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from bot.signals_database import SignalsDatabaseV2
 from bot.signals import SignalType, SignalV2, Urgency
+from bot.signals_database import SignalsDatabaseV2
 
 
 class TestSignalsDatabaseV2:

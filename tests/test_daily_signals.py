@@ -74,12 +74,8 @@ class TestDailySignalsCollector:
         assert collector.regulations_gov_api_key is None
 
     @patch("bot.daily_signals.DailySignalsCollector._collect_congress_signals")
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_federal_register_signals"
-    )
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals"
-    )
+    @patch("bot.daily_signals.DailySignalsCollector._collect_federal_register_signals")
+    @patch("bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals")
     @patch("bot.daily_signals.SignalsRulesEngine.process_signal")
     def test_collect_signals(
         self,
@@ -98,7 +94,7 @@ class TestDailySignalsCollector:
             title="Test Bill",
             link="https://example.com/bill",
         )
-        
+
         fedreg_signal = SignalV2(
             source="federal_register",
             source_id="test-doc-1",
@@ -134,12 +130,8 @@ class TestDailySignalsCollector:
         assert len(signals) == 3
 
     @patch("bot.daily_signals.DailySignalsCollector._collect_congress_signals")
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_federal_register_signals"
-    )
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals"
-    )
+    @patch("bot.daily_signals.DailySignalsCollector._collect_federal_register_signals")
+    @patch("bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals")
     def test_collect_signals_with_errors(
         self,
         mock_regs_signals: Mock,
@@ -263,7 +255,9 @@ class TestDailySignalsCollector:
         self, mock_get: Mock, config: Dict[str, str]
     ) -> None:
         """Test Regulations.gov signal collection without API key."""
-        config_no_key = {k: v for k, v in config.items() if k != "REGULATIONS_GOV_API_KEY"}
+        config_no_key = {
+            k: v for k, v in config.items() if k != "REGULATIONS_GOV_API_KEY"
+        }
         collector = DailySignalsCollector(config_no_key)
 
         signals = collector._collect_regulations_gov_signals(24)
@@ -351,27 +345,26 @@ class TestDailySignalsCollector:
             link="https://example.com",
             issue_codes=["TEC", "HCR"],
         )
-        
+
         score = collector._calculate_priority_score(
-            "final_rule", 
-            high_priority_signal.title, 
-            high_priority_signal.issue_codes, 
-            {}
+            "final_rule",
+            high_priority_signal.title,
+            high_priority_signal.issue_codes,
+            {},
         )
-        
+
         assert score > 5.0  # Final rule + issue codes should give high score
 
         # Test watchlist boost
         watchlist_text = "Google privacy policy changes"
         watchlist_score = collector._calculate_priority_score(
-            "notice", 
-            watchlist_text, 
-            ["TEC"], 
-            {}
+            "notice", watchlist_text, ["TEC"], {}
         )
-        
+
         # Should be higher due to watchlist match
-        base_score = collector._calculate_priority_score("notice", "random text", ["TEC"], {})
+        base_score = collector._calculate_priority_score(
+            "notice", "random text", ["TEC"], {}
+        )
         assert watchlist_score > base_score
 
     def test_save_signals(self, collector: DailySignalsCollector) -> None:
@@ -401,28 +394,29 @@ class TestDailySignalsCollector:
 # V1: Basic Daily Signals Tests (Legacy - Maintained for Compatibility)
 # =============================================================================
 
+
 class TestLegacyDailySignalsCollector:
     """Test legacy V1 daily signals collector (deprecated).
-    
+
     These tests are maintained for backward compatibility only.
     New tests should use TestDailySignalsCollector (V2) above.
     """
-    
+
     def test_legacy_collector_warning(self) -> None:
         """Test that legacy collector shows deprecation warning."""
         from bot.daily_signals import LegacyDailySignalsCollector
-        
+
         # Should create without error but log warning
         collector = LegacyDailySignalsCollector({})
         assert collector is not None
-    
+
     def test_legacy_collect_signals(self) -> None:
         """Test legacy signal collection (deprecated)."""
         from bot.daily_signals import LegacyDailySignalsCollector
-        
+
         collector = LegacyDailySignalsCollector({})
         signals = collector.collect_signals()
-        
+
         # Legacy system returns empty list
         assert signals == []
 
@@ -431,23 +425,24 @@ class TestLegacyDailySignalsCollector:
 # Backward Compatibility Tests
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Test backward compatibility aliases."""
-    
+
     def test_v2_alias_import(self) -> None:
         """Test that V2 alias imports still work."""
         from bot.daily_signals import DailySignalsCollectorV2
-        
+
         # Should be an alias for the main class
         assert DailySignalsCollectorV2 == DailySignalsCollector
-    
+
     def test_v2_alias_functionality(self) -> None:
         """Test that V2 alias works functionally."""
         from bot.daily_signals import DailySignalsCollectorV2
-        
+
         config = {"CONGRESS_API_KEY": "test"}
         collector = DailySignalsCollectorV2(config)
-        
+
         assert collector.config == config
         assert hasattr(collector, "collect_signals")
         assert hasattr(collector, "save_signals")

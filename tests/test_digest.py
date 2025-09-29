@@ -83,17 +83,18 @@ class TestDigestFormatter:
 # V1: Basic Digest Formatting Tests (Legacy - Maintained for Compatibility)
 # =============================================================================
 
+
 class TestLegacyDigestFormatter:
     """Test legacy V1 digest formatter (deprecated).
-    
+
     These tests are maintained for backward compatibility only.
     New tests should use TestDigestFormatter (V2) above.
     """
-    
+
     def test_legacy_formatter_warning(self) -> None:
         """Test that legacy formatter shows deprecation warning."""
         from bot.digest import LegacyDigestFormatter
-        
+
         # Should create without error but log warning
         formatter = LegacyDigestFormatter()
         assert formatter is not None
@@ -103,12 +104,13 @@ class TestLegacyDigestFormatter:
 # Backward Compatibility Tests
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Test backward compatibility aliases."""
-    
+
     def test_v2_alias_import(self) -> None:
         """Test that V2 alias imports still work."""
         from bot.digest import DigestV2Formatter
-        
+
         # Should be an alias for the main class
         assert DigestV2Formatter == DigestFormatter

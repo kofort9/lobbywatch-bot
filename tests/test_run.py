@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from bot.config import Settings
-from bot.run import fetch_data, setup_logging, run_daily_digest, run_mini_digest
+from bot.run import fetch_data, run_daily_digest, run_mini_digest, setup_logging
 
 
 class TestFetchData:

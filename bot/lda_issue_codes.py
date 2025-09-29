@@ -2,6 +2,7 @@
 
 import logging
 from typing import Dict, List
+
 from .database import DatabaseManager
 
 logger = logging.getLogger(__name__)
@@ -84,24 +85,24 @@ OFFICIAL_ISSUE_CODES = {
     "UTI": "Utilities",
     "VET": "Veterans",
     "WAS": "Waste (Hazardous/Solid/Interstate/Nuclear)",
-    "WEL": "Welfare"
+    "WEL": "Welfare",
 }
 
 
 def seed_issue_codes(db_manager: DatabaseManager) -> int:
     """Seed the issue codes table with official LDA codes.
-    
+
     Args:
         db_manager: Database manager instance
-        
+
     Returns:
         Number of issue codes inserted/updated
     """
     logger.info("Seeding official LDA issue codes")
-    
+
     inserted_count = 0
     updated_count = 0
-    
+
     with db_manager.get_connection() as conn:
         for code, description in OFFICIAL_ISSUE_CODES.items():
             try:
@@ -109,52 +110,65 @@ def seed_issue_codes(db_manager: DatabaseManager) -> int:
                 try:
                     # Try PostgreSQL syntax first
                     cursor = conn.cursor()
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO issue (code, description) 
                         VALUES (%s, %s)
                         ON CONFLICT (code) DO UPDATE SET 
                             description = EXCLUDED.description
                         RETURNING (xmax = 0) AS inserted
-                    """, (code, description))
-                    
+                    """,
+                        (code, description),
+                    )
+
                     result = cursor.fetchone()
                     if result and result[0]:
                         inserted_count += 1
                     else:
                         updated_count += 1
-                        
+
                 except Exception:
                     # Fall back to SQLite syntax
-                    cursor = conn.execute("SELECT id FROM issue WHERE code = ?", (code,))
+                    cursor = conn.execute(
+                        "SELECT id FROM issue WHERE code = ?", (code,)
+                    )
                     existing = cursor.fetchone()
-                    
+
                     if existing:
-                        conn.execute("""
+                        conn.execute(
+                            """
                             UPDATE issue SET description = ? WHERE code = ?
-                        """, (description, code))
+                        """,
+                            (description, code),
+                        )
                         updated_count += 1
                     else:
-                        conn.execute("""
+                        conn.execute(
+                            """
                             INSERT INTO issue (code, description) VALUES (?, ?)
-                        """, (code, description))
+                        """,
+                            (code, description),
+                        )
                         inserted_count += 1
-                        
+
             except Exception as e:
                 logger.error(f"Failed to insert/update issue code {code}: {e}")
-        
-        if hasattr(conn, 'commit'):
+
+        if hasattr(conn, "commit"):
             conn.commit()
-    
-    logger.info(f"Issue codes seeded: {inserted_count} inserted, {updated_count} updated")
+
+    logger.info(
+        f"Issue codes seeded: {inserted_count} inserted, {updated_count} updated"
+    )
     return inserted_count + updated_count
 
 
 def get_issue_description(code: str) -> str:
     """Get the description for an issue code.
-    
+
     Args:
         code: Issue code (e.g., "HCR")
-        
+
     Returns:
         Description or the code itself if not found
     """
@@ -163,7 +177,7 @@ def get_issue_description(code: str) -> str:
 
 def get_all_issue_codes() -> Dict[str, str]:
     """Get all official issue codes and descriptions.
-    
+
     Returns:
         Dictionary mapping codes to descriptions
     """
@@ -172,16 +186,16 @@ def get_all_issue_codes() -> Dict[str, str]:
 
 def format_issue_codes(codes: List[str]) -> str:
     """Format a list of issue codes for display.
-    
+
     Args:
         codes: List of issue codes
-        
+
     Returns:
         Formatted string with codes and descriptions
     """
     if not codes:
         return "—"
-    
+
     # Show up to 3 codes with descriptions, then "• +N more"
     formatted_codes = []
     for code in codes[:3]:
@@ -190,10 +204,10 @@ def format_issue_codes(codes: List[str]) -> str:
             formatted_codes.append(f"{code}")
         else:
             formatted_codes.append(code)
-    
+
     result = " • ".join(formatted_codes)
-    
+
     if len(codes) > 3:
         result += f" • +{len(codes) - 3} more"
-    
+
     return result
