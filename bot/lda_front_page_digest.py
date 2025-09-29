@@ -190,7 +190,7 @@ class LDAFrontPageDigest:
 
             # Add remaining sections to overflow
             if split_at_section is not None:
-                overflow_sections.extend(sections[split_at_section + 1:])
+                overflow_sections.extend(sections[split_at_section + 1 :])
 
             # Format main sections
             for section in main_sections:

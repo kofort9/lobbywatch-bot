@@ -187,7 +187,7 @@ class TestDailySignalsCollector:
                 }
             ]
         }
-        
+
         # Mock the session.get method
         collector.session.get = Mock(return_value=mock_response)
 

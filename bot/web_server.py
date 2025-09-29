@@ -321,10 +321,10 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
         else:
             settings = database.get_channel_settings(channel_id)
             # Use default values if settings are empty (placeholder implementation)
-            mini_threshold = settings.get('mini_digest_threshold', 10)
-            high_threshold = settings.get('high_priority_threshold', 5.0)
-            surge_threshold = settings.get('surge_threshold', 200.0)
-            
+            mini_threshold = settings.get("mini_digest_threshold", 10)
+            high_threshold = settings.get("high_priority_threshold", 5.0)
+            surge_threshold = settings.get("surge_threshold", 200.0)
+
             return {
                 "response_type": "in_channel",
                 "text": f"📊 **Threshold Settings for #{channel_id}**\n\n"

@@ -625,10 +625,15 @@ class TestSignalsRulesEngine:
         processed_signal = engine.process_signal(signal)
 
         # Check all fields were processed
-        assert processed_signal.signal_type == SignalType.FINAL_RULE  # "Final Rule" in title
+        assert (
+            processed_signal.signal_type == SignalType.FINAL_RULE
+        )  # "Final Rule" in title
         assert processed_signal.urgency == Urgency.HIGH  # Final rule gets HIGH urgency
         assert processed_signal.priority_score > 0
-        assert processed_signal.watchlist_matches == ["Apple", "privacy"]  # Both in title
+        assert processed_signal.watchlist_matches == [
+            "Apple",
+            "privacy",
+        ]  # Both in title
         # Note: watchlist_hit is not set in the current implementation
         # assert processed_signal.watchlist_hit is True  # "Apple" in title
 
