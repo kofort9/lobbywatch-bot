@@ -2,6 +2,7 @@
 
 # import json  # Unused import
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
 
 from bot.signals import (
     SignalDeduplicator,
@@ -75,7 +76,7 @@ class TestSignalV2:
     def test_signal_from_dict(self) -> None:
         """Test signal deserialization from dictionary."""
         now = datetime.now(timezone.utc)
-        data = {
+        data: Dict[str, Any] = {
             "source": "regulations_gov",
             "source_id": "docket-456",
             "title": "Docket Comment Period",
@@ -109,7 +110,7 @@ class TestSignalV2:
     def test_signal_from_dict_with_none_values(self) -> None:
         """Test signal deserialization with None values."""
         now = datetime.now(timezone.utc)
-        data = {
+        data: Dict[str, Any] = {
             "source": "congress",
             "source_id": "bill-789",
             "title": "Simple Bill",
@@ -440,7 +441,7 @@ class TestSignalsRulesEngine:
             title="Docket: High Activity",
             link="https://example.com/docket-1",
             timestamp=now,
-            deadline=now + timedelta(days=2),  # Near deadline
+            deadline=(now + timedelta(days=2)).isoformat(),  # Near deadline
             metrics={"comments_24h_delta_pct": 400.0},  # High surge
         )
         signal.signal_type = SignalType.DOCKET

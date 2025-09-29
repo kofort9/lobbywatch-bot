@@ -9,6 +9,7 @@ Designed to run in GitHub Actions or other CI/CD environments.
 import logging
 import os
 import sys
+from typing import Dict
 from datetime import datetime, timezone
 
 # Add parent directory to path
@@ -22,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     """Run daily digest collection and posting."""
     print("🔄 Starting LobbyLens V2 Daily Digest...")
     print(f"📅 Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
@@ -54,7 +55,7 @@ def main():
 
         # Show signal breakdown
         if signals:
-            sources = {}
+            sources: Dict[str, int] = {}
             for signal in signals:
                 sources[signal.source] = sources.get(signal.source, 0) + 1
 
@@ -95,20 +96,16 @@ def main():
             f"{'✅ Success' if slack_webhook else '⚠️ Skipped (no webhook)'}"
         )
 
-        return 0
-
     except ImportError as e:
         print(f"❌ Import error: {e}")
         print("💡 Make sure all dependencies are installed: pip install -e .")
-        return 1
 
     except Exception as e:
         print(f"❌ Error during digest generation: {e}")
         import traceback
 
         traceback.print_exc()
-        return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

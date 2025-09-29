@@ -5,7 +5,7 @@ import os
 import re
 
 
-def fix_unused_imports():
+def fix_unused_imports() -> None:
     """Fix unused imports in test files."""
     test_files = [
         "tests/conftest.py",

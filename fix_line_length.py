@@ -5,7 +5,7 @@ import os
 import re
 
 
-def fix_line_length():
+def fix_line_length() -> None:
     """Fix line length issues in test files."""
     test_files = [
         "tests/test_daily_signals_v2.py",

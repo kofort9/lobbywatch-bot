@@ -16,7 +16,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="LDA CLI for manual operations")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

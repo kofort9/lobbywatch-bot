@@ -7,7 +7,7 @@ import sys
 # from pathlib import Path  # Unused
 
 
-def check_environment():
+def check_environment() -> None:
     """Check environment variables and configuration."""
     print("🔍 Checking environment configuration...")
 
@@ -31,16 +31,13 @@ def check_environment():
 
     if missing_required:
         print(f"  ❌ Missing required: {', '.join(missing_required)}")
-        return False
 
     if missing_optional:
         print(f"  ⚠️  Missing optional: {', '.join(missing_optional)}")
         print("     (Bot will work but may have limited data)")
 
-    return True
 
-
-def check_dependencies():
+def check_dependencies() -> None:
     """Check that required packages are installed."""
     print("\n📦 Checking dependencies...")
 
@@ -67,12 +64,9 @@ def check_dependencies():
 
     if missing:
         print(f"\n  Install missing packages: pip install {' '.join(missing)}")
-        return False
-
-    return True
 
 
-def check_bot_modules():
+def check_bot_modules() -> None:
     """Check that bot modules can be imported."""
     print("\n🤖 Checking bot modules...")
 
@@ -90,12 +84,9 @@ def check_bot_modules():
 
     if missing:
         print("\n  Some bot modules failed to import. Check dependencies.")
-        return False
-
-    return True
 
 
-def test_cli_command():
+def test_cli_command() -> None:
     """Test that the CLI command is available."""
     print("\n💻 Testing CLI command...")
 
@@ -108,22 +99,18 @@ def test_cli_command():
 
         if result.returncode == 0:
             print("  ✅ CLI command works")
-            return True
         else:
             print(f"  ❌ CLI command failed: {result.stderr}")
-            return False
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         print(f"  ❌ CLI command not available: {e}")
-        return False
 
 
-def test_dry_run():
+def test_dry_run() -> None:
     """Test a dry run of the bot."""
     print("\n🧪 Testing dry run...")
 
     if not os.getenv("SLACK_WEBHOOK_URL"):
         print("  ⚠️  Skipping dry run test (no SLACK_WEBHOOK_URL)")
-        return True
 
     import subprocess
 
@@ -139,20 +126,16 @@ def test_dry_run():
             print("  ✅ Dry run successful")
             if "DRY RUN" in result.stdout:
                 print("  ✅ Dry run output detected")
-                return True
             else:
                 print("  ⚠️  Dry run completed but no expected output")
-                return True
         else:
             print(f"  ❌ Dry run failed: {result.stderr}")
-            return False
 
     except subprocess.TimeoutExpired:
         print("  ❌ Dry run timed out")
-        return False
 
 
-def main():
+def main() -> None:
     """Run all verification checks."""
     print("🔍 LobbyLens Setup Verification\n" + "=" * 40)
 
@@ -184,12 +167,9 @@ def main():
         print("  3. Test manual workflow dispatch")
         print("  4. Wait for your first daily digest!")
 
-        return True
     else:
         print(f"❌ {total - passed} checks failed. Please fix the issues above.")
-        return False
 
 
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    main()

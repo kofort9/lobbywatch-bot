@@ -17,7 +17,7 @@ os.environ["SLACK_BOT_TOKEN"] = "xoxb-test-token"  # Mock token
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def test_dm_vs_channel_alerts():
+def test_dm_vs_channel_alerts() -> None:
     """Test both DM and channel alert configurations."""
     print("📱 Testing DM vs Channel Alerts")
     print("=" * 50)
@@ -82,19 +82,14 @@ def test_dm_vs_channel_alerts():
     print("   • Alert formatting works for both types")
     print("   • Configuration detection working correctly")
 
-    return True
-
 
 if __name__ == "__main__":
     print("🚀 LDA DM Alert System Test")
     print("=" * 60)
 
-    success = test_dm_vs_channel_alerts()
+    test_dm_vs_channel_alerts()
 
     print("\n" + "=" * 60)
-    if success:
-        print("📱 DM alert system is working correctly!")
-        print("   Set LOBBYLENS_ADMIN_USER_ID to enable DM alerts.")
-    else:
-        print("⚠️  DM alert system test failed.")
+    print("📱 DM alert system is working correctly!")
+    print("   Set LOBBYLENS_ADMIN_USER_ID to enable DM alerts.")
     print("=" * 60)

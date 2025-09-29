@@ -9,7 +9,7 @@ import psycopg2
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 
 
-def setup_railway():
+def setup_railway() -> None:
     """Set up Railway PostgreSQL database for LDA V1."""
     print("🚂 Setting up Railway PostgreSQL for LDA V1")
     print("=" * 60)
@@ -211,12 +211,14 @@ def setup_railway():
             cursor.execute(
                 "SELECT id FROM entity WHERE normalized_name = 'akin gump strauss hauer feld'"
             )
-            registrant_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            registrant_id = result[0] if result else None
 
             cursor.execute(
                 "SELECT id FROM entity WHERE normalized_name = 'meta platforms'"
             )
-            client_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            client_id = result[0] if result else None
 
             # Create a filing
             cursor.execute(
@@ -236,10 +238,12 @@ def setup_railway():
             cursor.execute(
                 "SELECT id FROM filing WHERE filing_uid = 'railway-test-001'"
             )
-            filing_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            filing_id = result[0] if result else None
 
             cursor.execute("SELECT id FROM issue WHERE code = 'TEC'")
-            tec_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            tec_id = result[0] if result else None
 
             # Create filing-issue relationship
             cursor.execute(
@@ -258,13 +262,16 @@ def setup_railway():
         print("\n5. ✅ Verifying Setup...")
         with conn.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM entity")
-            entity_count = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            entity_count = result[0] if result else None
 
             cursor.execute("SELECT COUNT(*) FROM issue")
-            issue_count = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            issue_count = result[0] if result else None
 
             cursor.execute("SELECT COUNT(*) FROM filing")
-            filing_count = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            filing_count = result[0] if result else None
 
             print(f"   Entities: {entity_count}")
             print(f"   Issues: {issue_count}")
@@ -281,14 +288,11 @@ def setup_railway():
         print(f"\n   🔗 Your DATABASE_URL is already configured in .env")
         print(f"   🚀 Run: python scripts/lda-cli.py status")
 
-        return True
-
     except Exception as e:
         print(f"\n❌ Railway Setup FAILED: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
 
 
 if __name__ == "__main__":

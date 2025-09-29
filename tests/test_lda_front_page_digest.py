@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 class TestLDAFrontPageDigest(unittest.TestCase):
     """Test LDA Front Page Digest functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test database."""
         self.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         self.db_path = self.temp_db.name
@@ -33,14 +33,14 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         # Create test data
         self._create_test_data()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Clean up test database."""
         try:
             os.unlink(self.db_path)
         except BaseException:
             pass
 
-    def _create_test_data(self):
+    def _create_test_data(self) -> None:
         """Create comprehensive test data."""
         with self.db_manager.get_connection() as conn:
             # Create entities
@@ -166,7 +166,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
                     (filing_id, issue_id),
                 )
 
-    def test_digest_generation(self):
+    def test_digest_generation(self) -> None:
         """Test basic digest generation."""
         digest = self.digest.generate_digest("test_channel", "2024Q3")
 
@@ -175,7 +175,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         self.assertIn("Top registrants", digest)
         self.assertIn("Top issues", digest)
 
-    def test_header_narrative(self):
+    def test_header_narrative(self) -> None:
         """Test header narrative contains required elements."""
         digest = self.digest.generate_digest("test_channel", "2024Q3")
         lines = digest.split("\n")
@@ -190,14 +190,14 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         # Should contain top issue
         self.assertIn("Top issue:", header)
 
-    def test_amount_formatting(self):
+    def test_amount_formatting(self) -> None:
         """Test amount formatting in digest."""
         digest = self.digest.generate_digest("test_channel", "2024Q3")
 
         # Should contain formatted amounts
         self.assertTrue(any(c in digest for c in ["K", "M", "$"]))
 
-    def test_amendment_tracking(self):
+    def test_amendment_tracking(self) -> None:
         """Test amendment tracking and labeling."""
         # Set up last digest time to capture the amended filing
         with self.db_manager.get_connection() as conn:
@@ -214,7 +214,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         # Should show amended filing
         self.assertIn("(amended)", digest)
 
-    def test_new_since_last_run(self):
+    def test_new_since_last_run(self) -> None:
         """Test 'new since last run' functionality."""
         # Set up last digest time
         with self.db_manager.get_connection() as conn:
@@ -231,7 +231,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         # Should have new/amended section
         self.assertIn("New/Amended since last run", digest)
 
-    def test_no_new_items(self):
+    def test_no_new_items(self) -> None:
         """Test digest when no new items since last run."""
         # Set last digest time after all filings
         with self.db_manager.get_connection() as conn:
@@ -250,7 +250,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         # But should still have other sections
         self.assertIn("Top registrants", digest)
 
-    def test_line_limits(self):
+    def test_line_limits(self) -> None:
         """Test line limits and structure."""
         digest = self.digest.generate_digest("test_channel", "2024Q3")
         lines = digest.split("\n")
@@ -264,7 +264,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         self.assertIn("Updated", footer)
         self.assertIn("PT", footer)
 
-    def test_channel_settings(self):
+    def test_channel_settings(self) -> None:
         """Test channel-specific settings."""
         # Test default settings creation
         settings = self.digest._get_channel_settings("new_channel")
@@ -273,7 +273,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         self.assertEqual(settings["max_lines_main"], 15)
         self.assertIsNone(settings["last_lda_digest_at"])
 
-    def test_digest_state_update(self):
+    def test_digest_state_update(self) -> None:
         """Test digest state is updated after generation."""
         # Generate digest
         self.digest.generate_digest("test_channel", "2024Q3")
@@ -291,7 +291,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
             self.assertIsNotNone(row)
             self.assertIsNotNone(row["last_lda_digest_at"])
 
-    def test_quarter_parsing(self):
+    def test_quarter_parsing(self) -> None:
         """Test quarter parsing functionality."""
         year, q = self.digest._parse_quarter("2024Q3")
         self.assertEqual(year, 2024)
@@ -305,14 +305,14 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         self.assertEqual(prev_year, 2024)
         self.assertEqual(prev_q, 1)
 
-    def test_current_quarter_detection(self):
+    def test_current_quarter_detection(self) -> None:
         """Test current quarter detection."""
         current_quarter = self.digest._get_current_quarter()
 
         # Should be in format YYYYQX
         self.assertRegex(current_quarter, r"\d{4}Q[1-4]")
 
-    def test_error_handling(self):
+    def test_error_handling(self) -> None:
         """Test error handling in digest generation."""
         # Test with invalid quarter
         digest = self.digest.generate_digest("test_channel", "invalid")

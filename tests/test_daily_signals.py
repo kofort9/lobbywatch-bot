@@ -67,7 +67,7 @@ class TestDailySignalsCollector:
 
     def test_init_no_api_keys(self) -> None:
         """Test collector initialization without API keys."""
-        config = {}
+        config: Dict[str, str] = {}
         collector = DailySignalsCollector(config)
 
         assert collector.congress_api_key is None
@@ -189,15 +189,14 @@ class TestDailySignalsCollector:
         }
 
         # Mock the session.get method
-        collector.session.get = Mock(return_value=mock_response)
+        with patch.object(collector.session, "get", return_value=mock_response):
+            signals = collector._collect_congress_signals(24)
 
-        signals = collector._collect_congress_signals(24)
-
-        assert len(signals) > 0
-        signal = signals[0]
-        assert signal.source == "congress"
-        assert "Test Privacy Act" in signal.title
-        assert signal.link is not None
+            assert len(signals) > 0
+            signal = signals[0]
+            assert signal.source == "congress"
+            assert "Test Privacy Act" in signal.title
+            assert signal.link is not None
 
     @patch("bot.daily_signals.requests.Session.get")
     def test_collect_congress_signals_api_error(

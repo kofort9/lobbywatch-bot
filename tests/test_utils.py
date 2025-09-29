@@ -9,7 +9,7 @@ from bot.utils import derive_quarter_from_date, format_amount, normalize_entity_
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 
 
-def test_format_amount():
+def test_format_amount() -> None:
     """Test amount formatting."""
     test_cases = [
         (None, "—"),
@@ -32,7 +32,7 @@ def test_format_amount():
         )
 
 
-def test_normalize_entity_name():
+def test_normalize_entity_name() -> None:
     """Test entity name normalization."""
     test_cases = [
         ("Microsoft Corporation", "microsoft"),
@@ -53,7 +53,7 @@ def test_normalize_entity_name():
         )
 
 
-def test_derive_quarter_from_date():
+def test_derive_quarter_from_date() -> None:
     """Test quarter derivation."""
     test_cases = [
         ("2025-01-15", ("2025Q1", 2025)),

@@ -308,7 +308,7 @@ class TestSignalsDatabaseV2:
                 title="Past Deadline Bill",
                 link="https://example.com/bill-1",
                 timestamp=now,
-                deadline=now - timedelta(days=1),  # Past deadline
+                deadline=(now - timedelta(days=1)).isoformat(),  # Past deadline
             ),
             SignalV2(
                 source="congress",
@@ -316,7 +316,7 @@ class TestSignalsDatabaseV2:
                 title="Near Deadline Bill",
                 link="https://example.com/bill-2",
                 timestamp=now,
-                deadline=now + timedelta(days=3),  # Within 7 days
+                deadline=(now + timedelta(days=3)).isoformat(),  # Within 7 days
             ),
             SignalV2(
                 source="congress",
@@ -324,7 +324,7 @@ class TestSignalsDatabaseV2:
                 title="Future Deadline Bill",
                 link="https://example.com/bill-3",
                 timestamp=now,
-                deadline=now + timedelta(days=10),  # Beyond 7 days
+                deadline=(now + timedelta(days=10)).isoformat(),  # Beyond 7 days
             ),
         ]
 
@@ -518,7 +518,7 @@ class TestSignalsDatabaseV2:
             issue_codes=["HCR", "TEC"],
             bill_id="HR-123",
             agency="HHS",
-            deadline=now + timedelta(days=30),
+            deadline=(now + timedelta(days=30)).isoformat(),
             metrics={
                 "comments_24h_delta_pct": 50.0,
                 "nested": {"key": "value"},

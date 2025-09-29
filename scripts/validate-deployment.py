@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 
-# from typing import Any, Dict, List  # Unused for now
+from typing import List
 
 # import requests  # Unused for now
 
@@ -14,9 +14,9 @@ import sys
 class DeploymentValidator:
     """Validates LobbyLens deployment readiness."""
 
-    def __init__(self):
-        self.errors = []
-        self.warnings = []
+    def __init__(self) -> None:
+        self.errors: List[str] = []
+        self.warnings: List[str] = []
 
     def validate_environment(self) -> bool:
         """Validate environment variables."""
@@ -245,7 +245,7 @@ class DeploymentValidator:
         return all_passed and len(self.errors) == 0
 
 
-def main():
+def main() -> None:
     """Main validation entry point."""
     validator = DeploymentValidator()
     success = validator.run_validation()

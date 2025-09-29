@@ -8,7 +8,7 @@ import requests
 # import sys  # Unused
 
 
-def get_slack_user_id():
+def get_slack_user_id() -> None:
     """Get your Slack user ID for setting up DM alerts."""
 
     slack_token = os.getenv("SLACK_BOT_TOKEN")

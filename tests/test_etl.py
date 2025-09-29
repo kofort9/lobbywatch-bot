@@ -11,7 +11,7 @@ from bot.lda_etl import LDAETLPipeline
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 
 
-def test_etl_pipeline():
+def test_etl_pipeline() -> None:
     """Test the LDA ETL pipeline with sample data."""
     # Create temporary database
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
@@ -62,14 +62,12 @@ def test_etl_pipeline():
                 )
 
         print("\n✅ ETL pipeline test completed successfully!")
-        return True
 
     except Exception as e:
         print(f"❌ ETL pipeline test failed: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
     finally:
         # Clean up
         try:
