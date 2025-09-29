@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Test DM alerts functionality."""
 
-from bot.alerts import AlertManager
 import logging
 import os
 import sys
+
+from bot.alerts import AlertManager
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 

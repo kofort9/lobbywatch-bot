@@ -2,9 +2,10 @@
 """Helper script to find your Slack user ID for DM alerts."""
 
 import os
-# import sys  # Unused
 
 import requests
+
+# import sys  # Unused
 
 
 def get_slack_user_id():

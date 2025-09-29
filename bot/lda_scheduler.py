@@ -1,6 +1,7 @@
 """LDA Scheduler for regular data updates."""
 
 import logging
+
 # import os  # Unused
 from datetime import datetime, timezone
 from typing import Any, Dict

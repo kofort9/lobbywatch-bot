@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Quick test of LDA ETL pipeline."""
 
-from bot.lda_etl import LDAETLPipeline
-from bot.database import DatabaseManager
 import os
 import sys
 import tempfile
+
+from bot.database import DatabaseManager
+from bot.lda_etl import LDAETLPipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 

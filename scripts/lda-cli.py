@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """LDA CLI for manual operations."""
 
-from bot.utils import is_lda_enabled
-from bot.lda_scheduler import LDAScheduler
-from bot.lda_digest import LDADigestComputer
-from bot.database_postgres import create_database_manager
 import argparse
 import os
 import sys
 from pathlib import Path
+
+from bot.database_postgres import create_database_manager
+from bot.lda_digest import LDADigestComputer
+from bot.lda_scheduler import LDAScheduler
+from bot.utils import is_lda_enabled
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Comprehensive test of LDA V1 MVP functionality."""
 
-# from bot.slack_app import SlackApp  # Unused
-from bot.lda_etl import LDAETLPipeline
-from bot.lda_digest import LDADigestComputer
-from bot.database import DatabaseManager
 import os
 import sys
 import tempfile
+
+from bot.database import DatabaseManager
+from bot.lda_digest import LDADigestComputer
+
+# from bot.slack_app import SlackApp  # Unused
+from bot.lda_etl import LDAETLPipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 
@@ -95,21 +97,19 @@ def test_lda_full_pipeline():
             def post_message(self, channel, text):
                 return {"ok": True}
 
-        slack_app = MockSlackApp(db_manager)
-
         # Import the command handler method
         from bot.slack_app import SlackApp
 
         real_slack_app = SlackApp("mock_token", "mock_secret", db_manager, None)
 
         # Test LDA help command
-        help_result = real_slack_app._handle_lda_subcommands(
+        real_slack_app._handle_lda_subcommands(
             ["help"], "test_channel", "test_user"
         )
         print("   ✅ LDA help command works")
 
         # Test top registrants command
-        top_result = real_slack_app._handle_lda_subcommands(
+        real_slack_app._handle_lda_subcommands(
             ["top", "registrants", "n=3"], "test_channel", "test_user"
         )
         print("   ✅ Top registrants command works")
@@ -156,7 +156,7 @@ def test_smoke_tests():
         db_manager.ensure_enhanced_schema()
 
         etl = LDAETLPipeline(db_manager)
-        result = etl.run_etl(mode="update")
+        etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
             filing_count = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
@@ -171,7 +171,7 @@ def test_smoke_tests():
 
         # Smoke Test 2: Idempotency
         print("\n2. Idempotency test...")
-        result2 = etl.run_etl(mode="update")
+        etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
             filing_count2 = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
