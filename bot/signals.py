@@ -86,7 +86,7 @@ class SignalV2:
     watchlist_matches: List[str] = field(default_factory=list)
     watchlist_hit: bool = False  # Quick flag for watchlist hits
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Ensure timestamp is timezone-aware."""
         if self.timestamp.tzinfo is None:
             self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
@@ -543,7 +543,7 @@ class LegacySignal:
     url: str
     timestamp: datetime
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         import logging
 
         logging.warning("Using legacy V1 Signal. Consider upgrading to SignalV2.")
@@ -552,7 +552,7 @@ class LegacySignal:
 class LegacySignalsProcessor:
     """Legacy V1 signals processor (deprecated)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         import logging
 
         logging.warning(

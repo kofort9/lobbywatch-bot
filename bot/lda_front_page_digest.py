@@ -349,6 +349,33 @@ class LDAFrontPageDigest:
 
             return [dict(row) for row in cursor.fetchall()]
 
+    def _get_top_clients(self, year: int, quarter: int) -> List[Dict[str, Any]]:
+        """Get top clients by total amount for a quarter."""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT e.name,
+                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                       as total,
+                       COUNT(f.id) as count
+                FROM filing f
+                JOIN entity e ON f.client_id = e.id AND e.type = 'client'
+                WHERE f.year = ? AND f.quarter = ?
+                GROUP BY e.id, e.name
+                HAVING total > 0
+                ORDER BY total DESC
+                """,
+                (year, f"{year}Q{quarter}"),
+            )
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "name": row["name"],
+                    "total_amount": row["total"],
+                    "filing_count": row["count"],
+                })
+        return results
+
     def _get_top_issues(self, year: int, quarter: int) -> List[Dict[str, Any]]:
         """Get top issues by total amount in quarter."""
         with self.db_manager.get_connection() as conn:
@@ -697,6 +724,43 @@ class LDAFrontPageDigest:
                 f"Top registrant: {top_reg_str}. Top issue: {top_issue_str}. "
                 f"Biggest riser: {riser_str}. Largest filing: {largest_str}."
             )
+
+    # Public API methods for Slack commands
+    def get_top_registrants(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get top registrants for a quarter."""
+        if quarter:
+            year, q = self._parse_quarter(quarter)
+        else:
+            current_quarter = self._get_current_quarter()
+            year_str, q_str = current_quarter.split("Q")
+            year, q = int(year_str), int(q_str)
+        return self._get_top_registrants(year, q)[:limit]
+
+    def get_top_clients(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get top clients for a quarter."""
+        if quarter:
+            year, q = self._parse_quarter(quarter)
+        else:
+            current_quarter = self._get_current_quarter()
+            year_str, q_str = current_quarter.split("Q")
+            year, q = int(year_str), int(q_str)
+        return self._get_top_clients(year, q)[:limit]
+
+    def get_issues_summary(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get issues summary for a quarter."""
+        if quarter:
+            year, q = self._parse_quarter(quarter)
+        else:
+            current_quarter = self._get_current_quarter()
+            year_str, q_str = current_quarter.split("Q")
+            year, q = int(year_str), int(q_str)
+        return self._get_top_issues(year, q)[:limit]
+
+    def search_entity(self, name: str) -> Dict[str, Any]:
+        """Search for an entity by name."""
+        # This is a simplified implementation
+        # In a real implementation, you'd want more sophisticated search
+        return {"error": "Entity search not implemented yet"}
 
     def _format_new_item(self, item: Dict[str, Any]) -> str:
         """Format a new/amended item line."""

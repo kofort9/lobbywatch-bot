@@ -578,7 +578,7 @@ class SlackApp:
                     quarter = args[-1][2:]
                     entity_name = " ".join(args[1:-1])
 
-                result = lda_digest.search_entity(entity_name, quarter)
+                result = lda_digest.search_entity(entity_name)
 
                 if "error" in result:
                     return {

@@ -253,7 +253,7 @@ class DailySignalsCollector:
                 "order": "newest",
             }
 
-            response = self.session.get(url, params=params)
+            response = self.session.get(url, params=params)  # type: ignore
             response.raise_for_status()
             data = response.json()
 
@@ -453,7 +453,7 @@ class DailySignalsCollector:
         self, committee: Dict[str, Any], hours_back: int
     ) -> List[SignalV2]:
         """Collect activities for a specific committee."""
-        signals = []
+        signals: List[SignalV2] = []
 
         try:
             committee_code = committee.get("systemCode", "")

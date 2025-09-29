@@ -390,6 +390,36 @@ class SignalsDatabaseV2:
             watchlist_matches=watchlist_matches,
         )
 
+    # Additional methods for web server compatibility
+    def get_signal_stats(self) -> Dict[str, Any]:
+        """Get signal statistics for web interface."""
+        return self.get_database_stats()
+
+    def add_watchlist_item(self, channel_id: str, term: str) -> bool:
+        """Add a watchlist item (placeholder implementation)."""
+        # This would need to be implemented based on your watchlist schema
+        return True
+
+    def remove_watchlist_item(self, channel_id: str, term: str) -> bool:
+        """Remove a watchlist item (placeholder implementation)."""
+        # This would need to be implemented based on your watchlist schema
+        return True
+
+    def get_watchlist(self, channel_id: str) -> List[str]:
+        """Get watchlist items for a channel (placeholder implementation)."""
+        # This would need to be implemented based on your watchlist schema
+        return []
+
+    def update_channel_setting(self, channel_id: str, setting: str, value: Any) -> bool:
+        """Update a channel setting (placeholder implementation)."""
+        # This would need to be implemented based on your channel settings schema
+        return True
+
+    def get_channel_settings(self, channel_id: str) -> Dict[str, Any]:
+        """Get channel settings (placeholder implementation)."""
+        # This would need to be implemented based on your channel settings schema
+        return {}
+
 
 # =============================================================================
 # V1: Basic Signals Database (Legacy - Maintained for Compatibility)

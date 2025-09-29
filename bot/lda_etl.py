@@ -312,7 +312,7 @@ class LDAETLPipeline:
                 response = session.get(
                     base_url,
                     headers=headers,
-                    params=params,
+                    params=params,  # type: ignore
                     timeout=(3, 30),  # 3s connect, 30s read
                 )
                 response.raise_for_status()
@@ -632,7 +632,7 @@ class LDAETLPipeline:
             "issue_codes": issue_codes,
         }
 
-    def _insert_filing(self, conn, filing_data: Dict[str, Any]) -> None:
+    def _insert_filing(self, conn: Any, filing_data: Dict[str, Any]) -> None:
         """Insert a new filing and related entities."""
         # Get or create client entity
         client_id = None
@@ -679,7 +679,7 @@ class LDAETLPipeline:
         # Insert issue relationships
         self._insert_filing_issues(conn, filing_id, filing_data["issue_codes"])
 
-    def _update_filing(self, conn, filing_id: int, filing_data: Dict[str, Any]) -> None:
+    def _update_filing(self, conn: Any, filing_id: int, filing_data: Dict[str, Any]) -> None:
         """Update an existing filing."""
         # Get or create entities (they might have changed)
         client_id = None
@@ -724,7 +724,7 @@ class LDAETLPipeline:
         conn.execute("DELETE FROM filing_issue WHERE filing_id = ?", (filing_id,))
         self._insert_filing_issues(conn, filing_id, filing_data["issue_codes"])
 
-    def _get_or_create_entity(self, conn, name: str, entity_type: str) -> int:
+    def _get_or_create_entity(self, conn: Any, name: str, entity_type: str) -> int:
         """Get or create an entity, returning its ID."""
         normalized_name = normalize_entity_name(name)
 
@@ -735,7 +735,7 @@ class LDAETLPipeline:
         ).fetchone()
 
         if existing:
-            return existing["id"]
+            return int(existing["id"])
 
         # Create new entity
         cursor = conn.execute(
@@ -751,9 +751,9 @@ class LDAETLPipeline:
                 name, normalized_name, entity_type, entity_id
             )
 
-        return entity_id
+        return int(entity_id)
 
-    def _get_or_create_issue(self, conn, code: str) -> int:
+    def _get_or_create_issue(self, conn: Any, code: str) -> int:
         """Get or create an issue, returning its ID."""
         code = code.upper().strip()
 
@@ -763,15 +763,15 @@ class LDAETLPipeline:
         ).fetchone()
 
         if existing:
-            return existing["id"]
+            return int(existing["id"])
 
         # Create new issue (description can be added later)
         cursor = conn.execute("INSERT INTO issue (code) VALUES (?)", (code,))
 
-        return cursor.lastrowid
+        return int(cursor.lastrowid)
 
     def _insert_filing_issues(
-        self, conn, filing_id: int, issue_codes: List[str]
+        self, conn: Any, filing_id: int, issue_codes: List[str]
     ) -> None:
         """Insert filing-issue relationships."""
         for code in issue_codes:

@@ -41,7 +41,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
     # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
 
     # Collect signals
-    signals = collector.collect_all_signals(hours_back)
+    signals = collector.collect_signals(hours_back)
     logger.info(f"Collected {len(signals)} signals")
 
     # Format digest
@@ -74,7 +74,7 @@ def run_mini_digest(
     # watchlist = [item["name"] for item in database.get_watchlist(channel_id)]  # noqa: E501
 
     # Collect signals
-    signals = collector.collect_all_signals(hours_back)
+    signals = collector.collect_signals(hours_back)
     logger.info(f"Collected {len(signals)} signals")
 
     # Check mini-digest thresholds

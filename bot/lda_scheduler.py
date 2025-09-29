@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class LDAScheduler:
     """Scheduler for LDA data updates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.db_manager = create_database_manager()
         self.etl = LDAETLPipeline(self.db_manager)
 
@@ -78,7 +78,7 @@ class LDAScheduler:
             }
 
 
-def run_scheduled_update():
+def run_scheduled_update() -> None:
     """Entry point for scheduled updates (called by cron/GitHub Actions)."""
     scheduler = LDAScheduler()
     result = scheduler.run_quarterly_update()

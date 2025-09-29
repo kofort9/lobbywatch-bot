@@ -182,7 +182,7 @@ class DigestFormatter:
 
             if industry_signals:
                 # Count by signal type
-                type_counts = {}
+                type_counts: Dict[str, int] = {}
                 for signal in industry_signals:
                     signal_type = self._get_signal_type_name(signal)
                     type_counts[signal_type] = type_counts.get(signal_type, 0) + 1
@@ -359,7 +359,7 @@ class DigestFormatter:
         current_time = datetime.now(self.pt_tz).strftime("%H:%M PT")
 
         # Source breakdown
-        source_counts = {}
+        source_counts: Dict[str, int] = {}
         for signal in signals:
             source_counts[signal.source] = source_counts.get(signal.source, 0) + 1
 
@@ -526,8 +526,9 @@ class DigestFormatter:
         import re
 
         for pattern in patterns:
-            if re.search(pattern, title, re.IGNORECASE):
-                return re.search(pattern, title, re.IGNORECASE).group(0)
+            match = re.search(pattern, title, re.IGNORECASE)
+            if match:
+                return match.group(0)
 
         # Fallback: return first 50 chars
         return title[:50]
@@ -624,7 +625,7 @@ class DigestFormatter:
             and s.comment_surge_pct >= 200
         ]
         if surge_candidates:
-            return max(surge_candidates, key=lambda s: s.comment_surge_pct)
+            return max(surge_candidates, key=lambda s: s.comment_surge_pct or 0)
 
         # 2. Highest absolute delta (≥300 comments / 24h)
         # Note: This would require comment count data, which we don't have in current
@@ -718,7 +719,7 @@ class DigestFormatter:
             SignalType.DOCKET: "Docket",
             SignalType.NOTICE: "Notice",
         }
-        return type_mapping.get(signal.signal_type, "Update")
+        return type_mapping.get(signal.signal_type, "Update") if signal.signal_type else "Update"
 
     def _get_why_matters_clause(self, signal: SignalV2) -> str:
         """Get why-it-matters clause (deadline/effective/venue)."""

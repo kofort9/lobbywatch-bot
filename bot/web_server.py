@@ -275,9 +275,7 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
         elif action == "list":
             watchlist = database.get_watchlist(channel_id)
             if watchlist:
-                items = "\n".join(
-                    [f"• {item['name']} ({item['type']})" for item in watchlist]
-                )
+                items = "\n".join([f"• {item}" for item in watchlist])
                 return {
                     "response_type": "in_channel",
                     "text": f"📋 **Watchlist for #{channel_id}**\n\n{items}",
