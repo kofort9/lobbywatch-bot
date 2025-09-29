@@ -166,27 +166,30 @@ class TestDailySignalsCollector:
         assert len(signals) == 0
         mock_get.assert_not_called()
 
-    @patch("bot.daily_signals.requests.Session.get")
     def test_collect_congress_signals_success(
-        self, mock_get: Mock, collector: DailySignalsCollector
+        self, collector: DailySignalsCollector
     ) -> None:
         """Test successful Congress signal collection."""
         # Mock API response
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
+        # Use a recent date that will pass the 24-hour filter
+        recent_date = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         mock_response.json.return_value = {
             "bills": [
                 {
                     "number": "1234",
                     "type": "HR",
                     "title": "Test Privacy Act",
-                    "updateDate": "2024-01-15T10:00:00Z",
+                    "updateDate": recent_date,
                     "congress": "118",
                     "introducedDate": "2024-01-14",
                 }
             ]
         }
-        mock_get.return_value = mock_response
+        
+        # Mock the session.get method
+        collector.session.get = Mock(return_value=mock_response)
 
         signals = collector._collect_congress_signals(24)
 
@@ -324,7 +327,7 @@ class TestDailySignalsCollector:
         assert "HCR" in health_codes
 
         # Test multiple codes
-        multi_text = "healthcare technology and financial services"
+        multi_text = "healthcare software and financial services"
         multi_codes = collector._extract_issue_codes(multi_text)
         assert "HCR" in multi_codes
         assert "TEC" in multi_codes

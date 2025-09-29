@@ -267,8 +267,8 @@ class TestMainCommand:
 class TestRunV2Functions:
     """Test V2 runner functions (enhanced system)."""
 
-    @patch("bot.run.DailySignalsCollector")
-    @patch("bot.run.DigestFormatter")
+    @patch("bot.daily_signals.DailySignalsCollector")
+    @patch("bot.digest.DigestFormatter")
     def test_run_daily_digest_success(
         self,
         mock_formatter_class: Any,

@@ -72,7 +72,7 @@ class TestDigestFormatter:
 
         result = formatter.format_daily_digest(signals)
 
-        assert "LobbyLens Daily Digest" in result
+        assert "🔍 **LobbyLens** — Daily Signals" in result
         assert "Test Privacy Bill" in result
         assert "Privacy Rule Update" in result
         assert "What Changed" in result

@@ -237,10 +237,10 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
                 "text": f"🔍 **LobbyLens v2 Status**\n\n"
                 f"**Database Stats:**\n"
                 f"• Total signals: {stats['total_signals']}\n"
-                f"• High priority: {stats['high_priority']}\n"
-                f"• Watchlist hits: {stats['watchlist_hits']}\n\n"
+                f"• High priority (24h): {stats['high_priority_24h']}\n"
+                f"• Recent signals (24h): {stats['recent_signals_24h']}\n\n"
                 f"**Sources:** {', '.join(stats['by_source'].keys())}\n"
-                f"**Industries:** {', '.join(list(stats['by_industry'].keys())[:5])}",
+                f"**Average priority:** {stats['average_priority']}",
             }
 
     def handle_watchlist_command(text: str, channel_id: str) -> Dict[str, Any]:
@@ -320,13 +320,17 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
                 }
         else:
             settings = database.get_channel_settings(channel_id)
+            # Use default values if settings are empty (placeholder implementation)
+            mini_threshold = settings.get('mini_digest_threshold', 10)
+            high_threshold = settings.get('high_priority_threshold', 5.0)
+            surge_threshold = settings.get('surge_threshold', 200.0)
+            
             return {
                 "response_type": "in_channel",
                 "text": f"📊 **Threshold Settings for #{channel_id}**\n\n"
-                f"• Mini-digest threshold: "
-                f"{settings['mini_digest_threshold']} signals\n"
-                f"• High-priority threshold: {settings['high_priority_threshold']}\n"
-                f"• Surge threshold: {settings['surge_threshold']}%\n\n"
+                f"• Mini-digest threshold: {mini_threshold} signals\n"
+                f"• High-priority threshold: {high_threshold}\n"
+                f"• Surge threshold: {surge_threshold}%\n\n"
                 f"Usage: `/threshold set <number>`",
             }
 
