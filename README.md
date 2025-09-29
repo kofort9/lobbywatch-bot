@@ -10,11 +10,12 @@ A two-layer government monitoring system providing daily government activity sig
 - **Content**: Bills, hearings, regulations, regulatory actions
 - **Deployment**: Railway (main.py) + Docker (updated)
 
-### **V1: Quarterly Money Layer** (Prepared for Future)
-- **Data Source**: Lobbying Disclosure Act (LDA) filings
+### **V1: Quarterly Money Layer** (Production Ready - September 2025)
+- **Data Source**: U.S. Senate LDA REST API (real-time lobbying disclosure data)
 - **Purpose**: Track who's paying whom to lobby, how much, on which issues
-- **Content**: Lobbying filings, clients, registrants, amounts, issue codes
-- **Status**: Prepared for future LDA implementation
+- **Content**: Real lobbying filings, clients, registrants, amounts, issue codes
+- **Status**: ✅ **Production ready** with Railway PostgreSQL backend
+- **Database**: **PostgreSQL** (migrated from SQLite for better concurrency)
 
 > **📋 Architecture Note**: The system has evolved to separate daily government activity monitoring (V2) from quarterly lobbying analysis (V1). V2 is currently active and tracks government actions, while V1 is prepared for future LDA data integration.
 
@@ -31,11 +32,14 @@ A two-layer government monitoring system providing daily government activity sig
 - 📱 **Mobile Formatting**: Character budgets, line breaking, mobile-friendly design
 - 🏭 **Industry Snapshots**: Categorized view of government activity by industry
 
-### V1: Quarterly Lobbying Analysis (Prepared for Future)
-- 📊 **Quarterly Reports**: Deep analysis of actual lobbying disclosure data
-- 🏢 **Client & Registrant Analysis**: Top spenders, new registrations, issue trends
-- 📈 **Trend Detection**: Quarter-over-quarter changes in lobbying activity
-- 📋 **CSV Exports**: Downloadable data for further analysis
+### V1: LDA Front Page Digest (Production Ready)
+- 🎯 **Front Page Digest**: Focused "biggest hitters" analysis (not firehose)
+- 🏢 **Smart Selection**: Top registrants, clients, QoQ movers, new entrants
+- 📈 **Amendment Tracking**: Labels amended filings, shows latest versions
+- 💰 **Amount Semantics**: `$420K`, `$1.2M`, `—` for unreported, `$0` for explicit zero
+- 🔄 **Since Last Run**: Shows new/amended filings since previous digest
+- 🏛️ **Admin Controls**: Digest posting restricted to channel admins
+- 📊 **PostgreSQL Backend**: No database locking, handles concurrent operations
 
 ### Platform Features
 - 🚀 **Slack Integration**: Clean, formatted messages with direct links
@@ -77,6 +81,14 @@ LobbyLens provides comprehensive Slack integration with interactive slash comman
 - **`/threshold set <number>`** - Set mini-digest threshold (e.g., `/threshold set 5`)
 - **`/threshold`** - Show current threshold settings
 
+### **LDA Commands** (V1 - Admin Only for Digest)
+- **`/lobbylens lda digest [q=2024Q3]`** - Post LDA money digest (channel admins only)
+- **`/lobbylens lda top registrants [q=2024Q3] [n=10]`** - Top lobbying firms
+- **`/lobbylens lda top clients [q=2024Q3] [n=10]`** - Top lobbying clients
+- **`/lobbylens lda issues [q=2024Q3]`** - Top lobbying issues
+- **`/lobbylens lda entity <name>`** - Search for specific entity
+- **`/lobbylens lda help`** - LDA system help and issue codes
+
 ### **System Commands**
 - **`/lobbylens`** - Show system status and database statistics
 - **`/lobbylens help`** - Show comprehensive system help and features
@@ -113,13 +125,35 @@ The daily digest includes:
 - **📊 Docket Surges** - Regulatory dockets with significant activity increases
 - **📜 New Bills & Actions** - Recent congressional activity
 
-## 🚀 **Recent Migration (September 2025)**
+## 🚀 **Recent Updates (September 2025)**
+
+### LDA V1 MVP Complete ✅
+- **PostgreSQL Migration**: Migrated from SQLite to Railway PostgreSQL for production
+- **Front Page Digest**: Implemented focused "biggest hitters" digest (not data firehose)
+- **Real API Integration**: Live U.S. Senate LDA REST API data ingestion
+- **Admin Permissions**: Digest posting restricted to channel admins
+- **DM Alerts**: ETL error notifications sent via Slack DM
+
+### Database Migration: SQLite → PostgreSQL
+
+**Why PostgreSQL?**
+- **Concurrency**: SQLite had database locking issues during ETL operations
+- **Scalability**: PostgreSQL handles thousands of lobbying filings without locks
+- **Production Ready**: Railway PostgreSQL provides managed backups and monitoring
+- **ACID Compliance**: Better transaction handling for complex ETL operations
+- **Concurrent Access**: Multiple processes can read/write simultaneously
+
+**Migration Benefits:**
+- ✅ **Zero database locks** during LDA data ingestion
+- ✅ **Better performance** with proper indexing and query optimization
+- ✅ **Production reliability** with automatic backups and failover
+- ✅ **Scalability** for handling 18,000+ quarterly LDA filings
 
 ### What Changed
-- **Unified Deployment**: Both Railway and Docker now use V2 system
-- **Cleaned Codebase**: Removed obsolete V1 files that were superseded by V2
-- **Two-Layer Architecture**: Separated daily government activity from quarterly lobbying analysis
-- **Simplified Maintenance**: Single active system (V2) with V1 prepared for future use
+- **Database Backend**: SQLite → PostgreSQL (Railway managed)
+- **LDA System**: Complete V1 MVP with front page digest
+- **ETL Pipeline**: Robust API integration with retries and error handling
+- **Slack Integration**: Admin-only digest posting with comprehensive help
 
 ### Files Removed
 - `bot/web_server_v2.py` - Redundant with `web_server.py`
@@ -223,13 +257,33 @@ You can manually trigger the daily digest from the GitHub Actions tab using "Run
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_FILE` | `lobbywatch.db` | SQLite database path |
+| `DATABASE_URL` | - | **PostgreSQL connection string (production)** |
+| `DATABASE_FILE` | `lobbywatch.db` | SQLite database path (development fallback) |
 | `SLACK_WEBHOOK_URL` | - | Slack webhook URL (required) |
+| `SLACK_BOT_TOKEN` | - | Slack bot token for enhanced features |
+| `SLACK_SIGNING_SECRET` | - | Slack signing secret for request verification |
+| `LOBBYLENS_ADMIN_USER_ID` | - | Slack user ID for DM alerts |
+| `ENABLE_LDA_V1` | `false` | Enable LDA V1 features |
+| `LDA_API_KEY` | - | U.S. Senate LDA API key |
 | `CONGRESS_API_KEY` | - | Congress API key for bills/hearings |
 | `FEDERAL_REGISTER_API_KEY` | - | Federal Register API key (optional) |
 | `REGULATIONS_GOV_API_KEY` | - | Regulations.gov API key |
 | `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARN, ERROR) |
 | `DRY_RUN` | `false` | Generate digest without sending |
+
+### Database Configuration
+
+**PostgreSQL (Production - Recommended):**
+```bash
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+**SQLite (Development - Fallback):**
+```bash
+DATABASE_FILE=lobbywatch.db
+```
+
+The system automatically detects PostgreSQL when `DATABASE_URL` is set and falls back to SQLite otherwise.
 
 ### CLI Options
 
@@ -255,25 +309,48 @@ Options:
 
 ## Sample Output
 
+### V2: Daily Government Activity Digest
 ```
 🔍 LobbyLens Daily Digest — 2024-10-15
 
-📋 New filings (last 24h):
-• Acme Corp → K Street Advisors ($50K) • <http://example.com/filing1|View>
-• BigTech Inc → Capitol Consulting ($75K)
-• MegaPharm LLC → Influence Partners ($100K)
+🔎 Watchlist Alerts:
+• Google mentioned in FCC net neutrality hearing
+• Microsoft Azure mentioned in DOD cloud contract RFP
 
-💰 Top registrants (7d):
-• Capitol Consulting: $225K (5 filings)
-• K Street Advisors: $150K (3 filings)
-• Influence Partners: $100K (2 filings)
+📈 What Changed:
+• 12 new bills introduced in House Energy & Commerce
+• FCC opened comment period on broadband privacy rules
+• FDA issued guidance on AI in medical devices
 
-📈 Issue activity (7d vs prior 7d):
-• HCR: 8 filings (prev 3) +167%
-• TAX: 5 filings (prev 0) ∞
-• DEF: 12 filings (prev 10) +20%
+🏭 Industry Snapshots:
+• Tech: 8 regulatory actions, 3 congressional hearings
+• Health: 5 FDA guidances, 2 CMS rule changes
+• Energy: 4 DOE announcements, 1 FERC proceeding
 
 Updated at 15:00 UTC
+```
+
+### V1: LDA Front Page Digest (Biggest Hitters)
+```
+💵 **LDA 2024Q3** disclosed $2.3M (▲200% QoQ). Top registrant: Akin Gump ($920K). 
+Top issue: TEC ($1.8M, 7). Biggest riser: Akin Gump (+$620K). 
+Largest filing: Meta Platforms → Akin Gump ($420K).
+
+**New/Amended since last run**
+• Google LLC → Brownstein Hyatt ($150K) • Issues: TEC • <Filing>
+• Microsoft Corporation → Akin Gump ($320K) • Issues: HCR/TEC • <Filing> (amended)
+
+**Top registrants (Q)**
+• Akin Gump — $920K (3)
+• Covington & Burling — $630K (2)
+
+**Movers & new entrants**
+• QoQ risers: Akin Gump +$620K QoQ · Covington & Burling +$430K QoQ
+• New clients: Acme Health Systems $250K · JH Whitney Data $40K
+
+_$0 may indicate ≤$5K or not required to report_
+
+/lobbylens lda help · Updated 21:20 PT
 ```
 
 ## Testing Plan

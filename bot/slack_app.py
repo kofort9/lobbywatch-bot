@@ -412,7 +412,7 @@ class SlackApp:
     def _handle_lda_subcommands(self, args: List[str], channel_id: str, user_id: str) -> Dict[str, str]:
         """Handle LDA subcommands."""
         from .utils import is_lda_enabled
-        from .lda_digest import LDADigestComputer
+        from .lda_front_page_digest import LDAFrontPageDigest
         from .permissions import get_permission_manager
         
         if not is_lda_enabled():
@@ -429,7 +429,7 @@ class SlackApp:
         subcommand = args[0].lower()
         
         try:
-            lda_digest = LDADigestComputer(self.db_manager)
+            lda_digest = LDAFrontPageDigest(self.db_manager)
             
             if subcommand == "digest":
                 # Check permissions - only channel admins can post digests
@@ -444,7 +444,7 @@ class SlackApp:
                 if len(args) > 1 and args[1].startswith("q="):
                     quarter = args[1][2:]  # Extract quarter from q=2025Q3
                 
-                digest = lda_digest.compute_lda_digest(channel_id, quarter)
+                digest = lda_digest.generate_digest(channel_id, quarter)
                 
                 # Post digest to channel
                 result = self.post_message(channel_id, digest)

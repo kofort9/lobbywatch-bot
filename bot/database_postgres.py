@@ -77,9 +77,9 @@ class PostgresManager(DatabaseManager):
                     amount INTEGER,  -- NULL for not reported, 0 for explicitly zero
                     url TEXT,
                     summary TEXT,  -- From specific_issues/description
-                    filing_type TEXT,  -- Q1, Q2, Q3, Q4, etc.
-                    filing_status TEXT DEFAULT 'active',  -- active, amended, terminated
-                    is_amendment BOOLEAN DEFAULT FALSE,
+                filing_type TEXT,  -- Q1, Q2, Q3, Q4, etc.
+                filing_status TEXT DEFAULT 'original',  -- original, amended
+                is_amendment BOOLEAN DEFAULT FALSE,
                     source_system TEXT DEFAULT 'senate',  -- senate, house
                     ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -101,6 +101,16 @@ class PostgresManager(DatabaseManager):
                 CREATE TABLE IF NOT EXISTS meta (
                     key TEXT PRIMARY KEY,
                     value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Channel-specific digest settings
+                CREATE TABLE IF NOT EXISTS channel_digest_settings (
+                    channel_id TEXT PRIMARY KEY,
+                    min_amount INTEGER DEFAULT 10000,  -- $10K minimum for "new since last run"
+                    max_lines_main INTEGER DEFAULT 15,  -- main post line cap
+                    last_lda_digest_at TIMESTAMP,  -- timestamp of last digest
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 

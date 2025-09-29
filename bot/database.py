@@ -60,7 +60,7 @@ class DatabaseManager:
                 url TEXT,
                 summary TEXT,  -- From specific_issues/description
                 filing_type TEXT,  -- Q1, Q2, Q3, Q4, etc.
-                filing_status TEXT DEFAULT 'active',  -- active, amended, terminated
+                filing_status TEXT DEFAULT 'original',  -- original, amended
                 is_amendment BOOLEAN DEFAULT 0,
                 source_system TEXT DEFAULT 'senate',  -- senate, house
                 ingested_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -83,6 +83,16 @@ class DatabaseManager:
             CREATE TABLE IF NOT EXISTS meta (
                 key TEXT PRIMARY KEY,
                 value TEXT,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- Channel-specific digest settings
+            CREATE TABLE IF NOT EXISTS channel_digest_settings (
+                channel_id TEXT PRIMARY KEY,
+                min_amount INTEGER DEFAULT 10000,  -- $10K minimum for "new since last run"
+                max_lines_main INTEGER DEFAULT 15,  -- main post line cap
+                last_lda_digest_at TEXT,  -- timestamp of last digest
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
 

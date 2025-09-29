@@ -361,8 +361,13 @@ class LDAETLPipeline:
             
             # Extract filing type and status info
             filing_type = api_filing.get("filing_type", "")  # Q1, Q2, Q3, Q4, etc.
-            filing_status = "active"  # Default status
-            is_amendment = False  # TODO: Detect amendments from API data
+            
+            # Detect amendments from API data
+            is_amendment = api_filing.get("is_amendment", False)
+            if not isinstance(is_amendment, bool):
+                is_amendment = str(is_amendment).lower() in ('true', '1', 'yes')
+            
+            filing_status = "amended" if is_amendment else "original"
             source_system = "senate"  # Always senate for this API
             
             # Get income or expenses amount (lobbying amount)
