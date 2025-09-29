@@ -166,7 +166,8 @@ class AlertManager:
 
 **Time:** {time_str}
 
-Check logs for full error details. Consider investigating data source issues or API rate limits.
+Check logs for full error details. Consider investigating
+    data source issues or API rate limits.
 
 _Automated alert from LobbyLens ETL_"""
 
