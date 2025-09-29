@@ -413,12 +413,15 @@ class SlackApp:
         """Handle LDA subcommands."""
         from .utils import is_lda_enabled
         from .lda_digest import LDADigestComputer
+        from .permissions import get_permission_manager
         
         if not is_lda_enabled():
             return {
                 "response_type": "ephemeral",
                 "text": "💵 LDA features are currently disabled. Set ENABLE_LDA_V1=true to enable."
             }
+        
+        permission_manager = get_permission_manager()
         
         if not args:
             return self._lda_help()
@@ -429,6 +432,13 @@ class SlackApp:
             lda_digest = LDADigestComputer(self.db_manager)
             
             if subcommand == "digest":
+                # Check permissions - only channel admins can post digests
+                if not permission_manager.can_post_digest(channel_id, user_id):
+                    return {
+                        "response_type": "ephemeral",
+                        "text": permission_manager.get_permission_error_message("/lobbylens lda digest")
+                    }
+                
                 # Generate LDA digest
                 quarter = None
                 if len(args) > 1 and args[1].startswith("q="):
@@ -689,15 +699,24 @@ class SlackApp:
         """Return LDA help message."""
         return {
             "response_type": "ephemeral",
-            "text": "💵 **LDA Commands:**\n"
-            "• `/lobbylens lda digest` - Generate LDA money digest\n"
-            "• `/lobbylens lda top registrants [q=2025Q3] [n=10]` - Top registrants\n"
-            "• `/lobbylens lda top clients [q=2025Q3] [n=10]` - Top clients\n"
-            "• `/lobbylens lda issues [q=2025Q3]` - Issue summary\n"
-            "• `/lobbylens lda entity <name>` - Search entity\n"
-            "• `/lobbylens lda watchlist add/remove/list <term>` - Manage watchlist\n"
-            "• `/lobbylens lda help` - Show this help\n\n"
-            "_Quarter format: 2025Q1, 2025Q2, etc._",
+            "text": "💵 **LDA Commands:**\n\n"
+            "**Data Queries** (available to all members):\n"
+            "• `/lobbylens lda top registrants [q=2025Q3] [n=10]` - Top lobbying firms\n"
+            "• `/lobbylens lda top clients [q=2025Q3] [n=10]` - Top clients by spending\n"
+            "• `/lobbylens lda issues [q=2025Q3]` - Issue code summary\n"
+            "• `/lobbylens lda entity <name>` - Search for specific entity\n"
+            "• `/lobbylens lda watchlist add/remove/list <term>` - Manage watchlist\n\n"
+            "**Digest Posting** (channel admins only):\n"
+            "• `/lobbylens lda digest [q=2025Q3]` - Post LDA money digest to channel\n\n"
+            "**Understanding LDA Data:**\n"
+            "• **Amount Semantics**: `—` = not reported, `$0` = explicitly zero (may indicate ≤$5K)\n"
+            "• **Issue Codes**: HCR = Health, DEF = Defense, BUD = Budget, EDU = Education, etc.\n"
+            "• **Data Cadence**: Quarterly filings, updated monthly on 15th\n"
+            "• **Amendments**: Labeled \"(amended)\" in digests\n\n"
+            "**Common Issue Codes:**\n"
+            "HCR (Health) • DEF (Defense) • BUD (Budget) • EDU (Education)\n"
+            "TAX (Taxation) • ENV (Environmental) • FIN (Financial) • TEC (Telecom)\n\n"
+            "_Quarter format: 2025Q1, 2025Q2, etc. Data from U.S. Senate LDA filings._",
         }
 
     def handle_message_event(

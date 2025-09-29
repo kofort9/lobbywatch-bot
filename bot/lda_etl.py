@@ -72,6 +72,26 @@ class LDAETLPipeline:
         except Exception as e:
             logger.error(f"LDA ETL run {run_id} failed: {e}")
             self._log_ingest_completion(run_id, {"error": str(e)}, "failed")
+            
+            # Send error alert
+            error_result = {
+                "status": "error",
+                "error": str(e),
+                "added": 0,
+                "updated": 0,
+                "errors": 1,
+                "mode": mode,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "error_details": [str(e)]
+            }
+            
+            try:
+                from .alerts import get_alert_manager
+                alert_manager = get_alert_manager()
+                alert_manager.send_etl_error_alert(error_result)
+            except Exception as alert_error:
+                logger.error(f"Failed to send ETL error alert: {alert_error}")
+            
             raise
     
     def _run_backfill(self, run_id: str, start_year: int, end_year: int) -> Dict[str, Any]:
@@ -98,11 +118,24 @@ class LDAETLPipeline:
                     logger.error(f"Failed to process {quarter_str}: {e}")
                     total_errors += 1
         
-        return {
+        result = {
             "added": total_added,
             "updated": total_updated,
-            "errors": total_errors
+            "errors": total_errors,
+            "mode": "backfill"
         }
+        
+        # Send alert if there were errors
+        if total_errors > 0:
+            try:
+                from .alerts import get_alert_manager
+                alert_manager = get_alert_manager()
+                result["timestamp"] = datetime.now(timezone.utc).isoformat()
+                alert_manager.send_etl_error_alert(result)
+            except Exception as alert_error:
+                logger.error(f"Failed to send ETL error alert: {alert_error}")
+        
+        return result
     
     def _run_update(self, run_id: str) -> Dict[str, Any]:
         """Run update for current and previous quarter."""
@@ -142,11 +175,24 @@ class LDAETLPipeline:
         # Update last run timestamp
         self._update_meta("last_lda_run_at", datetime.now(timezone.utc).isoformat())
         
-        return {
+        result = {
             "added": total_added,
             "updated": total_updated,
-            "errors": total_errors
+            "errors": total_errors,
+            "mode": "update"
         }
+        
+        # Send alert if there were errors
+        if total_errors > 0:
+            try:
+                from .alerts import get_alert_manager
+                alert_manager = get_alert_manager()
+                result["timestamp"] = datetime.now(timezone.utc).isoformat()
+                alert_manager.send_etl_error_alert(result)
+            except Exception as alert_error:
+                logger.error(f"Failed to send ETL error alert: {alert_error}")
+        
+        return result
     
     def _fetch_quarter_data(self, quarter: str) -> List[Dict[str, Any]]:
         """Fetch data for a specific quarter."""
