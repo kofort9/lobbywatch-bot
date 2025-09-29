@@ -31,15 +31,23 @@ jobs:
           # This step may fail if lobbywatch isn't available, but the bot will continue
           pip install lobbywatch || echo "lobbywatch package not available, continuing with existing data"
 
-      - name: Run LobbyLens bot
+      - name: Run LobbyLens V2 Daily Digest
         env:
+          # V2 System Environment Variables
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          FEDERAL_REGISTER_API_KEY: ${{ secrets.FEDERAL_REGISTER_API_KEY }}
+          REGULATIONS_GOV_API_KEY: ${{ secrets.REGULATIONS_GOV_API_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOBBYLENS_CHANNELS: ${{ secrets.LOBBYLENS_CHANNELS }}
+          DATABASE_FILE: "signals.db"
+          LOG_LEVEL: "INFO"
+          # Legacy V1 keys (fallback)
           OPENSECRETS_API_KEY: ${{ secrets.OPENSECRETS_API_KEY }}
           PROPUBLICA_API_KEY: ${{ secrets.PROPUBLICA_API_KEY }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          DATABASE_FILE: "lobbywatch.db"
-          LOG_LEVEL: "INFO"
         run: |
-          lobbylens
+          python scripts/daily-digest.py
 
       - name: Upload database as artifact (for debugging)
         uses: actions/upload-artifact@v4

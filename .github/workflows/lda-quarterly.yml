@@ -51,9 +51,53 @@ jobs:
           LDA_API_KEY: ${{ secrets.LDA_API_KEY }}
           LDA_API_BASE_URL: https://lda.senate.gov/api/v1/
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          LOBBYLENS_CHANNELS: ${{ secrets.LOBBYLENS_CHANNELS }}
+          LOBBYLENS_ADMIN_USER_ID: ${{ secrets.LOBBYLENS_ADMIN_USER_ID }}
           LOG_LEVEL: INFO
         run: |
-          python -m bot.lda_scheduler
+          python -c "
+          import os
+          import sys
+          sys.path.insert(0, '.')
+          
+          from bot.lda_scheduler import LDAScheduler
+          from bot.lda_front_page_digest import LDAFrontPageDigest
+          from bot.database_postgres import create_database_manager
+          from bot.slack_app import SlackApp
+          
+          print('🔄 Starting LDA quarterly update...')
+          
+          # Run ETL
+          scheduler = LDAScheduler()
+          result = scheduler.run_quarterly_update()
+          print(f'✅ ETL completed: {result}')
+          
+          # Post digest to channels if ETL successful
+          if result.get('status') == 'success':
+              print('📤 Posting LDA digest to Slack channels...')
+              
+              channels = os.getenv('LOBBYLENS_CHANNELS', '').split(',')
+              if channels and channels[0]:
+                  db_manager = create_database_manager()
+                  digest_generator = LDAFrontPageDigest(db_manager)
+                  slack_app = SlackApp(db_manager, digest_generator)
+                  
+                  for channel_id in channels:
+                      channel_id = channel_id.strip()
+                      if channel_id:
+                          try:
+                              digest = digest_generator.generate_digest(channel_id)
+                              slack_app.post_message(channel_id, digest)
+                              print(f'✅ Posted digest to channel {channel_id}')
+                          except Exception as e:
+                              print(f'❌ Failed to post to channel {channel_id}: {e}')
+              else:
+                  print('⚠️ No channels configured in LOBBYLENS_CHANNELS')
+          else:
+              print('⚠️ ETL failed, skipping digest posting')
+          "
 
       - name: Run LDA backfill
         if: ${{ github.event.inputs.mode == 'backfill' }}
