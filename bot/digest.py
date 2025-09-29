@@ -675,8 +675,7 @@ class DigestFormatter:
         )
 
     def _format_front_page_signal(self, signal: SignalV2) -> str:
-        """Format a signal for the front page with type tag and why-it-matters clause.
-        """
+        """Format a signal for the front page with type tag and why-it-matters clause."""
         # Add type tag
         type_tag = self._get_signal_type_tag(signal)
 

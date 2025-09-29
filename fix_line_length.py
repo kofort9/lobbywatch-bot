@@ -1,47 +1,48 @@
 #!/usr/bin/env python3
 """Script to fix line length issues in test files."""
 
-import re
 import os
+import re
+
 
 def fix_line_length():
     """Fix line length issues in test files."""
     test_files = [
-        'tests/test_daily_signals_v2.py',
-        'tests/test_digest.py',
-        'tests/test_run.py',
-        'tests/test_run_v2.py',
-        'tests/test_signals_database_v2.py',
-        'tests/test_signals_v2.py',
-        'tests/test_test_fixtures_v2.py',
-        'tests/test_web_server_v2.py',
+        "tests/test_daily_signals_v2.py",
+        "tests/test_digest.py",
+        "tests/test_run.py",
+        "tests/test_run_v2.py",
+        "tests/test_signals_database_v2.py",
+        "tests/test_signals_v2.py",
+        "tests/test_test_fixtures_v2.py",
+        "tests/test_web_server_v2.py",
     ]
-    
+
     for file_path in test_files:
         if os.path.exists(file_path):
             print(f"Fixing {file_path}...")
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 content = f.read()
-            
+
             # Fix long lines by breaking them at logical points
-            lines = content.split('\n')
+            lines = content.split("\n")
             fixed_lines = []
-            
+
             for line in lines:
                 if len(line) > 88:
                     # Try to break long lines at logical points
-                    if 'def test_' in line and '(' in line and ')' in line:
+                    if "def test_" in line and "(" in line and ")" in line:
                         # Method signature - break at parameters
-                        parts = line.split('(')
+                        parts = line.split("(")
                         if len(parts) == 2:
                             method_part = parts[0]
-                            params_part = parts[1].rstrip('):')
+                            params_part = parts[1].rstrip("):")
                             if len(method_part) + len(params_part) > 88:
                                 # Break at the first parameter
-                                params = params_part.split(', ')
+                                params = params_part.split(", ")
                                 if len(params) > 1:
                                     first_param = params[0]
-                                    remaining_params = ', '.join(params[1:])
+                                    remaining_params = ", ".join(params[1:])
                                     fixed_line = f"{method_part}(\n        {first_param},\n        {remaining_params}\n    ) -> None:"
                                     fixed_lines.append(fixed_line)
                                 else:
@@ -50,10 +51,10 @@ def fix_line_length():
                                 fixed_lines.append(line)
                         else:
                             fixed_lines.append(line)
-                    elif 'assert ' in line and len(line) > 88:
+                    elif "assert " in line and len(line) > 88:
                         # Assert statement - break at logical points
-                        if ' in ' in line:
-                            parts = line.split(' in ')
+                        if " in " in line:
+                            parts = line.split(" in ")
                             if len(parts) == 2:
                                 left_part = parts[0]
                                 right_part = parts[1]
@@ -68,8 +69,8 @@ def fix_line_length():
                             fixed_lines.append(line)
                     else:
                         # Generic long line - try to break at spaces
-                        if ' ' in line:
-                            words = line.split(' ')
+                        if " " in line:
+                            words = line.split(" ")
                             if len(words) > 1:
                                 # Try to break at 80 characters
                                 current_line = ""
@@ -88,9 +89,10 @@ def fix_line_length():
                             fixed_lines.append(line)
                 else:
                     fixed_lines.append(line)
-            
-            with open(file_path, 'w') as f:
-                f.write('\n'.join(fixed_lines))
+
+            with open(file_path, "w") as f:
+                f.write("\n".join(fixed_lines))
+
 
 if __name__ == "__main__":
     fix_line_length()
