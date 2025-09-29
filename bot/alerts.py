@@ -17,7 +17,9 @@ class AlertManager:
         self.slack_token = slack_token or os.getenv("SLACK_BOT_TOKEN")
 
         # Support both DM and channel alerts
-        self.admin_user_id = os.getenv("LOBBYLENS_ADMIN_USER_ID")  # For DM alerts
+        self.admin_user_id = os.getenv(
+            "LOBBYLENS_ADMIN_USER_ID"
+        )  # For DM alerts
         self.alerts_channel = os.getenv(
             "LOBBYLENS_ALERTS_CHANNEL", "#lobbylens-alerts"
         )  # For channel alerts
@@ -101,13 +103,20 @@ class AlertManager:
 
         try:
             # Format alert message
-            emoji = {"info": "ℹ️", "warning": "⚠️", "error": "❌", "critical": "🚨"}.get(
-                severity, "⚠️"
+            emoji = {
+                "info": "ℹ️",
+                "warning": "⚠️",
+                "error": "❌",
+                "critical": "🚨",
+            }.get(severity, "⚠️")
+
+            timestamp = datetime.now(timezone.utc).strftime(
+                "%Y-%m-%d %H:%M:%S UTC"
             )
 
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-
-            alert_text = f"{emoji} **{title}**\n\n{message}\n\n_Time: {timestamp}_"
+            alert_text = (
+                f"{emoji} **{title}**\n\n{message}\n\n_Time: {timestamp}_"
+            )
 
             # Send to configured target (DM or channel)
             return self._send_slack_message(self.alert_target, alert_text)
@@ -200,7 +209,9 @@ _Automated alert from LobbyLens ETL_"""
                     logger.error(f"Slack API error: {data.get('error')}")
                     return False
             else:
-                logger.error(f"HTTP error sending alert: {response.status_code}")
+                logger.error(
+                    f"HTTP error sending alert: {response.status_code}"
+                )
                 return False
 
         except Exception as e:

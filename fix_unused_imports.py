@@ -49,7 +49,10 @@ def fix_unused_imports():
             for unused_import in unused_imports:
                 # Remove the import line
                 content = re.sub(
-                    f"^{re.escape(unused_import)}$", "", content, flags=re.MULTILINE
+                    f"^{re.escape(unused_import)}$",
+                    "",
+                    content,
+                    flags=re.MULTILINE,
                 )
                 # Remove empty lines that might be left behind
                 content = re.sub(r"\n\s*\n\s*\n", "\n\n", content)

@@ -18,7 +18,9 @@ class LDAFrontPageDigest:
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
 
-    def generate_digest(self, channel_id: str, quarter: Optional[str] = None) -> str:
+    def generate_digest(
+        self, channel_id: str, quarter: Optional[str] = None
+    ) -> str:
         """Generate the front page digest for a channel.
 
         Args:
@@ -201,7 +203,9 @@ class LDAFrontPageDigest:
                     f"+{overflow_count} more in thread · /lobbylens lda help · Updated {current_time}"
                 )
             else:
-                digest_lines.append(f"/lobbylens lda help · Updated {current_time}")
+                digest_lines.append(
+                    f"/lobbylens lda help · Updated {current_time}"
+                )
 
             # Update last digest timestamp
             self._update_last_digest_at(channel_id)
@@ -267,7 +271,11 @@ class LDAFrontPageDigest:
                 }
 
     def _get_new_amended_since_last_run(
-        self, last_digest_at: Optional[str], min_amount: int, year: int, quarter: int
+        self,
+        last_digest_at: Optional[str],
+        min_amount: int,
+        year: int,
+        quarter: int,
     ) -> List[Dict[str, Any]]:
         """Get new/amended filings since last digest run."""
         with self.db_manager.get_connection() as conn:
@@ -310,7 +318,9 @@ class LDAFrontPageDigest:
 
             return [dict(row) for row in cursor.fetchall()]
 
-    def _get_top_registrants(self, year: int, quarter: int) -> List[Dict[str, Any]]:
+    def _get_top_registrants(
+        self, year: int, quarter: int
+    ) -> List[Dict[str, Any]]:
         """Get top registrants by total amount in quarter."""
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
@@ -352,7 +362,12 @@ class LDAFrontPageDigest:
             return [dict(row) for row in cursor.fetchall()]
 
     def _get_movers_and_new_entrants(
-        self, year: int, quarter: int, prev_year: int, prev_quarter: int, max_lines: int
+        self,
+        year: int,
+        quarter: int,
+        prev_year: int,
+        prev_quarter: int,
+        max_lines: int,
     ) -> Optional[Dict[str, Any]]:
         """Get QoQ risers and new clients."""
         if max_lines <= 0:
@@ -387,7 +402,12 @@ class LDAFrontPageDigest:
                 ORDER BY delta DESC
                 LIMIT 3
             """,
-                (year, f"{year}Q{quarter}", prev_year, f"{prev_year}Q{prev_quarter}"),
+                (
+                    year,
+                    f"{year}Q{quarter}",
+                    prev_year,
+                    f"{prev_year}Q{prev_quarter}",
+                ),
             )
 
             risers = [dict(row) for row in cursor.fetchall()]
@@ -440,12 +460,20 @@ class LDAFrontPageDigest:
                     lines.append(f"• New clients: {' · '.join(client_names)}")
 
         if lines:
-            return {"title": "Movers & new entrants", "lines": lines, "type": "movers"}
+            return {
+                "title": "Movers & new entrants",
+                "lines": lines,
+                "type": "movers",
+            }
 
         return None
 
     def _get_largest_single_filings(
-        self, year: int, quarter: int, new_items: List[Dict[str, Any]], max_lines: int
+        self,
+        year: int,
+        quarter: int,
+        new_items: List[Dict[str, Any]],
+        max_lines: int,
     ) -> List[Dict[str, Any]]:
         """Get largest single filings, excluding duplicates from new items."""
         if max_lines <= 0:
@@ -459,7 +487,9 @@ class LDAFrontPageDigest:
                 ",".join(["?" for _ in exclude_uids]) if exclude_uids else "''"
             )
             exclude_clause = (
-                f"AND f.filing_uid NOT IN ({placeholders})" if exclude_uids else ""
+                f"AND f.filing_uid NOT IN ({placeholders})"
+                if exclude_uids
+                else ""
             )
 
             cursor = conn.execute(
@@ -589,7 +619,12 @@ class LDAFrontPageDigest:
                 ORDER BY delta DESC
                 LIMIT 1
             """,
-                (year, f"{year}Q{quarter}", prev_year, f"{prev_year}Q{prev_quarter}"),
+                (
+                    year,
+                    f"{year}Q{quarter}",
+                    prev_year,
+                    f"{prev_year}Q{prev_quarter}",
+                ),
             )
 
             biggest_riser = cursor.fetchone()
@@ -623,7 +658,8 @@ class LDAFrontPageDigest:
             return (
                 f"💵 **LDA {year}Q{quarter}** disclosed {format_amount(current_total)} ({qoq_str} QoQ). "
                 f"Top registrant: {top_reg_str}. Top issue: {top_issue_str}. "
-                f"Biggest riser: {riser_str}. Largest filing: {largest_str}.")
+                f"Biggest riser: {riser_str}. Largest filing: {largest_str}."
+            )
 
     def _format_new_item(self, item: Dict[str, Any]) -> str:
         """Format a new/amended item line."""
@@ -642,7 +678,9 @@ class LDAFrontPageDigest:
             issue_str = "—"
 
         # Amendment tag
-        amended_tag = " (amended)" if item.get("filing_status") == "amended" else ""
+        amended_tag = (
+            " (amended)" if item.get("filing_status") == "amended" else ""
+        )
 
         # URL
         url = item.get("url", "")

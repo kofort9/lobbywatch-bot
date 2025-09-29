@@ -17,14 +17,20 @@ sys.path.insert(0, str(project_root))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="LDA CLI for manual operations")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    parser = argparse.ArgumentParser(
+        description="LDA CLI for manual operations"
+    )
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands"
+    )
 
     # Update command
     subparsers.add_parser("update", help="Run quarterly update")
 
     # Backfill command
-    backfill_parser = subparsers.add_parser("backfill", help="Run historical backfill")
+    backfill_parser = subparsers.add_parser(
+        "backfill", help="Run historical backfill"
+    )
     backfill_parser.add_argument("start_year", type=int, help="Start year")
     backfill_parser.add_argument("end_year", type=int, help="End year")
 
@@ -68,7 +74,9 @@ def main():
             print(f"❌ Update failed: {result.get('error', 'Unknown error')}")
 
     elif args.command == "backfill":
-        print(f"🔄 Running LDA backfill from {args.start_year} to {args.end_year}...")
+        print(
+            f"🔄 Running LDA backfill from {args.start_year} to {args.end_year}..."
+        )
         result = scheduler.run_backfill(args.start_year, args.end_year)
 
         if result["status"] == "success":
@@ -94,7 +102,9 @@ def main():
         print("📊 LDA Status:")
         print(f"   Enabled: {is_lda_enabled()}")
         print(f"   Data Source: {os.getenv('LDA_DATA_SOURCE', 'bulk')}")
-        print(f"   API Key: {'✅ Set' if os.getenv('LDA_API_KEY') else '❌ Missing'}")
+        print(
+            f"   API Key: {'✅ Set' if os.getenv('LDA_API_KEY') else '❌ Missing'}"
+        )
 
         # Check database
         try:

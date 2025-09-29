@@ -18,7 +18,9 @@ class LDADigestComputer:
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
 
-    def compute_lda_digest(self, channel_id: str, quarter: Optional[str] = None) -> str:
+    def compute_lda_digest(
+        self, channel_id: str, quarter: Optional[str] = None
+    ) -> str:
         """Compute LDA money digest for a specific quarter.
 
         Args:
@@ -36,7 +38,9 @@ class LDADigestComputer:
 
         try:
             # Get new/amended filings since last run
-            new_filings = self._get_new_filings_since_last_run(channel_id, quarter)
+            new_filings = self._get_new_filings_since_last_run(
+                channel_id, quarter
+            )
 
             # Get top registrants for the quarter
             top_registrants = self._get_top_registrants(quarter, limit=5)
@@ -106,7 +110,9 @@ class LDADigestComputer:
                 digest_lines.append("Watchlist hits:")
                 for hit in watchlist_hits[:3]:  # Limit to 3 for brevity
                     client_name = hit.get("client_name", "Unknown Client")
-                    registrant_name = hit.get("registrant_name", "Unknown Registrant")
+                    registrant_name = hit.get(
+                        "registrant_name", "Unknown Registrant"
+                    )
                     amount = format_amount(hit.get("amount", 0))
                     issues = hit.get("issue_codes", "").replace(",", " • ")
                     url = hit.get("url", "")
@@ -124,7 +130,9 @@ class LDADigestComputer:
             # Footer with amount semantics note
             current_time = datetime.now().strftime("%H:%M PT")
             digest_lines.append(f"Updated {current_time} — /lobbylens lda help")
-            digest_lines.append("_$0 may indicate ≤$5K or not required to report_")
+            digest_lines.append(
+                "_$0 may indicate ≤$5K or not required to report_"
+            )
 
             # Update digest state for "since last run" tracking
             self._update_digest_state(channel_id, quarter)
@@ -170,7 +178,9 @@ class LDADigestComputer:
 
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_issues_summary(self, quarter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_issues_summary(
+        self, quarter: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Get issue summary for a quarter."""
         if not quarter:
             quarter = self._get_current_quarter()
@@ -356,7 +366,9 @@ class LDADigestComputer:
                 (channel_id, now, max_filing_date, max_ingested_at, now),
             )
 
-    def _get_top_registrants(self, quarter: str, limit: int) -> List[Dict[str, Any]]:
+    def _get_top_registrants(
+        self, quarter: str, limit: int
+    ) -> List[Dict[str, Any]]:
         """Get top registrants by total amount."""
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(

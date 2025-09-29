@@ -68,7 +68,9 @@ class SignalsDatabaseV2:
         )
 
         # Create indexes for performance
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_signal_ts ON signal_event(ts)")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_signal_ts ON signal_event(ts)"
+        )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score)"
         )
@@ -119,7 +121,11 @@ class SignalsDatabaseV2:
                         json.dumps(signal.issue_codes),
                         json.dumps(signal.metrics),
                         signal.priority_score,
-                        signal.signal_type.value if signal.signal_type else None,
+                        (
+                            signal.signal_type.value
+                            if signal.signal_type
+                            else None
+                        ),
                         signal.urgency.value if signal.urgency else None,
                         json.dumps(signal.watchlist_matches),
                     ),
@@ -343,7 +349,9 @@ class SignalsDatabaseV2:
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
 
-        cur.execute("DELETE FROM signal_event WHERE ts < ?", (cutoff_time.isoformat(),))
+        cur.execute(
+            "DELETE FROM signal_event WHERE ts < ?", (cutoff_time.isoformat(),)
+        )
 
         deleted_count = cur.rowcount
         conn.commit()
@@ -356,17 +364,23 @@ class SignalsDatabaseV2:
         from bot.signals import SignalType, Urgency
 
         # Parse JSON fields
-        issue_codes = json.loads(row["issue_codes"]) if row["issue_codes"] else []
+        issue_codes = (
+            json.loads(row["issue_codes"]) if row["issue_codes"] else []
+        )
         metrics = json.loads(row["metric_json"]) if row["metric_json"] else {}
         watchlist_matches = (
-            json.loads(row["watchlist_matches"]) if row["watchlist_matches"] else []
+            json.loads(row["watchlist_matches"])
+            if row["watchlist_matches"]
+            else []
         )
 
         # Parse timestamp
         timestamp = datetime.fromisoformat(row["ts"])
 
         # Parse enums
-        signal_type = SignalType(row["signal_type"]) if row["signal_type"] else None
+        signal_type = (
+            SignalType(row["signal_type"]) if row["signal_type"] else None
+        )
         urgency = Urgency(row["urgency"]) if row["urgency"] else None
 
         return SignalV2(
@@ -413,7 +427,9 @@ class LegacySignalsDatabase:
         """Legacy signal saving (deprecated)."""
         import logging
 
-        logging.warning("Legacy save_signals called. Use V2 SignalsDatabaseV2 instead.")
+        logging.warning(
+            "Legacy save_signals called. Use V2 SignalsDatabaseV2 instead."
+        )
         return 0
 
     def get_recent_signals(self, hours_back: int = 24) -> List[Dict]:

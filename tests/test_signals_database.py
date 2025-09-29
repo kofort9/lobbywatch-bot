@@ -222,9 +222,15 @@ class TestSignalsDatabaseV2:
         channel_id = "C1234567890"
 
         # Add watchlist items
-        assert temp_db.add_watchlist_item(channel_id, "Apple", "company") is True
-        assert temp_db.add_watchlist_item(channel_id, "Google", "company") is True
-        assert temp_db.add_watchlist_item(channel_id, "privacy", "topic") is True
+        assert (
+            temp_db.add_watchlist_item(channel_id, "Apple", "company") is True
+        )
+        assert (
+            temp_db.add_watchlist_item(channel_id, "Google", "company") is True
+        )
+        assert (
+            temp_db.add_watchlist_item(channel_id, "privacy", "topic") is True
+        )
 
         # Get watchlist
         watchlist = temp_db.get_watchlist(channel_id)
@@ -437,15 +443,20 @@ class TestSignalsDatabaseV2:
 
         # Update settings
         assert (
-            temp_db.update_channel_setting(channel_id, "mini_digest_threshold", 15)
+            temp_db.update_channel_setting(
+                channel_id, "mini_digest_threshold", 15
+            )
             is True
         )
         assert (
-            temp_db.update_channel_setting(channel_id, "high_priority_threshold", 7.0)
+            temp_db.update_channel_setting(
+                channel_id, "high_priority_threshold", 7.0
+            )
             is True
         )
         assert (
-            temp_db.update_channel_setting(channel_id, "show_summaries", False) is True
+            temp_db.update_channel_setting(channel_id, "show_summaries", False)
+            is True
         )
 
         # Get updated settings
@@ -492,7 +503,9 @@ class TestSignalsDatabaseV2:
         assert len(signals) == 0  # Recent signal is older than 24 hours
 
         # Get all signals
-        all_signals = temp_db.get_recent_signals(365)  # Get all signals from last year
+        all_signals = temp_db.get_recent_signals(
+            365
+        )  # Get all signals from last year
         assert len(all_signals) == 1
         assert all_signals[0].stable_id == "recent-bill"
 
@@ -577,7 +590,10 @@ class TestSignalsDatabaseV2:
             agency="HHS",
             comment_count=100,
             deadline=now + timedelta(days=30),
-            metric_json={"comments_24h_delta_pct": 50.0, "nested": {"key": "value"}},
+            metric_json={
+                "comments_24h_delta_pct": 50.0,
+                "nested": {"key": "value"},
+            },
             signal_type=SignalType.BILL,
             urgency=Urgency.HIGH,
             priority_score=7.5,

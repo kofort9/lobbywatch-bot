@@ -36,14 +36,18 @@ class DeploymentValidator:
         # Check required vars
         for var in required_vars:
             if not os.getenv(var):
-                self.errors.append(f"Missing required environment variable: {var}")
+                self.errors.append(
+                    f"Missing required environment variable: {var}"
+                )
             else:
                 print(f"  ✅ {var} is set")
 
         # Check optional vars
         for var in optional_vars:
             if not os.getenv(var):
-                self.warnings.append(f"Optional environment variable not set: {var}")
+                self.warnings.append(
+                    f"Optional environment variable not set: {var}"
+                )
             else:
                 print(f"  ✅ {var} is set")
 
@@ -85,7 +89,9 @@ class DeploymentValidator:
                 print(f"  ⚠️ {package} (optional - needed for PostgreSQL)")
 
         if missing:
-            self.errors.append(f"Missing required packages: {', '.join(missing)}")
+            self.errors.append(
+                f"Missing required packages: {', '.join(missing)}"
+            )
 
         return len(missing) == 0
 
@@ -115,7 +121,9 @@ class DeploymentValidator:
             from bot.database_postgres import create_database_manager
 
             # Test with in-memory database
-            db_manager = create_database_manager()  # Will use SQLite for testing
+            db_manager = (
+                create_database_manager()
+            )  # Will use SQLite for testing
             db_manager.ensure_enhanced_schema()
 
             # Test basic operations
@@ -150,7 +158,9 @@ class DeploymentValidator:
                 # Test health endpoint
                 response = client.get("/lobbylens/health")
                 if response.status_code != 200:
-                    self.errors.append("Health endpoint not responding correctly")
+                    self.errors.append(
+                        "Health endpoint not responding correctly"
+                    )
                 else:
                     print("  ✅ Health endpoint working")
 

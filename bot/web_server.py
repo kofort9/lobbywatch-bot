@@ -110,7 +110,9 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             elif digest_type == "mini":
                 digest = run_mini_digest(hours_back, channel_id)
                 if not digest:
-                    return jsonify({"message": "Mini-digest thresholds not met"})
+                    return jsonify(
+                        {"message": "Mini-digest thresholds not met"}
+                    )
             else:
                 return jsonify({"error": "Invalid digest type"})
 
@@ -145,7 +147,10 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
         elif command == "/threshold":
             return handle_threshold_command(text, channel_id)
         else:
-            return {"response_type": "ephemeral", "text": f"Unknown command: {command}"}
+            return {
+                "response_type": "ephemeral",
+                "text": f"Unknown command: {command}",
+            }
 
     def handle_lobbypulse_command(text: str, channel_id: str) -> Dict[str, Any]:
         """Handle /lobbypulse command."""

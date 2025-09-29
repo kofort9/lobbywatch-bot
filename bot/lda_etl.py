@@ -21,7 +21,9 @@ class LDAETLPipeline:
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
         self.api_key = os.getenv("LDA_API_KEY")
-        self.data_source = os.getenv("LDA_DATA_SOURCE", "bulk")  # 'bulk' or 'api'
+        self.data_source = os.getenv(
+            "LDA_DATA_SOURCE", "bulk"
+        )  # 'bulk' or 'api'
         self.bulk_base_url = os.getenv(
             "LDA_BULK_BASE_URL", "https://lda.senate.gov/filings/public/"
         )
@@ -68,7 +70,9 @@ class LDAETLPipeline:
         try:
             if mode == "backfill":
                 if not start_year or not end_year:
-                    raise ValueError("Backfill mode requires start_year and end_year")
+                    raise ValueError(
+                        "Backfill mode requires start_year and end_year"
+                    )
                 result = self._run_backfill(run_id, start_year, end_year)
             else:
                 result = self._run_update(run_id)
@@ -190,7 +194,9 @@ class LDAETLPipeline:
                 total_errors += 1
 
         # Update last run timestamp
-        self._update_meta("last_lda_run_at", datetime.now(timezone.utc).isoformat())
+        self._update_meta(
+            "last_lda_run_at", datetime.now(timezone.utc).isoformat()
+        )
 
         result = {
             "added": total_added,
@@ -242,9 +248,13 @@ class LDAETLPipeline:
             try:
                 filings = self._fetch_filings_by_type(year, filing_type)
                 all_filings.extend(filings)
-                logger.info(f"Fetched {len(filings)} {filing_type} filings for {year}")
+                logger.info(
+                    f"Fetched {len(filings)} {filing_type} filings for {year}"
+                )
             except Exception as e:
-                logger.error(f"Failed to fetch {filing_type} filings for {year}: {e}")
+                logger.error(
+                    f"Failed to fetch {filing_type} filings for {year}: {e}"
+                )
 
         return all_filings
 
@@ -355,10 +365,14 @@ class LDAETLPipeline:
                 time.sleep(0.5)
 
             except requests.exceptions.Timeout as e:
-                logger.error(f"Timeout for {filing_type} {year} page {page}: {e}")
+                logger.error(
+                    f"Timeout for {filing_type} {year} page {page}: {e}"
+                )
                 break
             except requests.exceptions.HTTPError as e:
-                logger.error(f"HTTP error for {filing_type} {year} page {page}: {e}")
+                logger.error(
+                    f"HTTP error for {filing_type} {year} page {page}: {e}"
+                )
                 if e.response.status_code == 429:
                     logger.info("Rate limited, waiting 60 seconds...")
                     time.sleep(60)
@@ -403,7 +417,9 @@ class LDAETLPipeline:
             ).strftime("%Y-%m-%d")
 
             # Extract filing type and status info
-            filing_type = api_filing.get("filing_type", "")  # Q1, Q2, Q3, Q4, etc.
+            filing_type = api_filing.get(
+                "filing_type", ""
+            )  # Q1, Q2, Q3, Q4, etc.
 
             # Detect amendments from API data
             is_amendment = api_filing.get("is_amendment", False)
@@ -452,7 +468,9 @@ class LDAETLPipeline:
                     descriptions.append(description)
 
             # Combine descriptions
-            combined_description = "; ".join(descriptions) if descriptions else ""
+            combined_description = (
+                "; ".join(descriptions) if descriptions else ""
+            )
 
             # Get filing document URL
             filing_url = api_filing.get("filing_document_url", "")
@@ -484,41 +502,44 @@ class LDAETLPipeline:
         logger.info(f"Generating sample data for {quarter}")
 
         # Generate sample filings for testing
-        sample_filings = [{"filing_uid": f"sample_{quarter}_001",
-                           "client_name": "Microsoft Corporation",
-                           "registrant_name": "Covington & Burling LLP",
-                           "filing_date": "2025-07-15",
-                           "amount": 320000,
-                           "url": "https://lda.senate.gov/filings/sample1.pdf",
-                           "specific_issues": "Technology policy, artificial intelligence regulation, data privacy",
-                           "issue_codes": ["TEC",
-                                           "CSP"],
-                           },
-                          {"filing_uid": f"sample_{quarter}_002",
-                           "client_name": "Pfizer Inc.",
-                           "registrant_name": "Akin Gump Strauss Hauer & Feld LLP",
-                           "filing_date": "2025-07-20",
-                           "amount": 180000,
-                           "url": "https://lda.senate.gov/filings/sample2.pdf",
-                           "specific_issues": "Healthcare reform, drug pricing, FDA regulations",
-                           "issue_codes": ["HCR",
-                                           "PHA"],
-                           },
-                          {"filing_uid": f"sample_{quarter}_003",
-                           "client_name": "Google LLC",
-                           "registrant_name": "Brownstein Hyatt Farber Schreck",
-                           "filing_date": "2025-07-25",
-                           "amount": 250000,
-                           "url": "https://lda.senate.gov/filings/sample3.pdf",
-                           "specific_issues": "Antitrust legislation, digital services act, privacy regulations",
-                           "issue_codes": ["TEC",
-                                           "JUD"],
-                           },
-                          ]
+        sample_filings = [
+            {
+                "filing_uid": f"sample_{quarter}_001",
+                "client_name": "Microsoft Corporation",
+                "registrant_name": "Covington & Burling LLP",
+                "filing_date": "2025-07-15",
+                "amount": 320000,
+                "url": "https://lda.senate.gov/filings/sample1.pdf",
+                "specific_issues": "Technology policy, artificial intelligence regulation, data privacy",
+                "issue_codes": ["TEC", "CSP"],
+            },
+            {
+                "filing_uid": f"sample_{quarter}_002",
+                "client_name": "Pfizer Inc.",
+                "registrant_name": "Akin Gump Strauss Hauer & Feld LLP",
+                "filing_date": "2025-07-20",
+                "amount": 180000,
+                "url": "https://lda.senate.gov/filings/sample2.pdf",
+                "specific_issues": "Healthcare reform, drug pricing, FDA regulations",
+                "issue_codes": ["HCR", "PHA"],
+            },
+            {
+                "filing_uid": f"sample_{quarter}_003",
+                "client_name": "Google LLC",
+                "registrant_name": "Brownstein Hyatt Farber Schreck",
+                "filing_date": "2025-07-25",
+                "amount": 250000,
+                "url": "https://lda.senate.gov/filings/sample3.pdf",
+                "specific_issues": "Antitrust legislation, digital services act, privacy regulations",
+                "issue_codes": ["TEC", "JUD"],
+            },
+        ]
 
         return sample_filings
 
-    def _process_filings(self, filings: List[Dict[str, Any]]) -> Tuple[int, int, int]:
+    def _process_filings(
+        self, filings: List[Dict[str, Any]]
+    ) -> Tuple[int, int, int]:
         """Process a list of filings and upsert to database."""
         added_count = 0
         updated_count = 0
@@ -538,7 +559,9 @@ class LDAETLPipeline:
 
                     if existing:
                         # Update existing filing
-                        self._update_filing(conn, existing["id"], normalized_filing)
+                        self._update_filing(
+                            conn, existing["id"], normalized_filing
+                        )
                         updated_count += 1
                     else:
                         # Insert new filing
@@ -590,7 +613,9 @@ class LDAETLPipeline:
         if isinstance(issue_codes, str):
             # Split comma-separated string
             issue_codes = [
-                code.strip().upper() for code in issue_codes.split(",") if code.strip()
+                code.strip().upper()
+                for code in issue_codes.split(",")
+                if code.strip()
             ]
 
         # Extract summary
@@ -659,7 +684,9 @@ class LDAETLPipeline:
         # Insert issue relationships
         self._insert_filing_issues(conn, filing_id, filing_data["issue_codes"])
 
-    def _update_filing(self, conn, filing_id: int, filing_data: Dict[str, Any]) -> None:
+    def _update_filing(
+        self, conn, filing_id: int, filing_data: Dict[str, Any]
+    ) -> None:
         """Update an existing filing."""
         # Get or create entities (they might have changed)
         client_id = None
@@ -701,7 +728,9 @@ class LDAETLPipeline:
         )
 
         # Replace issue relationships
-        conn.execute("DELETE FROM filing_issue WHERE filing_id = ?", (filing_id,))
+        conn.execute(
+            "DELETE FROM filing_issue WHERE filing_id = ?", (filing_id,)
+        )
         self._insert_filing_issues(conn, filing_id, filing_data["issue_codes"])
 
     def _get_or_create_entity(self, conn, name: str, entity_type: str) -> int:
@@ -762,7 +791,9 @@ class LDAETLPipeline:
                     (filing_id, issue_id),
                 )
 
-    def _log_ingest_start(self, run_id: str, started_at: str, mode: str) -> None:
+    def _log_ingest_start(
+        self, run_id: str, started_at: str, mode: str
+    ) -> None:
         """Log the start of an ingest run."""
         with self.db_manager.get_connection() as conn:
             conn.execute(
@@ -793,7 +824,11 @@ class LDAETLPipeline:
                     result.get("added", 0),
                     result.get("updated", 0),
                     result.get("errors", 0),
-                    json.dumps([result.get("error")]) if result.get("error") else "[]",
+                    (
+                        json.dumps([result.get("error")])
+                        if result.get("error")
+                        else "[]"
+                    ),
                     status,
                     run_id,
                 ),

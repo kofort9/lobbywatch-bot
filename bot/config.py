@@ -24,9 +24,15 @@ class Settings(BaseSettings):
     regulations_gov_api_key: Optional[str] = Field(default=None)
 
     # Slack Configuration
-    slack_webhook_url: Optional[str] = Field(default=None)  # Legacy webhook support
-    slack_bot_token: Optional[str] = Field(default=None)  # Enhanced app features
-    slack_signing_secret: Optional[str] = Field(default=None)  # Request verification
+    slack_webhook_url: Optional[str] = Field(
+        default=None
+    )  # Legacy webhook support
+    slack_bot_token: Optional[str] = Field(
+        default=None
+    )  # Enhanced app features
+    slack_signing_secret: Optional[str] = Field(
+        default=None
+    )  # Request verification
 
     # Enhanced Features
     lobbylens_channels: Optional[str] = Field(
@@ -34,14 +40,22 @@ class Settings(BaseSettings):
     )  # Comma-separated channel IDs
 
     # Production Settings
-    environment: str = Field(default="development")  # development, staging, production
-    admin_users: Optional[str] = Field(default=None)  # Comma-separated Slack user IDs
+    environment: str = Field(
+        default="development"
+    )  # development, staging, production
+    admin_users: Optional[str] = Field(
+        default=None
+    )  # Comma-separated Slack user IDs
 
     # Bot Configuration
     log_level: str = Field(default="INFO")
     dry_run: bool = Field(default=False)
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
     @property
     def notifier_type(self) -> Optional[Literal["slack"]]:
@@ -70,7 +84,9 @@ class Settings(BaseSettings):
         """Get list of admin user IDs."""
         if not self.admin_users:
             return []
-        return [user.strip() for user in self.admin_users.split(",") if user.strip()]
+        return [
+            user.strip() for user in self.admin_users.split(",") if user.strip()
+        ]
 
 
 # Global settings instance

@@ -71,7 +71,9 @@ class TestCreateNotifier:
         """Test error when no notifier is configured."""
         # Skip this test since Settings loads from .env file
         # The actual error handling is tested in integration tests
-        pytest.skip("Settings class loads from .env file - tested in integration")
+        pytest.skip(
+            "Settings class loads from .env file - tested in integration"
+        )
 
 
 class TestSetupLogging:
@@ -121,7 +123,9 @@ class TestMainCommand:
         # mock_compute_digest: Any,
     ) -> None:
         """Test main command in dry-run mode."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
+        pytest.skip(
+            "V1 legacy test - compute_digest function doesn't exist in V2"
+        )
         # mock_settings.database_file = "test.db"
         # mock_settings.log_level = "INFO"
         # mock_settings.dry_run = False  # Will be overridden by CLI flag
@@ -151,7 +155,9 @@ class TestMainCommand:
         # mock_compute_digest: Any,
     ) -> None:
         """Test main command with skip-fetch option."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
+        pytest.skip(
+            "V1 legacy test - compute_digest function doesn't exist in V2"
+        )
         # mock_settings.database_file = "test.db"
         # mock_settings.log_level = "INFO"
         # mock_settings.dry_run = False
@@ -181,7 +187,9 @@ class TestMainCommand:
         # mock_compute_digest: Any,
     ) -> None:
         """Test main command sending notification."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
+        pytest.skip(
+            "V1 legacy test - compute_digest function doesn't exist in V2"
+        )
         # mock_settings.database_file = "test.db"
         # mock_settings.log_level = "INFO"
         # mock_settings.dry_run = False
@@ -210,7 +218,9 @@ class TestMainCommand:
         # mock_compute_digest: Any,
     ) -> None:
         """Test main command handling notification errors."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
+        pytest.skip(
+            "V1 legacy test - compute_digest function doesn't exist in V2"
+        )
         # mock_settings.database_file = "test.db"
         # mock_settings.log_level = "INFO"
         # mock_settings.dry_run = False
@@ -239,7 +249,9 @@ class TestMainCommand:
         # mock_compute_digest: Any,
     ) -> None:
         """Test main command with fetch errors."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
+        pytest.skip(
+            "V1 legacy test - compute_digest function doesn't exist in V2"
+        )
         # mock_settings.database_file = "test.db"
         # mock_settings.log_level = "INFO"
         # mock_settings.dry_run = False
@@ -296,6 +308,8 @@ class TestRunV2Functions:
         mock_collector_class.assert_called_once()
         mock_formatter_class.assert_called_once()
         mock_collector.collect_signals.assert_called_once_with(24)
-        mock_formatter.format_daily_digest.assert_called_once_with(mock_signals, 24)
+        mock_formatter.format_daily_digest.assert_called_once_with(
+            mock_signals, 24
+        )
 
         assert result == mock_digest

@@ -290,7 +290,10 @@ class SignalsRulesEngine:
                 "notice of proposed rulemaking",
                 "nprm",
             ],
-            SignalType.INTERIM_FINAL_RULE: ["interim final rule", "interim rule"],
+            SignalType.INTERIM_FINAL_RULE: [
+                "interim final rule",
+                "interim rule",
+            ],
             SignalType.HEARING: ["hearing", "committee hearing"],
             SignalType.MARKUP: ["markup", "committee markup"],
             SignalType.BILL: ["bill", "h.r.", "s."],
@@ -318,7 +321,13 @@ class SignalsRulesEngine:
                 "significant",
                 "major",
             ],
-            Urgency.MEDIUM: ["proposed rule", "notice", "guidance", "report", "study"],
+            Urgency.MEDIUM: [
+                "proposed rule",
+                "notice",
+                "guidance",
+                "report",
+                "study",
+            ],
         }
 
     def process_signal(self, signal: SignalV2) -> SignalV2:
@@ -375,13 +384,18 @@ class SignalsRulesEngine:
                     return urgency
 
         # Check for time-sensitive indicators
-        if any(word in text for word in ["deadline", "due", "expires", "closing"]):
+        if any(
+            word in text for word in ["deadline", "due", "expires", "closing"]
+        ):
             return Urgency.HIGH
 
         # Default based on signal type
         if signal.signal_type in [SignalType.FINAL_RULE, SignalType.HEARING]:
             return Urgency.HIGH
-        elif signal.signal_type in [SignalType.PROPOSED_RULE, SignalType.MARKUP]:
+        elif signal.signal_type in [
+            SignalType.PROPOSED_RULE,
+            SignalType.MARKUP,
+        ]:
             return Urgency.MEDIUM
         else:
             return Urgency.LOW
@@ -498,7 +512,9 @@ class SignalDeduplicator:
 
         return unique_signals
 
-    def _calculate_similarity(self, signal1: SignalV2, signal2: SignalV2) -> float:
+    def _calculate_similarity(
+        self, signal1: SignalV2, signal2: SignalV2
+    ) -> float:
         """Calculate content similarity between two signals."""
         # Simple implementation - could be enhanced with more sophisticated NLP
         title1_words = set(signal1.title.lower().split())
@@ -534,7 +550,9 @@ class LegacySignal:
     def __post_init__(self):
         import logging
 
-        logging.warning("Using legacy V1 Signal. Consider upgrading to SignalV2.")
+        logging.warning(
+            "Using legacy V1 Signal. Consider upgrading to SignalV2."
+        )
 
 
 class LegacySignalsProcessor:

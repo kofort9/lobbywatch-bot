@@ -21,7 +21,9 @@ class TestSlackNotifier:
 
     def test_send_success(self, mock_slack_webhook: Any) -> None:
         """Test successful message sending."""
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST"
+        )
 
         # Should not raise an exception
         notifier.send("Test message")
@@ -43,9 +45,13 @@ class TestSlackNotifier:
             text="Not Found",
         )
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST"
+        )
 
-        with pytest.raises(NotificationError, match="Slack notification failed"):
+        with pytest.raises(
+            NotificationError, match="Slack notification failed"
+        ):
             notifier.send("Test message")
 
     def test_send_slack_error_response(self, mock_slack_webhook: Any) -> None:
@@ -56,7 +62,9 @@ class TestSlackNotifier:
             text="channel_not_found",
         )
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST"
+        )
 
         with pytest.raises(NotificationError, match="Slack webhook returned"):
             notifier.send("Test message")
@@ -66,9 +74,13 @@ class TestSlackNotifier:
         """Test handling of request timeouts."""
         mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
 
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST"
+        )
 
-        with pytest.raises(NotificationError, match="Slack notification failed"):
+        with pytest.raises(
+            NotificationError, match="Slack notification failed"
+        ):
             notifier.send("Test message")
 
         # Verify timeout was set correctly
@@ -76,11 +88,17 @@ class TestSlackNotifier:
         args, kwargs = mock_post.call_args
         assert kwargs["timeout"] == 30
 
-    def test_send_with_special_formatting(self, mock_slack_webhook: Any) -> None:
+    def test_send_with_special_formatting(
+        self, mock_slack_webhook: Any
+    ) -> None:
         """Test sending messages with Slack formatting."""
-        notifier = SlackNotifier("https://hooks.slack.com/services/TEST/TEST/TEST")
+        notifier = SlackNotifier(
+            "https://hooks.slack.com/services/TEST/TEST/TEST"
+        )
 
-        message = "*Bold text* and _italic text_ with <https://example.com|links>"
+        message = (
+            "*Bold text* and _italic text_ with <https://example.com|links>"
+        )
         notifier.send(message)
 
         request = mock_slack_webhook.request_history[0]

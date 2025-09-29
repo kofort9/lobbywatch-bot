@@ -88,7 +88,10 @@ class FuzzyMatcher:
         return max(token_score, sequence_score)
 
     def find_entity_matches(
-        self, search_term: str, entity_type: Optional[str] = None, limit: int = 10
+        self,
+        search_term: str,
+        entity_type: Optional[str] = None,
+        limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """Find entity matches with scores."""
         matches = []
@@ -206,7 +209,9 @@ class FuzzyMatcher:
         }
 
     def create_confirmation_message(
-        self, search_term: str, categorized_matches: Dict[str, List[Dict[str, Any]]]
+        self,
+        search_term: str,
+        categorized_matches: Dict[str, List[Dict[str, Any]]],
     ) -> Tuple[str, List[Dict[str, Any]]]:
         """Create confirmation message and return candidates for selection."""
         exact = categorized_matches["exact"]
@@ -224,10 +229,8 @@ class FuzzyMatcher:
                 message = f"Multiple exact matches for '{search_term}':\n"
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
-                message += (
-                    "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                        len(candidates)
-                    )
+                message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                    len(candidates)
                 )
                 return message, candidates
 
@@ -240,10 +243,8 @@ class FuzzyMatcher:
                 message = f"High confidence matches for '{search_term}':\n"
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
-                message += (
-                    "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                        len(candidates)
-                    )
+                message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                    len(candidates)
                 )
                 return message, candidates
 
@@ -252,9 +253,13 @@ class FuzzyMatcher:
             candidates = medium_confidence[:3]  # Limit to top 3
             message = f"Possible matches for '{search_term}':\n"
             for i, match in enumerate(candidates, 1):
-                message += f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
-            message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                len(candidates)
+                message += (
+                    f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
+                )
+            message += (
+                "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                    len(candidates)
+                )
             )
             return message, candidates
 
@@ -263,7 +268,9 @@ class FuzzyMatcher:
             candidates = low_confidence[:3]
             message = f"Weak matches for '{search_term}' (try a more complete name):\n"
             for i, match in enumerate(candidates, 1):
-                message += f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
+                message += (
+                    f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
+                )
             message += "\nReply with number (1-{}) or 'q' to cancel.".format(
                 len(candidates)
             )
@@ -335,7 +342,11 @@ class MatchingService:
 
             elif not candidates:
                 # No matches found
-                return {"status": "no_match", "message": message, "candidates": []}
+                return {
+                    "status": "no_match",
+                    "message": message,
+                    "candidates": [],
+                }
 
             else:
                 # Need user confirmation

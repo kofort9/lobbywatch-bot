@@ -186,7 +186,9 @@ def main():
 
         return True
     else:
-        print(f"❌ {total - passed} checks failed. Please fix the issues above.")
+        print(
+            f"❌ {total - passed} checks failed. Please fix the issues above."
+        )
         return False
 
 

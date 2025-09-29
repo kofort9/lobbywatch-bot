@@ -88,7 +88,9 @@ def populated_db(temp_db: Path) -> Path:
         (5, "Capitol Consulting", "registrant"),
         (6, "Influence Partners", "registrant"),
     ]
-    conn.executemany("INSERT INTO entity (id, name, type) VALUES (?, ?, ?)", entities)
+    conn.executemany(
+        "INSERT INTO entity (id, name, type) VALUES (?, ?, ?)", entities
+    )
 
     # Insert test issues
     issues = [
@@ -250,11 +252,24 @@ def sample_digest_data() -> Dict[str, Any]:
             },
         ],
         "top_registrants": [
-            {"name": "Capitol Consulting", "total_amount": 150000, "filing_count": 3},
-            {"name": "K Street Advisors", "total_amount": 75000, "filing_count": 2},
+            {
+                "name": "Capitol Consulting",
+                "total_amount": 150000,
+                "filing_count": 3,
+            },
+            {
+                "name": "K Street Advisors",
+                "total_amount": 75000,
+                "filing_count": 2,
+            },
         ],
         "issue_surges": [
-            {"code": "HCR", "count_current": 5, "count_previous": 2, "pct_change": 1.5},
+            {
+                "code": "HCR",
+                "count_current": 5,
+                "count_previous": 2,
+                "pct_change": 1.5,
+            },
             {
                 "code": "TAX",
                 "count_current": 3,

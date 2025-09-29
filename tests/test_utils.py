@@ -4,7 +4,11 @@
 import os
 import sys
 
-from bot.utils import derive_quarter_from_date, format_amount, normalize_entity_name
+from bot.utils import (
+    derive_quarter_from_date,
+    format_amount,
+    normalize_entity_name,
+)
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 

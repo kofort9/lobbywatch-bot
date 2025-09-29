@@ -56,7 +56,9 @@ def test_dm_vs_channel_alerts():
     print(f"   DM alert formatted (send failed as expected): {not dm_success}")
 
     # Test channel alert (will fail to send but should format correctly)
-    channel_success = channel_alert_manager.send_etl_error_alert(test_etl_result)
+    channel_success = channel_alert_manager.send_etl_error_alert(
+        test_etl_result
+    )
     print(
         f"   Channel alert formatted (send failed as expected): {not channel_success}"
     )

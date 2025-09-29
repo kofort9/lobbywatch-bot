@@ -118,9 +118,18 @@ def test_lda_full_pipeline():
         print("\n9. Verifying database integrity...")
         with db_manager.get_connection() as conn:
             # Check table counts
-            tables = ["entity", "issue", "filing", "filing_issue", "meta", "ingest_log"]
+            tables = [
+                "entity",
+                "issue",
+                "filing",
+                "filing_issue",
+                "meta",
+                "ingest_log",
+            ]
             for table in tables:
-                count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                count = conn.execute(
+                    f"SELECT COUNT(*) FROM {table}"
+                ).fetchone()[0]
                 print(f"   • {table}: {count} records")
 
         print("\n🎉 LDA V1 MVP Full Pipeline Test PASSED!")
@@ -159,11 +168,15 @@ def test_smoke_tests():
         etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
-            filing_count = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
-            entity_count = conn.execute("SELECT COUNT(*) FROM entity").fetchone()[0]
-            issue_count = conn.execute("SELECT COUNT(*) FROM filing_issue").fetchone()[
-                0
-            ]
+            filing_count = conn.execute(
+                "SELECT COUNT(*) FROM filing"
+            ).fetchone()[0]
+            entity_count = conn.execute(
+                "SELECT COUNT(*) FROM entity"
+            ).fetchone()[0]
+            issue_count = conn.execute(
+                "SELECT COUNT(*) FROM filing_issue"
+            ).fetchone()[0]
 
         print(
             f"   ✅ Row counts: {filing_count} filings, {entity_count} entities, {issue_count} filing-issues"
@@ -174,8 +187,12 @@ def test_smoke_tests():
         etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
-            filing_count2 = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
-            entity_count2 = conn.execute("SELECT COUNT(*) FROM entity").fetchone()[0]
+            filing_count2 = conn.execute(
+                "SELECT COUNT(*) FROM filing"
+            ).fetchone()[0]
+            entity_count2 = conn.execute(
+                "SELECT COUNT(*) FROM entity"
+            ).fetchone()[0]
 
             # Check for duplicate filing_uids
             duplicate_count = conn.execute(
@@ -189,7 +206,9 @@ def test_smoke_tests():
             """
             ).fetchone()[0]
 
-        print(f"   ✅ Counts stable: {filing_count2} filings, {entity_count2} entities")
+        print(
+            f"   ✅ Counts stable: {filing_count2} filings, {entity_count2} entities"
+        )
         print(f"   ✅ No duplicate filing_uids: {duplicate_count} duplicates")
 
         # Smoke Test 3: Slack digest
@@ -198,8 +217,14 @@ def test_smoke_tests():
         digest = lda_digest.compute_lda_digest("test_channel")
 
         # Verify digest contains expected sections
-        required_sections = ["LDA Money Digest", "Top registrants", "Top issues"]
-        sections_found = sum(1 for section in required_sections if section in digest)
+        required_sections = [
+            "LDA Money Digest",
+            "Top registrants",
+            "Top issues",
+        ]
+        sections_found = sum(
+            1 for section in required_sections if section in digest
+        )
 
         print(f"   ✅ Digest generated ({len(digest)} chars)")
         print(
@@ -210,14 +235,18 @@ def test_smoke_tests():
         print("\n4. Entity lookup test...")
         entity_result = lda_digest.search_entity("Google")
         if "error" not in entity_result:
-            print(f"   ✅ Entity lookup works: {entity_result['entity']['name']}")
+            print(
+                f"   ✅ Entity lookup works: {entity_result['entity']['name']}"
+            )
         else:
             print(f"   ⚠️  Entity lookup: {entity_result['error']}")
 
         # Smoke Test 5: Watchlist
         print("\n5. Watchlist test...")
         # Add to watchlist
-        success = db_manager.add_to_watchlist("test_channel", "client", "Google")
+        success = db_manager.add_to_watchlist(
+            "test_channel", "client", "Google"
+        )
         print(f"   ✅ Watchlist add: {success}")
 
         # Re-run digest to check for watchlist hits
