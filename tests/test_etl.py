@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Quick test of LDA ETL pipeline."""
 
+from bot.lda_etl import LDAETLPipeline
+from bot.database import DatabaseManager
 import os
 import sys
 import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
-
-from bot.database import DatabaseManager
-from bot.lda_etl import LDAETLPipeline
 
 
 def test_etl_pipeline():
@@ -73,7 +72,7 @@ def test_etl_pipeline():
         # Clean up
         try:
             os.unlink(db_path)
-        except:
+        except BaseException:
             pass
 
 

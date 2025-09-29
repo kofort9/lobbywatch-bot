@@ -2,7 +2,7 @@
 """Helper script to find your Slack user ID for DM alerts."""
 
 import os
-import sys
+# import sys  # Unused
 
 import requests
 

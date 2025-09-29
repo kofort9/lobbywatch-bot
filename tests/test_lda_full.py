@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Comprehensive test of LDA V1 MVP functionality."""
 
+from bot.slack_app import SlackApp
+from bot.lda_etl import LDAETLPipeline
+from bot.lda_digest import LDADigestComputer
+from bot.database import DatabaseManager
 import os
 import sys
 import tempfile
@@ -10,11 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 # Set environment variables for testing
 os.environ["ENABLE_LDA_V1"] = "true"
 os.environ["LDA_DATA_SOURCE"] = "bulk"
-
-from bot.database import DatabaseManager
-from bot.lda_digest import LDADigestComputer
-from bot.lda_etl import LDAETLPipeline
-from bot.slack_app import SlackApp
 
 
 def test_lda_full_pipeline():
@@ -137,7 +136,7 @@ def test_lda_full_pipeline():
         # Clean up
         try:
             os.unlink(db_path)
-        except:
+        except BaseException:
             pass
 
 
@@ -182,9 +181,9 @@ def test_smoke_tests():
             duplicate_count = conn.execute(
                 """
                 SELECT COUNT(*) FROM (
-                    SELECT filing_uid, COUNT(*) as cnt 
-                    FROM filing 
-                    GROUP BY filing_uid 
+                    SELECT filing_uid, COUNT(*) as cnt
+                    FROM filing
+                    GROUP BY filing_uid
                     HAVING cnt > 1
                 )
             """
@@ -239,7 +238,7 @@ def test_smoke_tests():
         # Clean up
         try:
             os.unlink(db_path)
-        except:
+        except BaseException:
             pass
 
 

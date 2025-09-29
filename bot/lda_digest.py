@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from .database import DatabaseManager
-from .lda_issue_codes import format_issue_codes, get_issue_description
+# from .lda_issue_codes import format_issue_codes, get_issue_description  # Unused
 from .utils import format_amount, is_lda_enabled
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ class LDADigestComputer:
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     e.name,
                     SUM(f.amount) as total_amount,
                     COUNT(f.id) as filing_count
@@ -188,7 +188,7 @@ class LDADigestComputer:
             # Try exact match first
             cursor = conn.execute(
                 """
-                SELECT id, name, type FROM entity 
+                SELECT id, name, type FROM entity
                 WHERE name LIKE ? OR normalized_name LIKE ?
                 LIMIT 5
             """,
@@ -208,7 +208,7 @@ class LDADigestComputer:
             if entity_type == "client":
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         f.*,
                         r.name as registrant_name,
                         GROUP_CONCAT(i.code) as issue_codes
@@ -225,7 +225,7 @@ class LDADigestComputer:
             else:  # registrant
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         f.*,
                         c.name as client_name,
                         GROUP_CONCAT(i.code) as issue_codes
@@ -275,7 +275,7 @@ class LDADigestComputer:
             last_ingested_at = None
             cursor = conn.execute(
                 """
-                SELECT last_ingested_at FROM channel_digest_state 
+                SELECT last_ingested_at FROM channel_digest_state
                 WHERE channel_id = ? AND service = 'lda'
             """,
                 (channel_id,),
@@ -348,7 +348,7 @@ class LDADigestComputer:
             # Upsert digest state
             conn.execute(
                 """
-                INSERT OR REPLACE INTO channel_digest_state 
+                INSERT OR REPLACE INTO channel_digest_state
                 (channel_id, service, last_digest_at, last_filing_date, last_ingested_at, updated_at)
                 VALUES (?, 'lda', ?, ?, ?, ?)
             """,
@@ -360,7 +360,7 @@ class LDADigestComputer:
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     e.name,
                     SUM(f.amount) as total_amount,
                     COUNT(f.id) as filing_count
@@ -381,7 +381,7 @@ class LDADigestComputer:
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     i.code,
                     i.description,
                     COUNT(fi.filing_id) as filing_count,
@@ -444,7 +444,7 @@ class LDADigestComputer:
 
             cursor = conn.execute(
                 f"""
-                SELECT 
+                SELECT
                     f.*,
                     c.name as client_name,
                     r.name as registrant_name,

@@ -142,7 +142,7 @@ class AlertManager:
         try:
             dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
             time_str = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-        except:
+        except BaseException:
             time_str = timestamp
 
         return f"""⚠️ **LDA ETL Error Alert**

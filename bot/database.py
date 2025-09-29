@@ -85,7 +85,7 @@ class DatabaseManager:
                 value TEXT,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
-            
+
             -- Channel-specific digest settings
             CREATE TABLE IF NOT EXISTS channel_digest_settings (
                 channel_id TEXT PRIMARY KEY,

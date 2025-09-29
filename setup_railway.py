@@ -200,7 +200,7 @@ def setup_railway():
             # Create entities
             cursor.execute(
                 """
-                INSERT INTO entity (name, type, normalized_name) VALUES 
+                INSERT INTO entity (name, type, normalized_name) VALUES
                 ('Akin Gump Strauss Hauer & Feld', 'registrant', 'akin gump strauss hauer feld'),
                 ('Meta Platforms Inc', 'client', 'meta platforms')
                 ON CONFLICT (normalized_name, type) DO NOTHING

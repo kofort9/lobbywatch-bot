@@ -100,8 +100,8 @@ class SignalsDatabaseV2:
                 cur.execute(
                     """
                     INSERT OR REPLACE INTO signal_event (
-                        source, source_id, ts, title, link, agency, committee, 
-                        bill_id, rin, docket_id, issue_codes, metric_json, 
+                        source, source_id, ts, title, link, agency, committee,
+                        bill_id, rin, docket_id, issue_codes, metric_json,
                         priority_score, signal_type, urgency, watchlist_matches
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
@@ -146,7 +146,7 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE ts >= ? AND priority_score >= ?
             ORDER BY priority_score DESC, ts DESC
             """,
@@ -179,7 +179,7 @@ class SignalsDatabaseV2:
 
         cur.execute(
             """
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE source = ? AND ts >= ?
             ORDER BY ts DESC
             """,
@@ -222,7 +222,7 @@ class SignalsDatabaseV2:
             params.extend([f"%{entity}%", f"%{entity}%"])
 
         query = f"""
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE ts >= ? AND ({' OR '.join(watchlist_conditions)})
             ORDER BY priority_score DESC, ts DESC
         """
@@ -264,7 +264,7 @@ class SignalsDatabaseV2:
             params.append(f'%"{code}"%')
 
         query = f"""
-            SELECT * FROM signal_event 
+            SELECT * FROM signal_event
             WHERE ts >= ? AND ({' OR '.join(issue_conditions)})
             ORDER BY priority_score DESC, ts DESC
         """
@@ -296,9 +296,9 @@ class SignalsDatabaseV2:
         # Signals by source
         cur.execute(
             """
-            SELECT source, COUNT(*) as count 
-            FROM signal_event 
-            GROUP BY source 
+            SELECT source, COUNT(*) as count
+            FROM signal_event
+            GROUP BY source
             ORDER BY count DESC
         """
         )

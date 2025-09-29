@@ -350,7 +350,8 @@ class LDAETLPipeline:
 
                 page += 1
 
-                # Rate limiting - respect API limits (120 req/min = 0.5s between requests)
+                # Rate limiting - respect API limits (120 req/min = 0.5s between
+                # requests)
                 time.sleep(0.5)
 
             except requests.exceptions.Timeout as e:
@@ -483,38 +484,37 @@ class LDAETLPipeline:
         logger.info(f"Generating sample data for {quarter}")
 
         # Generate sample filings for testing
-        sample_filings = [
-            {
-                "filing_uid": f"sample_{quarter}_001",
-                "client_name": "Microsoft Corporation",
-                "registrant_name": "Covington & Burling LLP",
-                "filing_date": "2025-07-15",
-                "amount": 320000,
-                "url": "https://lda.senate.gov/filings/sample1.pdf",
-                "specific_issues": "Technology policy, artificial intelligence regulation, data privacy",
-                "issue_codes": ["TEC", "CSP"],
-            },
-            {
-                "filing_uid": f"sample_{quarter}_002",
-                "client_name": "Pfizer Inc.",
-                "registrant_name": "Akin Gump Strauss Hauer & Feld LLP",
-                "filing_date": "2025-07-20",
-                "amount": 180000,
-                "url": "https://lda.senate.gov/filings/sample2.pdf",
-                "specific_issues": "Healthcare reform, drug pricing, FDA regulations",
-                "issue_codes": ["HCR", "PHA"],
-            },
-            {
-                "filing_uid": f"sample_{quarter}_003",
-                "client_name": "Google LLC",
-                "registrant_name": "Brownstein Hyatt Farber Schreck",
-                "filing_date": "2025-07-25",
-                "amount": 250000,
-                "url": "https://lda.senate.gov/filings/sample3.pdf",
-                "specific_issues": "Antitrust legislation, digital services act, privacy regulations",
-                "issue_codes": ["TEC", "JUD"],
-            },
-        ]
+        sample_filings = [{"filing_uid": f"sample_{quarter}_001",
+                           "client_name": "Microsoft Corporation",
+                           "registrant_name": "Covington & Burling LLP",
+                           "filing_date": "2025-07-15",
+                           "amount": 320000,
+                           "url": "https://lda.senate.gov/filings/sample1.pdf",
+                           "specific_issues": "Technology policy, artificial intelligence regulation, data privacy",
+                           "issue_codes": ["TEC",
+                                           "CSP"],
+                           },
+                          {"filing_uid": f"sample_{quarter}_002",
+                           "client_name": "Pfizer Inc.",
+                           "registrant_name": "Akin Gump Strauss Hauer & Feld LLP",
+                           "filing_date": "2025-07-20",
+                           "amount": 180000,
+                           "url": "https://lda.senate.gov/filings/sample2.pdf",
+                           "specific_issues": "Healthcare reform, drug pricing, FDA regulations",
+                           "issue_codes": ["HCR",
+                                           "PHA"],
+                           },
+                          {"filing_uid": f"sample_{quarter}_003",
+                           "client_name": "Google LLC",
+                           "registrant_name": "Brownstein Hyatt Farber Schreck",
+                           "filing_date": "2025-07-25",
+                           "amount": 250000,
+                           "url": "https://lda.senate.gov/filings/sample3.pdf",
+                           "specific_issues": "Antitrust legislation, digital services act, privacy regulations",
+                           "issue_codes": ["TEC",
+                                           "JUD"],
+                           },
+                          ]
 
         return sample_filings
 
@@ -632,7 +632,7 @@ class LDAETLPipeline:
         # Insert filing
         cursor = conn.execute(
             """
-            INSERT INTO filing 
+            INSERT INTO filing
             (filing_uid, client_id, registrant_id, filing_date, quarter, year, amount, url, summary,
              filing_type, filing_status, is_amendment, source_system)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -677,8 +677,8 @@ class LDAETLPipeline:
         # Update filing
         conn.execute(
             """
-            UPDATE filing 
-            SET client_id = ?, registrant_id = ?, filing_date = ?, quarter = ?, 
+            UPDATE filing
+            SET client_id = ?, registrant_id = ?, filing_date = ?, quarter = ?,
                 year = ?, amount = ?, url = ?, summary = ?,
                 filing_type = ?, filing_status = ?, is_amendment = ?, source_system = ?
             WHERE id = ?
@@ -767,7 +767,7 @@ class LDAETLPipeline:
         with self.db_manager.get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO ingest_log 
+                INSERT INTO ingest_log
                 (run_id, started_at, source, mode, status)
                 VALUES (?, ?, ?, ?, 'running')
                 """,
@@ -783,8 +783,8 @@ class LDAETLPipeline:
         with self.db_manager.get_connection() as conn:
             conn.execute(
                 """
-                UPDATE ingest_log 
-                SET completed_at = ?, added_count = ?, updated_count = ?, 
+                UPDATE ingest_log
+                SET completed_at = ?, added_count = ?, updated_count = ?,
                     error_count = ?, errors = ?, status = ?
                 WHERE run_id = ?
                 """,

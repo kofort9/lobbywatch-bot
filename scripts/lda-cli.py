@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """LDA CLI for manual operations."""
 
+from bot.utils import is_lda_enabled
+from bot.lda_scheduler import LDAScheduler
+from bot.lda_digest import LDADigestComputer
+from bot.database_postgres import create_database_manager
 import argparse
 import os
 import sys
@@ -10,18 +14,13 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from bot.database_postgres import create_database_manager
-from bot.lda_digest import LDADigestComputer
-from bot.lda_scheduler import LDAScheduler
-from bot.utils import is_lda_enabled
-
 
 def main():
     parser = argparse.ArgumentParser(description="LDA CLI for manual operations")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Update command
-    update_parser = subparsers.add_parser("update", help="Run quarterly update")
+    subparsers.add_parser("update", help="Run quarterly update")
 
     # Backfill command
     backfill_parser = subparsers.add_parser("backfill", help="Run historical backfill")
@@ -34,7 +33,7 @@ def main():
     digest_parser.add_argument("--channel", default="cli", help="Channel ID")
 
     # Status command
-    status_parser = subparsers.add_parser("status", help="Show LDA status")
+    subparsers.add_parser("status", help="Show LDA status")
 
     # Test command
     test_parser = subparsers.add_parser("test", help="Test API connection")
@@ -116,7 +115,7 @@ def main():
                         "SELECT COUNT(*) FROM entity"
                     ).fetchone()[0]
 
-                print(f"   Database: ✅ Connected")
+                print("   Database: ✅ Connected")
                 print(f"   Filings: {filing_count:,}")
                 print(f"   Entities: {entity_count:,}")
         except Exception as e:

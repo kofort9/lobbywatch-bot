@@ -1,5 +1,8 @@
 """Test LDA Front Page Digest functionality."""
 
+from bot.lda_issue_codes import seed_issue_codes
+from bot.lda_front_page_digest import LDAFrontPageDigest
+from bot.database import DatabaseManager
 import os
 import sys
 import tempfile
@@ -8,10 +11,6 @@ from datetime import datetime, timezone
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from bot.database import DatabaseManager
-from bot.lda_front_page_digest import LDAFrontPageDigest
-from bot.lda_issue_codes import seed_issue_codes
 
 
 class TestLDAFrontPageDigest(unittest.TestCase):
@@ -36,7 +35,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         """Clean up test database."""
         try:
             os.unlink(self.db_path)
-        except:
+        except BaseException:
             pass
 
     def _create_test_data(self):
@@ -118,10 +117,10 @@ class TestLDAFrontPageDigest(unittest.TestCase):
                 ) = filing_data
                 conn.execute(
                     """
-                    INSERT OR REPLACE INTO filing 
-                    (id, filing_uid, client_id, registrant_id, filing_date, quarter, year, amount, 
+                    INSERT OR REPLACE INTO filing
+                    (id, filing_uid, client_id, registrant_id, filing_date, quarter, year, amount,
                      filing_type, filing_status, is_amendment, source_system, ingested_at, url)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Q3', ?, ?, 'senate', ?, 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Q3', ?, ?, 'senate', ?,
                             'https://lda.senate.gov/filings/public/filing/' || ? || '/print/')
                 """,
                     (
@@ -200,7 +199,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         with self.db_manager.get_connection() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO channel_digest_settings 
+                INSERT OR REPLACE INTO channel_digest_settings
                 (channel_id, last_lda_digest_at)
                 VALUES ('test_channel', '2024-09-29T13:00:00Z')
             """
@@ -217,7 +216,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         with self.db_manager.get_connection() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO channel_digest_settings 
+                INSERT OR REPLACE INTO channel_digest_settings
                 (channel_id, last_lda_digest_at)
                 VALUES ('test_channel', '2024-09-29T13:00:00Z')
             """
@@ -234,7 +233,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         with self.db_manager.get_connection() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO channel_digest_settings 
+                INSERT OR REPLACE INTO channel_digest_settings
                 (channel_id, last_lda_digest_at)
                 VALUES ('test_channel', '2024-09-29T15:00:00Z')
             """
@@ -279,7 +278,7 @@ class TestLDAFrontPageDigest(unittest.TestCase):
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT last_lda_digest_at FROM channel_digest_settings 
+                SELECT last_lda_digest_at FROM channel_digest_settings
                 WHERE channel_id = 'test_channel'
             """
             )

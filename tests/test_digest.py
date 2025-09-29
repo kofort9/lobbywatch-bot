@@ -12,10 +12,10 @@ Architecture:
 # V2: Enhanced Digest Formatting Tests (Current Active System)
 # =============================================================================
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from bot.digest import DigestFormatter
-from bot.signals import SignalType, SignalV2, Urgency
+from bot.signals import SignalV2
 
 
 class TestDigestFormatter:

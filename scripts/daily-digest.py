@@ -86,7 +86,7 @@ def main():
 
         # Summary
         print("\n🎉 Daily digest completed successfully!")
-        print(f"📊 Summary:")
+        print("📊 Summary:")
         print(f"  - Signals collected: {len(signals)}")
         print(f"  - Digest length: {len(digest)} characters")
         print(

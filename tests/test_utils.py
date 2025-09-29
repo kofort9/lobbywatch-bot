@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Quick test of utility functions."""
 
+from bot.utils import derive_quarter_from_date, format_amount, normalize_entity_name
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
-
-from bot.utils import derive_quarter_from_date, format_amount, normalize_entity_name
 
 
 def test_format_amount():

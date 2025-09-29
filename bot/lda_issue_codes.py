@@ -112,9 +112,9 @@ def seed_issue_codes(db_manager: DatabaseManager) -> int:
                     cursor = conn.cursor()
                     cursor.execute(
                         """
-                        INSERT INTO issue (code, description) 
+                        INSERT INTO issue (code, description)
                         VALUES (%s, %s)
-                        ON CONFLICT (code) DO UPDATE SET 
+                        ON CONFLICT (code) DO UPDATE SET
                             description = EXCLUDED.description
                         RETURNING (xmax = 0) AS inserted
                     """,

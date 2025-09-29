@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test DM alerts functionality."""
 
+from bot.alerts import AlertManager
 import logging
 import os
 import sys
@@ -13,8 +14,6 @@ os.environ["SLACK_BOT_TOKEN"] = "xoxb-test-token"  # Mock token
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
-from bot.alerts import AlertManager
 
 
 def test_dm_vs_channel_alerts():
@@ -65,22 +64,22 @@ def test_dm_vs_channel_alerts():
     print("\n4. Testing Configuration Detection...")
 
     # With admin user ID set
-    print(f"   With LOBBYLENS_ADMIN_USER_ID=U123456789:")
+    print("   With LOBBYLENS_ADMIN_USER_ID=U123456789:")
     print(f"     → Alert type: {dm_alert_manager.alert_type}")
     print(f"     → Target: {dm_alert_manager.alert_target}")
 
     # Without admin user ID
     os.environ.pop("LOBBYLENS_ADMIN_USER_ID", None)
     fallback_alert_manager = AlertManager()
-    print(f"   Without LOBBYLENS_ADMIN_USER_ID:")
+    print("   Without LOBBYLENS_ADMIN_USER_ID:")
     print(f"     → Alert type: {fallback_alert_manager.alert_type}")
     print(f"     → Target: {fallback_alert_manager.alert_target}")
 
-    print(f"\n🎉 DM Alert System Test PASSED!")
-    print(f"   • DM alerts preferred when LOBBYLENS_ADMIN_USER_ID is set")
-    print(f"   • Channel alerts used as fallback")
-    print(f"   • Alert formatting works for both types")
-    print(f"   • Configuration detection working correctly")
+    print("\n🎉 DM Alert System Test PASSED!")
+    print("   • DM alerts preferred when LOBBYLENS_ADMIN_USER_ID is set")
+    print("   • Channel alerts used as fallback")
+    print("   • Alert formatting works for both types")
+    print("   • Configuration detection working correctly")
 
     return True
 

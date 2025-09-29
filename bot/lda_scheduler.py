@@ -1,7 +1,7 @@
 """LDA Scheduler for regular data updates."""
 
 import logging
-import os
+# import os  # Unused
 from datetime import datetime, timezone
 from typing import Any, Dict
 
@@ -83,7 +83,7 @@ def run_scheduled_update():
     result = scheduler.run_quarterly_update()
 
     if result["status"] == "success":
-        print(f"✅ LDA quarterly update completed successfully")
+        print("✅ LDA quarterly update completed successfully")
         print(f"   Added: {result.get('added', 0)} filings")
         print(f"   Updated: {result.get('updated', 0)} filings")
         print(f"   Errors: {result.get('errors', 0)}")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         result = scheduler.run_backfill(start_year, end_year)
 
         if result["status"] == "success":
-            print(f"✅ LDA backfill completed successfully")
+            print("✅ LDA backfill completed successfully")
             print(f"   Years: {start_year}-{end_year}")
             print(f"   Added: {result.get('added', 0)} filings")
             print(f"   Updated: {result.get('updated', 0)} filings")

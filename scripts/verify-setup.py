@@ -3,7 +3,7 @@
 
 import os
 import sys
-from pathlib import Path
+# from pathlib import Path  # Unused
 
 
 def check_environment():
