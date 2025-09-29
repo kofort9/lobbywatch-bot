@@ -572,20 +572,40 @@ class FRDigestFormatter:
 
     def _format_outlier_item(self, signal: SignalV2) -> str:
         """Format outlier item."""
+        # Get document type
+        doc_type = signal.metrics.get("document_type", "").lower()
+        if "final" in doc_type and "rule" in doc_type:
+            type_tag = "Final Rule"
+        elif "proposed" in doc_type and "rule" in doc_type:
+            type_tag = "Proposed Rule"
+        elif "meeting" in doc_type or "hearing" in doc_type:
+            type_tag = "Meeting/Hearing"
+        else:
+            type_tag = "Notice"
+
+        # Truncate title to ~80 chars
         title = signal.title
         if len(title) > 80:
             title = title[:77] + "..."
 
+        # Get why it matters clause
+        why_matters = self._get_why_matters_clause(signal)
+
+        # Get real link using helper
         link = slack_link(signal.link, "FR")
 
+        # Format with industry tag
+        industry_tag = f"[{signal.industry}]" if signal.industry else "[Other]"
+
+        # Format line - only include link if it exists
         if link:
-            return f"• {title} • {link}"
+            return f"• {industry_tag} {type_tag} — {title} — {why_matters} • {link}"
         else:
-            return f"• {title}"
+            return f"• {industry_tag} {type_tag} — {title} — {why_matters}"
 
     def _format_footer(self) -> str:
         """Format footer."""
-        return "\n_/lobbylens fr help · All links are real URLs_"
+        return ""
 
     def _format_empty_digest(self) -> str:
         """Format empty digest."""

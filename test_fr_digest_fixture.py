@@ -234,6 +234,23 @@ def create_test_fixture() -> list[SignalV2]:
         )
         signals.append(signal)
 
+    # Add a high-scoring signal that should be an outlier (8th highest)
+    outlier_signal = SignalV2(
+        source="federal_register",
+        source_id="OUTLIER-2024-0001",
+        timestamp=now - timedelta(hours=5),
+        title="Cybersecurity Standards for Educational Institutions",
+        link="https://www.federalregister.gov/documents/2024/01/15/OUTLIER-2024-0001",
+        agency="Department of Education",
+        industry="Cyber",
+        metrics={
+            "document_type": "Notice",
+        },
+        priority_score=3.0,  # Medium score that should be outlier
+        signal_type=SignalType.NOTICE,
+    )
+    signals.append(outlier_signal)
+
     return signals
 
 
