@@ -61,6 +61,7 @@ class SignalV2:
     # Content
     title: str
     link: str
+    url: Optional[str] = None  # Alternative URL field for compatibility
     
     # Government structure
     agency: Optional[str] = None
@@ -68,16 +69,23 @@ class SignalV2:
     bill_id: Optional[str] = None
     rin: Optional[str] = None  # Regulation Identifier Number
     docket_id: Optional[str] = None
+    industry: Optional[str] = None  # Industry categorization
     
     # Classification
     issue_codes: List[str] = field(default_factory=list)
     metrics: Dict[str, Any] = field(default_factory=dict)
     priority_score: float = 0.0
     
+    # Timing and impact
+    deadline: Optional[str] = None  # ISO format deadline
+    effective_date: Optional[str] = None  # ISO format effective date
+    comment_surge_pct: Optional[float] = None  # Comment surge percentage
+    
     # Computed fields (set by rules engine)
     signal_type: Optional[SignalType] = None
     urgency: Optional[Urgency] = None
     watchlist_matches: List[str] = field(default_factory=list)
+    watchlist_hit: bool = False  # Quick flag for watchlist hits
     
     def __post_init__(self):
         """Ensure timestamp is timezone-aware."""
@@ -97,17 +105,23 @@ class SignalV2:
             "timestamp": self.timestamp.isoformat(),
             "title": self.title,
             "link": self.link,
+            "url": self.url,
             "agency": self.agency,
             "committee": self.committee,
             "bill_id": self.bill_id,
             "rin": self.rin,
             "docket_id": self.docket_id,
+            "industry": self.industry,
             "issue_codes": self.issue_codes,
             "metrics": self.metrics,
             "priority_score": self.priority_score,
+            "deadline": self.deadline,
+            "effective_date": self.effective_date,
+            "comment_surge_pct": self.comment_surge_pct,
             "signal_type": self.signal_type.value if self.signal_type else None,
             "urgency": self.urgency.value if self.urgency else None,
             "watchlist_matches": self.watchlist_matches,
+            "watchlist_hit": self.watchlist_hit,
         }
     
     @classmethod
@@ -126,17 +140,23 @@ class SignalV2:
             timestamp=timestamp,
             title=data["title"],
             link=data["link"],
+            url=data.get("url"),
             agency=data.get("agency"),
             committee=data.get("committee"),
             bill_id=data.get("bill_id"),
             rin=data.get("rin"),
             docket_id=data.get("docket_id"),
+            industry=data.get("industry"),
             issue_codes=data.get("issue_codes", []),
             metrics=data.get("metrics", {}),
             priority_score=data.get("priority_score", 0.0),
+            deadline=data.get("deadline"),
+            effective_date=data.get("effective_date"),
+            comment_surge_pct=data.get("comment_surge_pct"),
             signal_type=signal_type,
             urgency=urgency,
             watchlist_matches=data.get("watchlist_matches", []),
+            watchlist_hit=data.get("watchlist_hit", False),
         )
 
 

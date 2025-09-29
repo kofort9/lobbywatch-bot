@@ -38,61 +38,49 @@ class DigestFormatter:
         self.pt_tz = pytz.timezone("America/Los_Angeles")
 
     def format_daily_digest(self, signals: List[SignalV2], hours_back: int = 24) -> str:
-        """Format daily digest with V2 features."""
+        """Format focused front page digest with strict filtering and bundling."""
         if not signals:
             return self._format_empty_digest()
 
         # Process and deduplicate signals
         processed_signals = self._process_signals(signals)
 
-        # Get section data
-        watchlist_signals = self._get_watchlist_signals(processed_signals)
-        what_changed = self._get_what_changed_signals(processed_signals)
-        industry_snapshots = self._get_industry_snapshots(processed_signals)
-        deadlines = self._get_deadline_signals(processed_signals)
-        docket_surges = self._get_docket_surge_signals(processed_signals)
-        bill_actions = self._get_bill_action_signals(processed_signals)
+        # Apply enhanced scoring with deadline/effective date boosts
+        enhanced_signals = self._apply_enhanced_scoring(processed_signals)
 
-        # Build digest
+        # Get front page sections
+        what_changed = self._get_front_page_what_changed(enhanced_signals)
+        industry_snapshots = self._get_front_page_industry_snapshots(enhanced_signals)
+        outlier = self._get_outlier(enhanced_signals)
+        
+        # Get mini-stats
+        mini_stats = self._get_mini_stats(enhanced_signals)
+
+        # Build focused front page digest
         lines = []
 
-        # Header
-        lines.append(self._format_header(processed_signals, hours_back))
+        # Header with mini-stats
+        lines.append(self._format_front_page_header(enhanced_signals, hours_back, mini_stats))
 
-        # Sections with limits
-        if watchlist_signals:
-            lines.append(f"\n🔎 **Watchlist Alerts** ({len(watchlist_signals)}):")
-            for signal in watchlist_signals[:5]:  # Max 5
-                lines.append(self._format_watchlist_signal(signal))
-
+        # What Changed (max 5 items, high priority only)
         if what_changed:
-            lines.append(f"\n📈 **What Changed** ({len(what_changed)}):")
-            for signal in what_changed[:8]:  # Max 8
-                lines.append(self._format_what_changed_signal(signal))
+            lines.append(f"\n📈 **What Changed** ({min(len(what_changed), 5)}):")
+            for signal in what_changed[:5]:  # Max 5
+                lines.append(self._format_front_page_signal(signal))
 
+        # Industry Snapshot (5-7 categories max)
         if industry_snapshots:
-            lines.append(f"\n🏭 **Industry Snapshots**:")
-            for industry, snapshot in industry_snapshots.items():
-                if snapshot["count"] > 0:
-                    lines.append(self._format_industry_snapshot(industry, snapshot))
+            lines.append(f"\n🏭 **Industry Snapshot**:")
+            for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
+                lines.append(self._format_front_page_industry_snapshot(industry, snapshot))
 
-        if deadlines:
-            lines.append(f"\n⏰ **Upcoming Deadlines** ({len(deadlines)}):")
-            for signal in deadlines[:5]:  # Max 5
-                lines.append(self._format_deadline_signal(signal))
+        # Outlier (exactly 1)
+        if outlier:
+            lines.append(f"\n🧪 **Outlier**:")
+            lines.append(self._format_outlier_signal(outlier))
 
-        if docket_surges:
-            lines.append(f"\n📊 **Docket Surges** ({len(docket_surges)}):")
-            for signal in docket_surges[:4]:  # Max 4
-                lines.append(self._format_docket_surge_signal(signal))
-
-        if bill_actions:
-            lines.append(f"\n📜 **New Bills & Actions** ({len(bill_actions)}):")
-            for signal in bill_actions[:6]:  # Max 6
-                lines.append(self._format_bill_action_signal(signal))
-
-        # Footer
-        lines.append(self._format_footer(processed_signals))
+        # Footer with thread link
+        lines.append(self._format_front_page_footer())
 
         return "\n".join(lines)
 
@@ -386,6 +374,361 @@ class DigestFormatter:
         if len(text) <= max_length:
             return text
         return text[:max_length - 3] + "..."
+
+    # =============================================================================
+    # Front Page Digest Methods (Focused, High-Quality Format)
+    # =============================================================================
+
+    def _apply_enhanced_scoring(self, signals: List[SignalV2]) -> List[SignalV2]:
+        """Apply enhanced scoring with deadline/effective date boosts."""
+        from datetime import datetime, timedelta
+        
+        enhanced_signals = []
+        current_time = datetime.now(timezone.utc)
+        
+        for signal in signals:
+            # Start with base priority score
+            enhanced_score = signal.priority_score
+            
+            # Apply deadline boost (+1.0 for deadlines ≤ 7 days)
+            if hasattr(signal, 'deadline') and signal.deadline:
+                try:
+                    deadline = datetime.fromisoformat(signal.deadline.replace('Z', '+00:00'))
+                    days_until_deadline = (deadline - current_time).days
+                    if days_until_deadline <= 7:
+                        enhanced_score += 1.0
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Apply effective date boost (+1.0 for effective ≤ 30 days)
+            if hasattr(signal, 'effective_date') and signal.effective_date:
+                try:
+                    effective = datetime.fromisoformat(signal.effective_date.replace('Z', '+00:00'))
+                    days_until_effective = (effective - current_time).days
+                    if days_until_effective <= 30:
+                        enhanced_score += 1.0
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Apply docket surge boost
+            if hasattr(signal, 'comment_surge_pct') and signal.comment_surge_pct:
+                surge_boost = min(2.0, max(0, signal.comment_surge_pct / 100))
+                enhanced_score += surge_boost
+            
+            # Apply staleness penalty (-1.0 for >30 days old)
+            signal_age = (current_time - signal.timestamp).days
+            if signal_age > 30:
+                enhanced_score -= 1.0
+            
+            # Create enhanced signal with new score
+            enhanced_signal = SignalV2(
+                source=signal.source,
+                source_id=signal.source_id,
+                timestamp=signal.timestamp,
+                title=signal.title,
+                link=signal.link,
+                url=signal.url,
+                agency=signal.agency,
+                committee=signal.committee,
+                bill_id=signal.bill_id,
+                rin=signal.rin,
+                docket_id=signal.docket_id,
+                industry=signal.industry,
+                issue_codes=signal.issue_codes,
+                metrics=signal.metrics,
+                priority_score=enhanced_score,
+                deadline=signal.deadline,
+                effective_date=signal.effective_date,
+                comment_surge_pct=signal.comment_surge_pct,
+                signal_type=signal.signal_type,
+                urgency=signal.urgency,
+                watchlist_matches=signal.watchlist_matches,
+                watchlist_hit=signal.watchlist_hit
+            )
+            enhanced_signals.append(enhanced_signal)
+        
+        return enhanced_signals
+
+    def _get_front_page_what_changed(self, signals: List[SignalV2]) -> List[SignalV2]:
+        """Get signals for front page 'What Changed' section (max 5, priority ≥ 3.0)."""
+        # Filter for high priority only (≥ 3.0) - includes proposed rules, hearings, markups
+        high_priority = [
+            s for s in signals 
+            if s.priority_score >= 3.0 and s.source in ["federal_register", "congress"]
+        ]
+        
+        # Apply bundling for similar items (e.g., FAA Airworthiness Directives)
+        bundled_signals = self._bundle_similar_signals(high_priority)
+        
+        return sorted(bundled_signals, key=lambda s: s.priority_score, reverse=True)
+
+    def _bundle_similar_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+        """Bundle similar signals (e.g., FAA Airworthiness Directives) into single entries."""
+        from collections import defaultdict
+        
+        # Group by agency and normalized topic
+        groups = defaultdict(list)
+        
+        for signal in signals:
+            # Normalize topic by removing boilerplate
+            normalized_topic = self._normalize_topic(signal.title)
+            key = (signal.agency or "Unknown", normalized_topic)
+            groups[key].append(signal)
+        
+        bundled = []
+        for (agency, topic), group_signals in groups.items():
+            if len(group_signals) >= 2:
+                # Create bundled signal
+                bundled_signal = self._create_bundled_signal(agency, topic, group_signals)
+                bundled.append(bundled_signal)
+            else:
+                # Keep individual signals
+                bundled.extend(group_signals)
+        
+        return bundled
+
+    def _normalize_topic(self, title: str) -> str:
+        """Normalize topic by removing boilerplate and extracting key terms."""
+        # Common patterns to normalize
+        patterns = [
+            r"Airworthiness Directives.*",
+            r"Proposed Rule.*",
+            r"Final Rule.*",
+            r"Notice of Proposed Rulemaking.*",
+            r"Notice of Availability.*"
+        ]
+        
+        import re
+        for pattern in patterns:
+            if re.search(pattern, title, re.IGNORECASE):
+                return re.search(pattern, title, re.IGNORECASE).group(0)
+        
+        # Fallback: return first 50 chars
+        return title[:50]
+
+    def _create_bundled_signal(self, agency: str, topic: str, signals: List[SignalV2]) -> SignalV2:
+        """Create a bundled signal from multiple similar signals."""
+        # Use the highest priority signal as base
+        base_signal = max(signals, key=lambda s: s.priority_score)
+        
+        # Create bundled title
+        count = len(signals)
+        bundled_title = f"{agency} {topic} — {count} {'directives' if 'directive' in topic.lower() else 'items'} today"
+        
+        # Create bundled signal
+        return SignalV2(
+            source=base_signal.source,
+            source_id=f"bundled_{agency}_{topic}_{count}",
+            timestamp=base_signal.timestamp,
+            title=bundled_title,
+            link=base_signal.link,
+            url=base_signal.url,  # Link to search results
+            agency=agency,
+            committee=base_signal.committee,
+            bill_id=base_signal.bill_id,
+            rin=base_signal.rin,
+            docket_id=base_signal.docket_id,
+            industry=base_signal.industry,
+            issue_codes=base_signal.issue_codes,
+            metrics=base_signal.metrics,
+            priority_score=base_signal.priority_score,
+            deadline=base_signal.deadline,
+            effective_date=base_signal.effective_date,
+            comment_surge_pct=base_signal.comment_surge_pct,
+            signal_type=base_signal.signal_type,
+            urgency=base_signal.urgency,
+            watchlist_matches=base_signal.watchlist_matches,
+            watchlist_hit=base_signal.watchlist_hit
+        )
+
+    def _get_front_page_industry_snapshots(self, signals: List[SignalV2]) -> Dict[str, Dict]:
+        """Get industry snapshots for front page (5-7 categories max, ≥2 items each)."""
+        industry_data = {}
+        
+        for signal in signals:
+            industry = signal.industry or "Other"
+            if industry not in industry_data:
+                industry_data[industry] = {"rules": 0, "notices": 0, "total": 0}
+            
+            industry_data[industry]["total"] += 1
+            if signal.signal_type in [SignalType.FINAL_RULE, SignalType.PROPOSED_RULE]:
+                industry_data[industry]["rules"] += 1
+            else:
+                industry_data[industry]["notices"] += 1
+        
+        # Filter for industries with ≥2 items and sort by total
+        filtered_industries = {
+            industry: data for industry, data in industry_data.items() 
+            if data["total"] >= 2
+        }
+        
+        # Sort by total count (descending) and take top 7
+        sorted_industries = dict(sorted(
+            filtered_industries.items(), 
+            key=lambda x: x[1]["total"], 
+            reverse=True
+        )[:7])
+        
+        return sorted_industries
+
+    def _get_outlier(self, signals: List[SignalV2]) -> Optional[SignalV2]:
+        """Get the single outlier signal based on comment surge, absolute delta, or industry impact."""
+        if not signals:
+            return None
+        
+        # 1. Highest comment surge Δ% (≥200%)
+        surge_candidates = [
+            s for s in signals 
+            if hasattr(s, 'comment_surge_pct') and s.comment_surge_pct and s.comment_surge_pct >= 200
+        ]
+        if surge_candidates:
+            return max(surge_candidates, key=lambda s: s.comment_surge_pct)
+        
+        # 2. Highest absolute delta (≥300 comments / 24h)
+        # Note: This would require comment count data, which we don't have in current schema
+        # For now, skip this criterion
+        
+        # 3. Widest industry impact (multiple issue codes)
+        multi_issue_candidates = [
+            s for s in signals 
+            if hasattr(s, 'issue_codes') and s.issue_codes and len(s.issue_codes) >= 3
+        ]
+        if multi_issue_candidates:
+            return max(multi_issue_candidates, key=lambda s: len(s.issue_codes))
+        
+        # Fallback: highest priority signal not already in What Changed
+        high_priority = [s for s in signals if s.priority_score >= 3.0]
+        if high_priority:
+            return high_priority[0]
+        
+        return None
+
+    def _get_mini_stats(self, signals: List[SignalV2]) -> Dict[str, int]:
+        """Get mini-stats for header."""
+        stats = {"bills": 0, "fr": 0, "dockets": 0, "high_priority": 0}
+        
+        for signal in signals:
+            if signal.source == "congress":
+                stats["bills"] += 1
+            elif signal.source == "federal_register":
+                stats["fr"] += 1
+            elif signal.source == "regulations_gov":
+                stats["dockets"] += 1
+            
+            if signal.priority_score >= 3.0:
+                stats["high_priority"] += 1
+        
+        return stats
+
+    def _format_front_page_header(self, signals: List[SignalV2], hours_back: int, mini_stats: Dict[str, int]) -> str:
+        """Format front page header with mini-stats."""
+        current_time = datetime.now(self.pt_tz)
+        date_str = current_time.strftime("%Y-%m-%d")
+        
+        stats_str = f"Bills {mini_stats['bills']} · FR {mini_stats['fr']} · Dockets {mini_stats['dockets']} · High-priority {mini_stats['high_priority']}"
+        
+        return f"🔍 **LobbyLens** — Daily Signals ({date_str}) · {hours_back}h\nMini-stats: {stats_str}"
+
+    def _format_front_page_signal(self, signal: SignalV2) -> str:
+        """Format a signal for the front page with type tag and why-it-matters clause."""
+        # Add type tag
+        type_tag = self._get_signal_type_tag(signal)
+        
+        # Truncate title to 90 chars
+        title_truncated = self._truncate_text(signal.title, 90)
+        
+        # Add why-it-matters clause
+        why_matters = self._get_why_matters_clause(signal)
+        
+        # Format with link
+        link_text = "View all" if hasattr(signal, 'bundled_count') else "View"
+        source_emoji = "FR" if signal.source == "federal_register" else "C"
+        
+        return f"• {type_tag} — {title_truncated} • {why_matters} • <{source_emoji}|{link_text}>"
+
+    def _get_signal_type_tag(self, signal: SignalV2) -> str:
+        """Get signal type tag for display."""
+        type_mapping = {
+            SignalType.FINAL_RULE: "Final Rule",
+            SignalType.PROPOSED_RULE: "Proposed Rule", 
+            SignalType.INTERIM_FINAL_RULE: "Interim Final Rule",
+            SignalType.HEARING: "Hearing",
+            SignalType.MARKUP: "Markup",
+            SignalType.BILL: "Bill",
+            SignalType.DOCKET: "Docket",
+            SignalType.NOTICE: "Notice"
+        }
+        return type_mapping.get(signal.signal_type, "Update")
+
+    def _get_why_matters_clause(self, signal: SignalV2) -> str:
+        """Get why-it-matters clause (deadline/effective/venue)."""
+        clauses = []
+        
+        # Check for deadline
+        if hasattr(signal, 'deadline') and signal.deadline:
+            try:
+                from datetime import datetime
+                deadline = datetime.fromisoformat(signal.deadline.replace('Z', '+00:00'))
+                days_until = (deadline - datetime.now(timezone.utc)).days
+                if days_until <= 7:
+                    clauses.append(f"deadline in {days_until}d")
+                elif days_until <= 30:
+                    clauses.append(f"deadline in {days_until}d")
+            except (ValueError, AttributeError):
+                pass
+        
+        # Check for effective date
+        if hasattr(signal, 'effective_date') and signal.effective_date:
+            try:
+                from datetime import datetime
+                effective = datetime.fromisoformat(signal.effective_date.replace('Z', '+00:00'))
+                days_until = (effective - datetime.now(timezone.utc)).days
+                if days_until <= 30:
+                    clauses.append(f"effective in {days_until}d")
+            except (ValueError, AttributeError):
+                pass
+        
+        # Check for venue/time
+        if signal.committee:
+            clauses.append(f"{signal.committee}")
+        
+        # Fallback
+        if not clauses:
+            if signal.signal_type in [SignalType.FINAL_RULE, SignalType.PROPOSED_RULE]:
+                clauses.append("regulatory action")
+            else:
+                clauses.append("government activity")
+        
+        return " • ".join(clauses[:2])  # Max 2 clauses
+
+    def _format_front_page_industry_snapshot(self, industry: str, snapshot: Dict) -> str:
+        """Format industry snapshot for front page."""
+        rules = snapshot["rules"]
+        notices = snapshot["notices"]
+        total = snapshot["total"]
+        
+        return f"• {industry}: {total} ({rules} rules, {notices} notices)"
+
+    def _format_outlier_signal(self, signal: SignalV2) -> str:
+        """Format outlier signal."""
+        title_truncated = self._truncate_text(signal.title, 80)
+        
+        # Determine outlier type
+        if hasattr(signal, 'comment_surge_pct') and signal.comment_surge_pct and signal.comment_surge_pct >= 200:
+            outlier_type = f"Comment Surge ({signal.comment_surge_pct:.0f}%)"
+        elif hasattr(signal, 'issue_codes') and signal.issue_codes and len(signal.issue_codes) >= 3:
+            outlier_type = f"Multi-Industry Impact ({len(signal.issue_codes)} codes)"
+        else:
+            outlier_type = "High Impact"
+        
+        source_emoji = "FR" if signal.source == "federal_register" else "C"
+        
+        return f"• {outlier_type} — {title_truncated} • <{source_emoji}|View>"
+
+    def _format_front_page_footer(self) -> str:
+        """Format front page footer with thread link."""
+        current_time = datetime.now(self.pt_tz).strftime("%H:%M PT")
+        return f"\n/lobbylens more · Updated {current_time}"
 
 
 # =============================================================================
