@@ -10,7 +10,8 @@ def format_amount(amount: Optional[int]) -> str:
     """Format amount for display in Slack messages.
     
     Rules:
-    - 0 or None → —
+    - None → — (not reported)
+    - 0 → $0 (explicitly reported as zero, may indicate ≤$5K or not required to report)
     - 1,200 → $1.2K
     - 320,000 → $320K
     - 1,500,000 → $1.5M
@@ -22,8 +23,11 @@ def format_amount(amount: Optional[int]) -> str:
     Returns:
         Formatted string
     """
-    if not amount or amount == 0:
+    if amount is None:
         return "—"
+    
+    if amount == 0:
+        return "$0"
     
     if amount < 1000:
         return f"${amount:,}"
@@ -62,34 +66,42 @@ def is_lda_enabled() -> bool:
 
 
 def normalize_entity_name(name: str) -> str:
-    """Normalize entity name for consistent matching.
+    """Normalize entity name for consistent matching and deduplication.
+    
+    Uses Unicode NFKC normalization, casefold, punctuation removal,
+    and corporate suffix stripping for better entity matching.
     
     Args:
         name: Raw entity name
         
     Returns:
-        Normalized name (lowercase, stripped, no punctuation)
+        Normalized name for matching
     """
     if not name:
         return ""
     
-    # Convert to lowercase and strip whitespace
-    normalized = name.lower().strip()
+    import unicodedata
     
-    # Remove common corporate suffixes
-    suffixes = [
-        " inc", " inc.", " incorporated", " corp", " corp.", " corporation",
-        " llc", " l.l.c.", " ltd", " ltd.", " limited", " co", " co.",
-        " company", " lp", " l.p.", " llp", " l.l.p."
+    # Unicode NFKC normalization + casefold for proper international text handling
+    normalized = unicodedata.normalize('NFKC', name).casefold()
+    
+    # Remove common punctuation but keep spaces and alphanumeric
+    normalized = re.sub(r'[^\w\s]', ' ', normalized)
+    
+    # Remove corporate suffixes (case insensitive, word boundaries)
+    corporate_suffixes = [
+        r'\binc\b', r'\bcorp\b', r'\bcorporation\b', r'\bllc\b', r'\bltd\b', 
+        r'\blimited\b', r'\bplc\b', r'\bholdings\b', r'\btech\b', r'\btechnologies\b',
+        r'\bco\b', r'\bcompany\b', r'\bassociation\b', r'\bassoc\b', r'\bgroup\b',
+        r'\bpartners\b', r'\bpartnership\b', r'\bfoundation\b', r'\binstitute\b',
+        r'\bcenter\b', r'\bcentre\b', r'\bcouncil\b', r'\bsociety\b', r'\bunion\b',
+        r'\bincorporated\b'
     ]
     
-    for suffix in suffixes:
-        if normalized.endswith(suffix):
-            normalized = normalized[:-len(suffix)].strip()
-            break
+    for suffix in corporate_suffixes:
+        normalized = re.sub(suffix, '', normalized)
     
-    # Remove punctuation and extra spaces
-    normalized = re.sub(r'[^\w\s]', '', normalized)
+    # Collapse whitespace and strip
     normalized = re.sub(r'\s+', ' ', normalized).strip()
     
     return normalized

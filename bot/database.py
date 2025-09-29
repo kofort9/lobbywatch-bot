@@ -56,9 +56,14 @@ class DatabaseManager:
                 filing_date TEXT,
                 quarter TEXT,  -- e.g., "2025Q3"
                 year INTEGER,
-                amount INTEGER DEFAULT 0,
+                amount INTEGER,  -- NULL for not reported, 0 for explicitly zero
                 url TEXT,
                 summary TEXT,  -- From specific_issues/description
+                filing_type TEXT,  -- Q1, Q2, Q3, Q4, etc.
+                filing_status TEXT DEFAULT 'active',  -- active, amended, terminated
+                is_amendment BOOLEAN DEFAULT 0,
+                source_system TEXT DEFAULT 'senate',  -- senate, house
+                ingested_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (client_id) REFERENCES entity(id),
                 FOREIGN KEY (registrant_id) REFERENCES entity(id)
@@ -115,6 +120,19 @@ class DatabaseManager:
                 show_descriptions BOOLEAN DEFAULT 1,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Per-channel digest tracking for "since last run" logic
+            CREATE TABLE IF NOT EXISTS channel_digest_state (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                channel_id TEXT NOT NULL,
+                service TEXT NOT NULL,  -- 'lda', 'v2', etc.
+                last_digest_at TEXT,
+                last_filing_date TEXT,  -- Track latest filing date seen
+                last_ingested_at TEXT,  -- Track latest ingested_at seen
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(channel_id, service)
             );
 
             -- Per-channel watchlists

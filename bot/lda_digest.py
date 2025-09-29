@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from .database import DatabaseManager
 from .utils import format_amount, is_lda_enabled
+from .lda_issue_codes import format_issue_codes, get_issue_description
 
 logger = logging.getLogger(__name__)
 
@@ -110,9 +111,13 @@ class LDADigestComputer:
                         digest_lines.append(f"• {client_name} → {registrant_name} ({amount}) • Issues: {issues}")
                 digest_lines.append("")
             
-            # Footer
+            # Footer with amount semantics note
             current_time = datetime.now().strftime("%H:%M PT")
             digest_lines.append(f"Updated {current_time} — /lobbylens lda help")
+            digest_lines.append("_$0 may indicate ≤$5K or not required to report_")
+            
+            # Update digest state for "since last run" tracking
+            self._update_digest_state(channel_id, quarter)
             
             return "\n".join(digest_lines)
             
@@ -235,48 +240,76 @@ class LDADigestComputer:
             return f"{year}Q4"
     
     def _get_new_filings_since_last_run(self, channel_id: str, quarter: str) -> List[Dict[str, Any]]:
-        """Get new filings since the last digest run."""
-        # Get last run time
-        last_run = self.db_manager.get_last_digest_run(channel_id, "lda_digest")
-        
+        """Get new/amended filings since the last digest run for this channel."""
         with self.db_manager.get_connection() as conn:
-            if last_run:
-                # Get filings created since last run
+            # Get last digest state for this channel
+            last_ingested_at = None
+            cursor = conn.execute("""
+                SELECT last_ingested_at FROM channel_digest_state 
+                WHERE channel_id = ? AND service = 'lda'
+            """, (channel_id,))
+            
+            row = cursor.fetchone()
+            if row and row['last_ingested_at']:
+                last_ingested_at = row['last_ingested_at']
+            
+            # Get filings since last run, or recent ones if first run
+            if last_ingested_at:
                 cursor = conn.execute("""
-                    SELECT 
-                        f.*,
-                        c.name as client_name,
-                        r.name as registrant_name,
-                        GROUP_CONCAT(i.code) as issue_codes
+                    SELECT f.*, e1.name as client_name, e2.name as registrant_name,
+                           GROUP_CONCAT(i.code) as issue_codes,
+                           CASE WHEN f.is_amendment = 1 THEN ' (amended)' ELSE '' END as amendment_label
                     FROM filing f
-                    LEFT JOIN entity c ON f.client_id = c.id
-                    LEFT JOIN entity r ON f.registrant_id = r.id
+                    LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
+                    LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
                     LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                     LEFT JOIN issue i ON fi.issue_id = i.id
-                    WHERE f.quarter = ? AND f.created_at > ?
+                    WHERE f.quarter = ? AND f.ingested_at > ?
                     GROUP BY f.id
-                    ORDER BY f.amount DESC
-                """, (quarter, last_run['run_time']))
+                    ORDER BY f.ingested_at DESC
+                    LIMIT 20
+                """, (quarter, last_ingested_at))
             else:
-                # First run, get recent filings
+                # First run - get recent filings
                 cursor = conn.execute("""
-                    SELECT 
-                        f.*,
-                        c.name as client_name,
-                        r.name as registrant_name,
-                        GROUP_CONCAT(i.code) as issue_codes
+                    SELECT f.*, e1.name as client_name, e2.name as registrant_name,
+                           GROUP_CONCAT(i.code) as issue_codes,
+                           CASE WHEN f.is_amendment = 1 THEN ' (amended)' ELSE '' END as amendment_label
                     FROM filing f
-                    LEFT JOIN entity c ON f.client_id = c.id
-                    LEFT JOIN entity r ON f.registrant_id = r.id
+                    LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
+                    LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
                     LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                     LEFT JOIN issue i ON fi.issue_id = i.id
                     WHERE f.quarter = ?
                     GROUP BY f.id
-                    ORDER BY f.amount DESC
+                    ORDER BY f.filing_date DESC
                     LIMIT 10
                 """, (quarter,))
             
             return [dict(row) for row in cursor.fetchall()]
+    
+    def _update_digest_state(self, channel_id: str, quarter: str) -> None:
+        """Update the digest state for this channel after running a digest."""
+        with self.db_manager.get_connection() as conn:
+            now = datetime.now(timezone.utc).isoformat()
+            
+            # Get the latest ingested_at timestamp for this quarter
+            cursor = conn.execute("""
+                SELECT MAX(ingested_at) as max_ingested_at,
+                       MAX(filing_date) as max_filing_date
+                FROM filing WHERE quarter = ?
+            """, (quarter,))
+            
+            row = cursor.fetchone()
+            max_ingested_at = row['max_ingested_at'] if row else now
+            max_filing_date = row['max_filing_date'] if row else now
+            
+            # Upsert digest state
+            conn.execute("""
+                INSERT OR REPLACE INTO channel_digest_state 
+                (channel_id, service, last_digest_at, last_filing_date, last_ingested_at, updated_at)
+                VALUES (?, 'lda', ?, ?, ?, ?)
+            """, (channel_id, now, max_filing_date, max_ingested_at, now))
     
     def _get_top_registrants(self, quarter: str, limit: int) -> List[Dict[str, Any]]:
         """Get top registrants by total amount."""

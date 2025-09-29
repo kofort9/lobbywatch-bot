@@ -25,6 +25,17 @@ class LDAETLPipeline:
         self.bulk_base_url = os.getenv("LDA_BULK_BASE_URL", "https://lda.senate.gov/filings/public/")
         self.api_base_url = os.getenv("LDA_API_BASE_URL", "https://lda.senate.gov/api/v1/")
         
+        # Seed issue codes on initialization
+        self._ensure_issue_codes()
+    
+    def _ensure_issue_codes(self) -> None:
+        """Ensure official LDA issue codes are seeded in the database."""
+        try:
+            from .lda_issue_codes import seed_issue_codes
+            seed_issue_codes(self.db_manager)
+        except Exception as e:
+            logger.warning(f"Failed to seed issue codes: {e}")
+        
     def run_etl(self, mode: str = "update", start_year: Optional[int] = None, 
                 end_year: Optional[int] = None) -> Dict[str, Any]:
         """Run the ETL pipeline.
@@ -302,22 +313,28 @@ class LDAETLPipeline:
             from datetime import datetime
             filing_date = datetime.fromisoformat(dt_posted.replace('Z', '+00:00')).strftime('%Y-%m-%d')
             
+            # Extract filing type and status info
+            filing_type = api_filing.get("filing_type", "")  # Q1, Q2, Q3, Q4, etc.
+            filing_status = "active"  # Default status
+            is_amendment = False  # TODO: Detect amendments from API data
+            source_system = "senate"  # Always senate for this API
+            
             # Get income or expenses amount (lobbying amount)
             income = api_filing.get("income")
             expenses = api_filing.get("expenses")
-            amount = 0
+            amount = None  # Default to None (not reported)
             
             # Try income first, then expenses
-            if income:
+            if income is not None:
                 try:
                     amount = int(float(income))
                 except (ValueError, TypeError):
-                    amount = 0
-            elif expenses:
+                    amount = 0  # Explicitly reported as zero
+            elif expenses is not None:
                 try:
                     amount = int(float(expenses))
                 except (ValueError, TypeError):
-                    amount = 0
+                    amount = 0  # Explicitly reported as zero
             
             # Get client and registrant info
             client_info = api_filing.get("client", {})
@@ -354,7 +371,11 @@ class LDAETLPipeline:
                 "amount": amount,
                 "url": filing_url,
                 "specific_issues": combined_description,
-                "issue_codes": issue_codes
+                "issue_codes": issue_codes,
+                "filing_type": filing_type,
+                "filing_status": filing_status,
+                "is_amendment": is_amendment,
+                "source_system": source_system
             }
             
         except Exception as e:
@@ -511,8 +532,9 @@ class LDAETLPipeline:
         cursor = conn.execute(
             """
             INSERT INTO filing 
-            (filing_uid, client_id, registrant_id, filing_date, quarter, year, amount, url, summary)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (filing_uid, client_id, registrant_id, filing_date, quarter, year, amount, url, summary,
+             filing_type, filing_status, is_amendment, source_system)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 filing_data["filing_uid"],
@@ -523,7 +545,11 @@ class LDAETLPipeline:
                 filing_data["year"],
                 filing_data["amount"],
                 filing_data["url"],
-                filing_data["summary"]
+                filing_data["summary"],
+                filing_data.get("filing_type", ""),
+                filing_data.get("filing_status", "active"),
+                filing_data.get("is_amendment", False),
+                filing_data.get("source_system", "senate")
             )
         )
         
@@ -552,7 +578,8 @@ class LDAETLPipeline:
             """
             UPDATE filing 
             SET client_id = ?, registrant_id = ?, filing_date = ?, quarter = ?, 
-                year = ?, amount = ?, url = ?, summary = ?
+                year = ?, amount = ?, url = ?, summary = ?,
+                filing_type = ?, filing_status = ?, is_amendment = ?, source_system = ?
             WHERE id = ?
             """,
             (
@@ -564,6 +591,10 @@ class LDAETLPipeline:
                 filing_data["amount"],
                 filing_data["url"],
                 filing_data["summary"],
+                filing_data.get("filing_type", ""),
+                filing_data.get("filing_status", "active"),
+                filing_data.get("is_amendment", False),
+                filing_data.get("source_system", "senate"),
                 filing_id
             )
         )
