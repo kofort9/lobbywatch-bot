@@ -89,7 +89,8 @@ class DatabaseManager:
             -- Channel-specific digest settings
             CREATE TABLE IF NOT EXISTS channel_digest_settings (
                 channel_id TEXT PRIMARY KEY,
-                min_amount INTEGER DEFAULT 10000,  -- $10K minimum for "new since last run"
+                min_amount INTEGER DEFAULT 10000,  -- $10K minimum for
+                    -- "new since last run"
                 max_lines_main INTEGER DEFAULT 15,  -- main post line cap
                 last_lda_digest_at TEXT,  -- timestamp of last digest
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -112,7 +113,8 @@ class DatabaseManager:
             );
 
             -- Create indexes for core LDA tables
-            CREATE INDEX IF NOT EXISTS idx_entity_normalized ON entity(normalized_name, type);
+            CREATE INDEX IF NOT EXISTS idx_entity_normalized
+                ON entity(normalized_name, type);
             CREATE INDEX IF NOT EXISTS idx_filing_uid ON filing(filing_uid);
             CREATE INDEX IF NOT EXISTS idx_filing_quarter ON filing(quarter, year);
             CREATE INDEX IF NOT EXISTS idx_filing_date ON filing(filing_date);
@@ -195,10 +197,13 @@ class DatabaseManager:
             );
 
             -- Create indexes for performance
-            CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
+            CREATE INDEX IF NOT EXISTS idx_watchlist_channel
+                ON channel_watchlist(channel_id);
             CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
-            CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
-            CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
+            CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time
+                ON digest_runs(channel_id, run_time);
+            CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed
+                ON filing_tracking(processed_at);
             """
             )
 
@@ -225,7 +230,8 @@ class DatabaseManager:
                 conn.execute(
                     """
                     INSERT INTO channel_settings
-                    (id, threshold_filings, threshold_amount, show_descriptions, created_at)
+                    (id, threshold_filings, threshold_amount, show_descriptions,
+                     created_at)
                     VALUES (?, ?, ?, ?, ?)
                 """,
                     (
@@ -287,7 +293,8 @@ class DatabaseManager:
                 conn.execute(
                     """
                 INSERT OR REPLACE INTO channel_watchlist
-                (channel_id, entity_type, entity_id, watch_name, display_name, fuzzy_score)
+                (channel_id, entity_type, entity_id, watch_name, display_name,
+                 fuzzy_score)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
                     (
@@ -333,7 +340,8 @@ class DatabaseManager:
             conn.execute(
                 """
             INSERT INTO digest_runs
-            (channel_id, run_type, run_time, filings_count, last_filing_time, digest_content)
+            (channel_id, run_type, run_time, filings_count, last_filing_time,
+             digest_content)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
                 (
@@ -377,7 +385,8 @@ class DatabaseManager:
             conn.execute(
                 """
             INSERT OR REPLACE INTO entity_aliases
-            (alias_name, canonical_name, entity_type, entity_id, confidence_score, updated_at, usage_count)
+            (alias_name, canonical_name, entity_type, entity_id, confidence_score,
+             updated_at, usage_count)
             VALUES (?, ?, ?, ?, ?, ?, COALESCE((
                 SELECT usage_count + 1 FROM entity_aliases
                 WHERE alias_name = ? AND entity_type = ?

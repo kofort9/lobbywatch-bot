@@ -107,7 +107,8 @@ class PostgresManager(DatabaseManager):
                 -- Channel-specific digest settings
                 CREATE TABLE IF NOT EXISTS channel_digest_settings (
                     channel_id TEXT PRIMARY KEY,
-                    min_amount INTEGER DEFAULT 10000,  -- $10K minimum for "new since last run"
+                    min_amount INTEGER DEFAULT 10000,  -- $10K minimum for
+                        -- "new since last run"
                     max_lines_main INTEGER DEFAULT 15,  -- main post line cap
                     last_lda_digest_at TIMESTAMP,  -- timestamp of last digest
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -130,13 +131,15 @@ class PostgresManager(DatabaseManager):
                 );
 
                 -- Create indexes for core LDA tables
-                CREATE INDEX IF NOT EXISTS idx_entity_normalized ON entity(normalized_name, type);
+                CREATE INDEX IF NOT EXISTS idx_entity_normalized
+                    ON entity(normalized_name, type);
                 CREATE INDEX IF NOT EXISTS idx_filing_uid ON filing(filing_uid);
                 CREATE INDEX IF NOT EXISTS idx_filing_quarter ON filing(quarter, year);
                 CREATE INDEX IF NOT EXISTS idx_filing_date ON filing(filing_date);
                 CREATE INDEX IF NOT EXISTS idx_filing_amount ON filing(amount);
                 CREATE INDEX IF NOT EXISTS idx_filing_client ON filing(client_id);
-                CREATE INDEX IF NOT EXISTS idx_filing_registrant ON filing(registrant_id);
+                CREATE INDEX IF NOT EXISTS idx_filing_registrant
+                    ON filing(registrant_id);
                 CREATE INDEX IF NOT EXISTS idx_issue_code ON issue(code);
 
                 -- Channel-specific settings and state
@@ -212,10 +215,14 @@ class PostgresManager(DatabaseManager):
                 );
 
                 -- Create indexes for performance
-                CREATE INDEX IF NOT EXISTS idx_watchlist_channel ON channel_watchlist(channel_id);
-                CREATE INDEX IF NOT EXISTS idx_aliases_name ON entity_aliases(alias_name);
-                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time ON digest_runs(channel_id, run_time);
-                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed ON filing_tracking(processed_at);
+                CREATE INDEX IF NOT EXISTS idx_watchlist_channel
+                    ON channel_watchlist(channel_id);
+                CREATE INDEX IF NOT EXISTS idx_aliases_name
+                    ON entity_aliases(alias_name);
+                CREATE INDEX IF NOT EXISTS idx_digest_runs_channel_time
+                    ON digest_runs(channel_id, run_time);
+                CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed
+                    ON filing_tracking(processed_at);
                 """
                 )
 
