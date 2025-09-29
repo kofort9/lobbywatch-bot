@@ -679,7 +679,9 @@ class LDAETLPipeline:
         # Insert issue relationships
         self._insert_filing_issues(conn, filing_id, filing_data["issue_codes"])
 
-    def _update_filing(self, conn: Any, filing_id: int, filing_data: Dict[str, Any]) -> None:
+    def _update_filing(
+        self, conn: Any, filing_id: int, filing_data: Dict[str, Any]
+    ) -> None:
         """Update an existing filing."""
         # Get or create entities (they might have changed)
         client_id = None

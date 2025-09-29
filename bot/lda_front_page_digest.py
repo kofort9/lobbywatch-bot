@@ -369,11 +369,13 @@ class LDAFrontPageDigest:
             )
             results = []
             for row in cursor.fetchall():
-                results.append({
-                    "name": row["name"],
-                    "total_amount": row["total"],
-                    "filing_count": row["count"],
-                })
+                results.append(
+                    {
+                        "name": row["name"],
+                        "total_amount": row["total"],
+                        "filing_count": row["count"],
+                    }
+                )
         return results
 
     def _get_top_issues(self, year: int, quarter: int) -> List[Dict[str, Any]]:
@@ -726,7 +728,9 @@ class LDAFrontPageDigest:
             )
 
     # Public API methods for Slack commands
-    def get_top_registrants(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_top_registrants(
+        self, quarter: Optional[str] = None, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """Get top registrants for a quarter."""
         if quarter:
             year, q = self._parse_quarter(quarter)
@@ -736,7 +740,9 @@ class LDAFrontPageDigest:
             year, q = int(year_str), int(q_str)
         return self._get_top_registrants(year, q)[:limit]
 
-    def get_top_clients(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_top_clients(
+        self, quarter: Optional[str] = None, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """Get top clients for a quarter."""
         if quarter:
             year, q = self._parse_quarter(quarter)
@@ -746,7 +752,9 @@ class LDAFrontPageDigest:
             year, q = int(year_str), int(q_str)
         return self._get_top_clients(year, q)[:limit]
 
-    def get_issues_summary(self, quarter: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_issues_summary(
+        self, quarter: Optional[str] = None, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """Get issues summary for a quarter."""
         if quarter:
             year, q = self._parse_quarter(quarter)

@@ -719,7 +719,11 @@ class DigestFormatter:
             SignalType.DOCKET: "Docket",
             SignalType.NOTICE: "Notice",
         }
-        return type_mapping.get(signal.signal_type, "Update") if signal.signal_type else "Update"
+        return (
+            type_mapping.get(signal.signal_type, "Update")
+            if signal.signal_type
+            else "Update"
+        )
 
     def _get_why_matters_clause(self, signal: SignalV2) -> str:
         """Get why-it-matters clause (deadline/effective/venue)."""
