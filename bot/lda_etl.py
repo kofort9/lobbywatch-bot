@@ -129,7 +129,8 @@ class LDAETLPipeline:
                     total_errors += errors
 
                     logger.info(
-                        f"{quarter_str}: {added} added, {updated} updated, {errors} errors"
+                        f"{quarter_str}: {added} added, {updated} updated, "
+                        f"{errors} errors"
                     )
 
                 except Exception as e:
@@ -261,7 +262,8 @@ class LDAETLPipeline:
     def _fetch_filings_by_type(
         self, year: int, filing_type: str, max_pages: Optional[int] = None
     ) -> List[Dict[str, Any]]:
-        """Fetch filings of a specific type from the LDA API with proper pagination and retries."""
+        """Fetch filings of a specific type from the LDA API with proper
+        pagination and retries."""
         import time
 
         from requests.adapters import HTTPAdapter
@@ -299,7 +301,8 @@ class LDAETLPipeline:
         page = 1
 
         logger.info(
-            f"Fetching {filing_type} filings for {year} (max_pages: {max_pages or 'unlimited'})"
+            f"Fetching {filing_type} filings for {year} "
+            f"(max_pages: {max_pages or 'unlimited'})"
         )
 
         while True:
@@ -326,7 +329,8 @@ class LDAETLPipeline:
 
                 # Log response details
                 logger.debug(
-                    f"Response: {response.status_code}, Time: {response.elapsed.total_seconds():.2f}s"
+                    f"Response: {response.status_code}, "
+                    f"Time: {response.elapsed.total_seconds():.2f}s"
                 )
 
                 data = response.json()
@@ -338,7 +342,8 @@ class LDAETLPipeline:
                     break
 
                 logger.info(
-                    f"Page {page}: {len(results)} filings (total available: {total_count:,})"
+                    f"Page {page}: {len(results)} filings "
+                    f"(total available: {total_count:,})"
                 )
 
                 # Process each filing to extract the data we need
@@ -350,7 +355,8 @@ class LDAETLPipeline:
                         processed_count += 1
 
                 logger.info(
-                    f"Processed {processed_count}/{len(results)} filings from page {page}"
+                    f"Processed {processed_count}/{len(results)} filings "
+                    f"from page {page}"
                 )
 
                 # Check if there's a next page
@@ -385,12 +391,14 @@ class LDAETLPipeline:
                 break
             except Exception as e:
                 logger.error(
-                    f"Error processing API response for {filing_type} {year} page {page}: {e}"
+                    f"Error processing API response for {filing_type} {year} "
+                    f"page {page}: {e}"
                 )
                 break
 
         logger.info(
-            f"Fetched {len(all_results)} total processed filings for {filing_type} {year}"
+            f"Fetched {len(all_results)} total processed filings "
+            f"for {filing_type} {year}"
         )
         return all_results
 
@@ -492,7 +500,8 @@ class LDAETLPipeline:
 
         except Exception as e:
             logger.error(
-                f"Error processing API filing {api_filing.get('filing_uuid', 'unknown')}: {e}"
+                f"Error processing API filing "
+                f"{api_filing.get('filing_uuid', 'unknown')}: {e}"
             )
             return None
 
@@ -508,7 +517,10 @@ class LDAETLPipeline:
                            "filing_date": "2025-07-15",
                            "amount": 320000,
                            "url": "https://lda.senate.gov/filings/sample1.pdf",
-                           "specific_issues": "Technology policy, artificial intelligence regulation, data privacy",
+                           "specific_issues": (
+                               "Technology policy, artificial intelligence "
+                               "regulation, data privacy"
+                           ),
                            "issue_codes": ["TEC",
                                            "CSP"],
                            },
@@ -518,7 +530,10 @@ class LDAETLPipeline:
                            "filing_date": "2025-07-20",
                            "amount": 180000,
                            "url": "https://lda.senate.gov/filings/sample2.pdf",
-                           "specific_issues": "Healthcare reform, drug pricing, FDA regulations",
+                           "specific_issues": (
+                               "Healthcare reform, drug pricing, "
+                               "FDA regulations"
+                           ),
                            "issue_codes": ["HCR",
                                            "PHA"],
                            },
@@ -528,7 +543,10 @@ class LDAETLPipeline:
                            "filing_date": "2025-07-25",
                            "amount": 250000,
                            "url": "https://lda.senate.gov/filings/sample3.pdf",
-                           "specific_issues": "Antitrust legislation, digital services act, privacy regulations",
+                           "specific_issues": (
+                               "Antitrust legislation, digital services act, "
+                               "privacy regulations"
+                           ),
                            "issue_codes": ["TEC",
                                            "JUD"],
                            },
@@ -569,7 +587,8 @@ class LDAETLPipeline:
 
                 except Exception as e:
                     logger.error(
-                        f"Failed to process filing {filing_data.get('filing_uid', 'unknown')}: {e}"
+                        f"Failed to process filing "
+                        f"{filing_data.get('filing_uid', 'unknown')}: {e}"
                     )
                     error_count += 1
 
@@ -657,8 +676,9 @@ class LDAETLPipeline:
         cursor = conn.execute(
             """
             INSERT INTO filing
-            (filing_uid, client_id, registrant_id, filing_date, quarter, year, amount, url, summary,
-             filing_type, filing_status, is_amendment, source_system)
+            (filing_uid, client_id, registrant_id, filing_date, quarter, year,
+             amount, url, summary, filing_type, filing_status, is_amendment,
+             source_system)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -786,7 +806,8 @@ class LDAETLPipeline:
             if code.strip():
                 issue_id = self._get_or_create_issue(conn, code)
                 conn.execute(
-                    "INSERT OR IGNORE INTO filing_issue (filing_id, issue_id) VALUES (?, ?)",
+                    "INSERT OR IGNORE INTO filing_issue (filing_id, issue_id) "
+                    "VALUES (?, ?)",
                     (filing_id, issue_id),
                 )
 

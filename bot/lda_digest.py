@@ -31,7 +31,10 @@ class LDADigestComputer:
             Formatted digest string for Slack
         """
         if not is_lda_enabled():
-            return "💵 LDA features are currently disabled. Set ENABLE_LDA_V1=true to enable."
+            return (
+                "💵 LDA features are currently disabled. "
+                "Set ENABLE_LDA_V1=true to enable."
+            )
 
         if not quarter:
             quarter = self._get_current_quarter()
@@ -68,11 +71,13 @@ class LDADigestComputer:
 
                     if url:
                         digest_lines.append(
-                            f"• {client_name} → {registrant_name} ({amount}) • Issues: {issues} • <{url}|View>"
+                            f"• {client_name} → {registrant_name} ({amount}) • "
+                            f"Issues: {issues} • <{url}|View>"
                         )
                     else:
                         digest_lines.append(
-                            f"• {client_name} → {registrant_name} ({amount}) • Issues: {issues}"
+                            f"• {client_name} → {registrant_name} ({amount}) • "
+                            f"Issues: {issues}"
                         )
 
                 if len(new_filings) > 5:
@@ -119,11 +124,13 @@ class LDADigestComputer:
 
                     if url:
                         digest_lines.append(
-                            f"• {client_name} → {registrant_name} ({amount}) • Issues: {issues} • <{url}|View>"
+                            f"• {client_name} → {registrant_name} ({amount}) • "
+                            f"Issues: {issues} • <{url}|View>"
                         )
                     else:
                         digest_lines.append(
-                            f"• {client_name} → {registrant_name} ({amount}) • Issues: {issues}"
+                            f"• {client_name} → {registrant_name} ({amount}) • "
+                            f"Issues: {issues}"
                         )
                 digest_lines.append("")
 
@@ -302,10 +309,14 @@ class LDADigestComputer:
                     """
                     SELECT f.*, e1.name as client_name, e2.name as registrant_name,
                            GROUP_CONCAT(i.code) as issue_codes,
-                           CASE WHEN f.is_amendment = 1 THEN ' (amended)' ELSE '' END as amendment_label
+                           CASE WHEN f.is_amendment = 1
+                                THEN ' (amended)'
+                                ELSE ''
+                           END as amendment_label
                     FROM filing f
                     LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
-                    LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
+                    LEFT JOIN entity e2 ON f.registrant_id = e2.id
+                        AND e2.type = 'registrant'
                     LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                     LEFT JOIN issue i ON fi.issue_id = i.id
                     WHERE f.quarter = ? AND f.ingested_at > ?
@@ -321,10 +332,14 @@ class LDADigestComputer:
                     """
                     SELECT f.*, e1.name as client_name, e2.name as registrant_name,
                            GROUP_CONCAT(i.code) as issue_codes,
-                           CASE WHEN f.is_amendment = 1 THEN ' (amended)' ELSE '' END as amendment_label
+                           CASE WHEN f.is_amendment = 1
+                                THEN ' (amended)'
+                                ELSE ''
+                           END as amendment_label
                     FROM filing f
                     LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
-                    LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
+                    LEFT JOIN entity e2 ON f.registrant_id = e2.id
+                        AND e2.type = 'registrant'
                     LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                     LEFT JOIN issue i ON fi.issue_id = i.id
                     WHERE f.quarter = ?
@@ -354,13 +369,16 @@ class LDADigestComputer:
 
             row = cursor.fetchone()
             max_ingested_at = row["max_ingested_at"] if row else now
-            max_filing_date = row["max_filing_date"] if row else now
+            max_filing_date = (
+                row["max_filing_date"] if row else now
+            )
 
             # Upsert digest state
             conn.execute(
                 """
                 INSERT OR REPLACE INTO channel_digest_state
-                (channel_id, service, last_digest_at, last_filing_date, last_ingested_at, updated_at)
+                (channel_id, service, last_digest_at, last_filing_date,
+                 last_ingested_at, updated_at)
                 VALUES (?, 'lda', ?, ?, ?, ?)
             """,
                 (channel_id, now, max_filing_date, max_ingested_at, now),
