@@ -230,8 +230,7 @@ class FuzzyMatcher:
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
                 message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                    len(candidates)
-                )
+                    len(candidates))
                 return message, candidates
 
         # High confidence - auto-accept single, prompt for multiple
@@ -244,8 +243,7 @@ class FuzzyMatcher:
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
                 message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                    len(candidates)
-                )
+                    len(candidates))
                 return message, candidates
 
         # Medium confidence - always prompt

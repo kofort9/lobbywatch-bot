@@ -59,9 +59,7 @@ def fix_line_length():
                                 left_part = parts[0]
                                 right_part = parts[1]
                                 if len(left_part) + len(right_part) + 4 > 88:
-                                    fixed_line = (
-                                        f"        {left_part} in {right_part}"
-                                    )
+                                    fixed_line = f"        {left_part} in {right_part}"
                                     fixed_lines.append(fixed_line)
                                 else:
                                     fixed_lines.append(line)
@@ -79,9 +77,7 @@ def fix_line_length():
                                 for word in words:
                                     if len(current_line + word) > 80:
                                         if current_line:
-                                            fixed_lines.append(
-                                                current_line.rstrip()
-                                            )
+                                            fixed_lines.append(current_line.rstrip())
                                         current_line = "        " + word + " "
                                     else:
                                         current_line += word + " "

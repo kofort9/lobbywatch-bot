@@ -658,8 +658,7 @@ class LDAFrontPageDigest:
             return (
                 f"💵 **LDA {year}Q{quarter}** disclosed {format_amount(current_total)} ({qoq_str} QoQ). "
                 f"Top registrant: {top_reg_str}. Top issue: {top_issue_str}. "
-                f"Biggest riser: {riser_str}. Largest filing: {largest_str}."
-            )
+                f"Biggest riser: {riser_str}. Largest filing: {largest_str}.")
 
     def _format_new_item(self, item: Dict[str, Any]) -> str:
         """Format a new/amended item line."""
