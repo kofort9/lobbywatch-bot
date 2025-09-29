@@ -40,9 +40,7 @@ def fetch_data() -> tuple[int, int]:
     # The v2 system now uses direct government API calls instead of
     # the lobbywatch package which relied on deprecated OpenSecrets/ProPublica
     # APIs.
-    logger.info(
-        "Legacy data fetching disabled - using v2 system for fresh data"
-    )
+    logger.info("Legacy data fetching disabled - using v2 system for fresh data")
     return 0, 0
 
 
@@ -63,16 +61,12 @@ def is_time_for_digest(digest_type: str) -> bool:
         # 8:00 AM PT (15:00 UTC in winter, 16:00 UTC in summer)
         # For simplicity, using 8:00 AM local time
         target_time = dt_time(8, 0)
-        return (
-            current_time.hour == target_time.hour and current_time.minute < 15
-        )
+        return current_time.hour == target_time.hour and current_time.minute < 15
 
     elif digest_type == "mini":
         # 4:00 PM PT
         target_time = dt_time(16, 0)
-        return (
-            current_time.hour == target_time.hour and current_time.minute < 15
-        )
+        return current_time.hour == target_time.hour and current_time.minute < 15
 
     return False
 
@@ -90,9 +84,7 @@ def run_scheduled_digests(
 
     for channel_id in channels:
         try:
-            logger.info(
-                f"Generating {digest_type} digest for channel {channel_id}"
-            )
+            logger.info(f"Generating {digest_type} digest for channel {channel_id}")
 
             # Check if mini-digest should be sent
             if digest_type == "mini":
@@ -109,18 +101,12 @@ def run_scheduled_digests(
             results[channel_id] = success
 
             if success:
-                logger.info(
-                    f"✅ {digest_type.title()} digest sent to {channel_id}"
-                )
+                logger.info(f"✅ {digest_type.title()} digest sent to {channel_id}")
             else:
-                logger.error(
-                    f"❌ Failed to send {digest_type} digest to {channel_id}"
-                )
+                logger.error(f"❌ Failed to send {digest_type} digest to {channel_id}")
 
         except Exception as e:
-            logger.error(
-                f"Error generating {digest_type} digest for {channel_id}: {e}"
-            )
+            logger.error(f"Error generating {digest_type} digest for {channel_id}: {e}")
             results[channel_id] = False
 
     return results
@@ -133,9 +119,7 @@ def run_scheduled_digests(
     default="daily",
     help="Run mode: daily digest, mini digest, or web server",
 )
-@click.option(
-    "--channel", help="Specific channel to send digest to (overrides config)"
-)
+@click.option("--channel", help="Specific channel to send digest to (overrides config)")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -229,9 +213,7 @@ def main(
         try:
             successful_fetches, failed_fetches = fetch_data()
             if failed_fetches > 0:
-                errors.append(
-                    f"Data fetch errors: {failed_fetches} source(s) failed"
-                )
+                errors.append(f"Data fetch errors: {failed_fetches} source(s) failed")
             logger.info(
                 f"Data fetch complete: {successful_fetches} successful, "
                 f"{failed_fetches} failed"
@@ -245,9 +227,7 @@ def main(
 
     # 2. Run digests
     if settings.dry_run:
-        logger.info(
-            "DRY RUN MODE - Would send digests but not actually posting"
-        )
+        logger.info("DRY RUN MODE - Would send digests but not actually posting")
 
         # Generate sample digest for first configured channel or specified
         # channel
@@ -294,14 +274,10 @@ def main(
             successful = sum(1 for success in results.values() if success)
             total = len(results)
 
-            logger.info(
-                f"📊 Digest summary: {successful}/{total} channels successful"
-            )
+            logger.info(f"📊 Digest summary: {successful}/{total} channels successful")
 
             if successful < total:
-                failed_channels = [
-                    ch for ch, success in results.items() if not success
-                ]
+                failed_channels = [ch for ch, success in results.items() if not success]
                 logger.error(f"Failed channels: {', '.join(failed_channels)}")
                 sys.exit(1)
 

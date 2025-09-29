@@ -83,7 +83,8 @@ def get_slack_user_id():
         print("      LOBBYLENS_ADMIN_USER_ID=U1234567890")
         print("   3. Test with:")
         print(
-            '      python -c "from bot.alerts import get_alert_manager; get_alert_manager().test_alerts_system()"'
+            '      python -c "from bot.alerts import get_alert_manager; '
+            'get_alert_manager().test_alerts_system()"'
         )
 
     except Exception as e:

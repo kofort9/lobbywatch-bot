@@ -37,9 +37,7 @@ class DigestFormatter:
         self.deduplicator = SignalDeduplicator()
         self.pt_tz = pytz.timezone("America/Los_Angeles")
 
-    def format_daily_digest(
-        self, signals: List[SignalV2], hours_back: int = 24
-    ) -> str:
+    def format_daily_digest(self, signals: List[SignalV2], hours_back: int = 24) -> str:
         """Format focused front page digest with strict filtering and bundling."""
         if not signals:
             return self._format_empty_digest()
@@ -52,9 +50,7 @@ class DigestFormatter:
 
         # Get front page sections
         what_changed = self._get_front_page_what_changed(enhanced_signals)
-        industry_snapshots = self._get_front_page_industry_snapshots(
-            enhanced_signals
-        )
+        industry_snapshots = self._get_front_page_industry_snapshots(enhanced_signals)
         outlier = self._get_outlier(enhanced_signals)
 
         # Get mini-stats
@@ -65,29 +61,21 @@ class DigestFormatter:
 
         # Header with mini-stats
         lines.append(
-            self._format_front_page_header(
-                enhanced_signals, hours_back, mini_stats
-            )
+            self._format_front_page_header(enhanced_signals, hours_back, mini_stats)
         )
 
         # What Changed (max 5 items, high priority only)
         if what_changed:
-            lines.append(
-                f"\n📈 **What Changed** ({min(len(what_changed), 5)}):"
-            )
+            lines.append(f"\n📈 **What Changed** ({min(len(what_changed), 5)}):")
             for signal in what_changed[:5]:  # Max 5
                 lines.append(self._format_front_page_signal(signal))
 
         # Industry Snapshot (5-7 categories max)
         if industry_snapshots:
             lines.append("\n🏭 **Industry Snapshot**:")
-            for industry, snapshot in list(industry_snapshots.items())[
-                :7
-            ]:  # Max 7
+            for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
                 lines.append(
-                    self._format_front_page_industry_snapshot(
-                        industry, snapshot
-                    )
+                    self._format_front_page_industry_snapshot(industry, snapshot)
                 )
 
         # Outlier (exactly 1)
@@ -100,9 +88,7 @@ class DigestFormatter:
 
         return "\n".join(lines)
 
-    def format_mini_digest(
-        self, signals: List[SignalV2], threshold: int = 5
-    ) -> str:
+    def format_mini_digest(self, signals: List[SignalV2], threshold: int = 5) -> str:
         """Format mini digest for threshold-based alerts."""
         if not signals or len(signals) < threshold:
             return ""
@@ -110,15 +96,11 @@ class DigestFormatter:
         processed_signals = self._process_signals(signals)
 
         # Focus on high-priority items only
-        high_priority = [
-            s for s in processed_signals if s.priority_score >= 3.0
-        ]
+        high_priority = [s for s in processed_signals if s.priority_score >= 3.0]
         watchlist_signals = self._get_watchlist_signals(processed_signals)
 
         lines = []
-        lines.append(
-            f"🔔 **LobbyLens Mini Alert** — {len(signals)} new signals"
-        )
+        lines.append(f"🔔 **LobbyLens Mini Alert** — {len(signals)} new signals")
 
         if watchlist_signals:
             lines.append(f"\n🔎 **Watchlist Hits** ({len(watchlist_signals)}):")
@@ -156,9 +138,7 @@ class DigestFormatter:
             if self._matches_watchlist(signal):
                 watchlist_signals.append(signal)
 
-        return sorted(
-            watchlist_signals, key=lambda s: s.priority_score, reverse=True
-        )
+        return sorted(watchlist_signals, key=lambda s: s.priority_score, reverse=True)
 
     def _matches_watchlist(self, signal: SignalV2) -> bool:
         """Check if signal matches any watchlist entity."""
@@ -170,25 +150,18 @@ class DigestFormatter:
 
         return False
 
-    def _get_what_changed_signals(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _get_what_changed_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get signals for 'What Changed' section."""
         # Filter for significant changes
         significant_signals = [
             s
             for s in signals
-            if s.priority_score >= 2.0
-            and s.source in ["federal_register", "congress"]
+            if s.priority_score >= 2.0 and s.source in ["federal_register", "congress"]
         ]
 
-        return sorted(
-            significant_signals, key=lambda s: s.priority_score, reverse=True
-        )
+        return sorted(significant_signals, key=lambda s: s.priority_score, reverse=True)
 
-    def _get_industry_snapshots(
-        self, signals: List[SignalV2]
-    ) -> Dict[str, Dict]:
+    def _get_industry_snapshots(self, signals: List[SignalV2]) -> Dict[str, Dict]:
         """Generate industry snapshots from signals."""
         industry_mapping = {
             "TEC": "Tech",
@@ -205,18 +178,14 @@ class DigestFormatter:
         snapshots = {}
 
         for industry_code, industry_name in industry_mapping.items():
-            industry_signals = [
-                s for s in signals if industry_code in s.issue_codes
-            ]
+            industry_signals = [s for s in signals if industry_code in s.issue_codes]
 
             if industry_signals:
                 # Count by signal type
                 type_counts = {}
                 for signal in industry_signals:
                     signal_type = self._get_signal_type_name(signal)
-                    type_counts[signal_type] = (
-                        type_counts.get(signal_type, 0) + 1
-                    )
+                    type_counts[signal_type] = type_counts.get(signal_type, 0) + 1
 
                 # Get top activities
                 top_activities = sorted(
@@ -259,9 +228,9 @@ class DigestFormatter:
 
         for signal in signals:
             # Check for comment deadlines
-            comment_date = signal.metrics.get(
-                "comment_date"
-            ) or signal.metrics.get("comment_end_date")
+            comment_date = signal.metrics.get("comment_date") or signal.metrics.get(
+                "comment_end_date"
+            )
             if comment_date:
                 try:
                     deadline = datetime.fromisoformat(
@@ -280,9 +249,7 @@ class DigestFormatter:
             key=lambda s: s.metrics.get("days_until_deadline", 999),
         )
 
-    def _get_docket_surge_signals(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _get_docket_surge_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get signals representing docket activity surges."""
         surge_signals = []
 
@@ -298,17 +265,11 @@ class DigestFormatter:
             reverse=True,
         )
 
-    def _get_bill_action_signals(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _get_bill_action_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get congressional bill action signals."""
-        bill_signals = [
-            s for s in signals if s.source == "congress" and s.bill_id
-        ]
+        bill_signals = [s for s in signals if s.source == "congress" and s.bill_id]
 
-        return sorted(
-            bill_signals, key=lambda s: s.priority_score, reverse=True
-        )
+        return sorted(bill_signals, key=lambda s: s.priority_score, reverse=True)
 
     def _format_header(self, signals: List[SignalV2], hours_back: int) -> str:
         """Format digest header."""
@@ -400,9 +361,7 @@ class DigestFormatter:
         # Source breakdown
         source_counts = {}
         for signal in signals:
-            source_counts[signal.source] = (
-                source_counts.get(signal.source, 0) + 1
-            )
+            source_counts[signal.source] = source_counts.get(signal.source, 0) + 1
 
         source_summary = " | ".join(
             [
@@ -435,9 +394,7 @@ class DigestFormatter:
     # Front Page Digest Methods (Focused, High-Quality Format)
     # =============================================================================
 
-    def _apply_enhanced_scoring(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _apply_enhanced_scoring(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Apply enhanced scoring with deadline/effective date boosts."""
         from datetime import datetime
 
@@ -473,10 +430,7 @@ class DigestFormatter:
                     pass
 
             # Apply docket surge boost
-            if (
-                hasattr(signal, "comment_surge_pct")
-                and signal.comment_surge_pct
-            ):
+            if hasattr(signal, "comment_surge_pct") and signal.comment_surge_pct:
                 surge_boost = min(2.0, max(0, signal.comment_surge_pct / 100))
                 enhanced_score += surge_boost
 
@@ -514,29 +468,22 @@ class DigestFormatter:
 
         return enhanced_signals
 
-    def _get_front_page_what_changed(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _get_front_page_what_changed(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get signals for front page 'What Changed' section (max 5, priority ≥ 3.0)."""
         # Filter for high priority only (≥ 3.0) - includes proposed rules, hearings,
         # markups
         high_priority = [
             s
             for s in signals
-            if s.priority_score >= 3.0
-            and s.source in ["federal_register", "congress"]
+            if s.priority_score >= 3.0 and s.source in ["federal_register", "congress"]
         ]
 
         # Apply bundling for similar items (e.g., FAA Airworthiness Directives)
         bundled_signals = self._bundle_similar_signals(high_priority)
 
-        return sorted(
-            bundled_signals, key=lambda s: s.priority_score, reverse=True
-        )
+        return sorted(bundled_signals, key=lambda s: s.priority_score, reverse=True)
 
-    def _bundle_similar_signals(
-        self, signals: List[SignalV2]
-    ) -> List[SignalV2]:
+    def _bundle_similar_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Bundle similar signals (e.g., FAA Airworthiness Directives) into single
         entries.
         """
@@ -688,9 +635,7 @@ class DigestFormatter:
         multi_issue_candidates = [
             s
             for s in signals
-            if hasattr(s, "issue_codes")
-            and s.issue_codes
-            and len(s.issue_codes) >= 3
+            if hasattr(s, "issue_codes") and s.issue_codes and len(s.issue_codes) >= 3
         ]
         if multi_issue_candidates:
             return max(multi_issue_candidates, key=lambda s: len(s.issue_codes))
@@ -741,7 +686,8 @@ class DigestFormatter:
         )
 
     def _format_front_page_signal(self, signal: SignalV2) -> str:
-        """Format a signal for the front page with type tag and why-it-matters clause."""
+        """Format a signal for the front page with type tag and
+        why-it-matters clause."""
         # Add type tag
         type_tag = self._get_signal_type_tag(signal)
 
@@ -850,9 +796,7 @@ class DigestFormatter:
             and signal.issue_codes
             and len(signal.issue_codes) >= 3
         ):
-            outlier_type = (
-                f"Multi-Industry Impact ({len(signal.issue_codes)} codes)"
-            )
+            outlier_type = f"Multi-Industry Impact ({len(signal.issue_codes)} codes)"
         else:
             outlier_type = "High Impact"
 
@@ -884,9 +828,7 @@ class LegacyDigestFormatter:
 
     def format_daily_digest(self, signals: List[Dict]) -> str:
         """Legacy digest formatting (deprecated)."""
-        print(
-            "Legacy format_daily_digest called. Use V2 DigestFormatter instead."
-        )
+        print("Legacy format_daily_digest called. Use V2 DigestFormatter instead.")
         return "Legacy digest formatting is deprecated. Please use V2."
 
 

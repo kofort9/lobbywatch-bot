@@ -340,9 +340,7 @@ class TestWebServerV2:
         # The actual stats will depend on the database state
         assert "Total signals:" in data["text"]
 
-    def test_handle_slash_command_watchlist_add_success(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_add_success(self, client: Any) -> None:
         """Test /watchlist add command with success"""
         response = client.post(
             "/lobbylens/commands",
@@ -360,9 +358,7 @@ class TestWebServerV2:
         assert data["response_type"] in ["in_channel", "ephemeral"]
         assert "Google" in data["text"]
 
-    def test_handle_slash_command_watchlist_add_failure(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_add_failure(self, client: Any) -> None:
         """Test /watchlist add command with failure"""
         response = client.post(
             "/lobbylens/commands",
@@ -380,9 +376,7 @@ class TestWebServerV2:
         assert data["response_type"] in ["in_channel", "ephemeral"]
         assert "Google" in data["text"]
 
-    def test_handle_slash_command_watchlist_remove_success(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_remove_success(self, client: Any) -> None:
         """Test /watchlist remove command with success"""
         response = client.post(
             "/lobbylens/commands",
@@ -400,9 +394,7 @@ class TestWebServerV2:
         assert data["response_type"] in ["in_channel", "ephemeral"]
         assert "Google" in data["text"]
 
-    def test_handle_slash_command_watchlist_list_with_items(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_list_with_items(self, client: Any) -> None:
         """Test /watchlist list command with items"""
         response = client.post(
             "/lobbylens/commands",
@@ -419,9 +411,7 @@ class TestWebServerV2:
         assert data["response_type"] == "in_channel"
         assert "Watchlist for #test_channel" in data["text"]
 
-    def test_handle_slash_command_watchlist_list_empty(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_list_empty(self, client: Any) -> None:
         """Test /watchlist list command with empty watchlist"""
         response = client.post(
             "/lobbylens/commands",
@@ -438,9 +428,7 @@ class TestWebServerV2:
         assert data["response_type"] == "in_channel"
         assert "Watchlist for #test_channel" in data["text"]
 
-    def test_handle_slash_command_watchlist_invalid_usage(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_watchlist_invalid_usage(self, client: Any) -> None:
         """Test /watchlist command with invalid usage"""
         response = client.post(
             "/lobbylens/commands",
@@ -457,9 +445,7 @@ class TestWebServerV2:
         assert data["response_type"] == "ephemeral"
         assert "Usage:" in data["text"]
 
-    def test_handle_slash_command_threshold_set_success(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_threshold_set_success(self, client: Any) -> None:
         """Test /threshold set command with success"""
         response = client.post(
             "/lobbylens/commands",
@@ -477,9 +463,7 @@ class TestWebServerV2:
         assert data["response_type"] in ["in_channel", "ephemeral"]
         assert "10" in data["text"]
 
-    def test_handle_slash_command_threshold_set_failure(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_threshold_set_failure(self, client: Any) -> None:
         """Test /threshold set command with failure"""
         response = client.post(
             "/lobbylens/commands",
@@ -516,9 +500,7 @@ class TestWebServerV2:
         assert data["response_type"] == "ephemeral"
         assert "Threshold must be a number" in data["text"]
 
-    def test_handle_slash_command_threshold_show_settings(
-        self, client: Any
-    ) -> None:
+    def test_handle_slash_command_threshold_show_settings(self, client: Any) -> None:
         """Test /threshold command showing current settings"""
         response = client.post(
             "/lobbylens/commands",

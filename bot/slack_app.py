@@ -108,9 +108,7 @@ class SlackApp:
             payload["thread_ts"] = thread_ts
 
         try:
-            response = requests.post(
-                url, headers=headers, json=payload, timeout=30
-            )
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
             result = response.json()
             return (
                 result
@@ -121,9 +119,7 @@ class SlackApp:
             logger.error(f"Failed to post Slack message: {e}")
             return {"ok": False, "error": str(e)}
 
-    def handle_slash_command(
-        self, command_data: Dict[str, Any]
-    ) -> Dict[str, str]:
+    def handle_slash_command(self, command_data: Dict[str, Any]) -> Dict[str, str]:
         """Handle slash command from Slack."""
         command = command_data.get("command", "")
         text = command_data.get("text", "").strip()
@@ -220,9 +216,7 @@ class SlackApp:
         self, search_term: str, channel_id: str, user_id: str
     ) -> Dict[str, str]:
         """Handle watchlist add command."""
-        result = self.matching_service.process_watchlist_add(
-            channel_id, search_term
-        )
+        result = self.matching_service.process_watchlist_add(channel_id, search_term)
 
         if result["status"] == "success":
             return {"response_type": "in_channel", "text": result["message"]}
@@ -240,10 +234,7 @@ class SlackApp:
             }
 
             # Post message asking for confirmation
-            message = (
-                result["message"]
-                + f"\n\n_Confirmation key: {confirmation_key}_"
-            )
+            message = result["message"] + f"\n\n_Confirmation key: {confirmation_key}_"
 
             return {"response_type": "ephemeral", "text": message}
         else:
@@ -616,9 +607,7 @@ class SlackApp:
                     for filing in result["filings"][:5]:
                         amount = format_amount(filing.get("amount", 0))
                         if entity["type"] == "client":
-                            other_party = filing.get(
-                                "registrant_name", "Unknown"
-                            )
+                            other_party = filing.get("registrant_name", "Unknown")
                             lines.append(f"• → {other_party} ({amount})")
                         else:
                             other_party = filing.get("client_name", "Unknown")
@@ -638,9 +627,7 @@ class SlackApp:
                 action = args[1].lower()
 
                 if action == "list":
-                    watchlist = self.db_manager.get_channel_watchlist(
-                        channel_id
-                    )
+                    watchlist = self.db_manager.get_channel_watchlist(channel_id)
                     if not watchlist:
                         return {
                             "response_type": "ephemeral",
@@ -894,9 +881,7 @@ class SlackApp:
             result = self.post_message(channel_id, digest)
             return bool(result.get("ok", False))
         except Exception as e:
-            logger.error(
-                f"Failed to send {digest_type} digest to {channel_id}: {e}"
-            )
+            logger.error(f"Failed to send {digest_type} digest to {channel_id}: {e}")
             return False
 
     def send_alert(self, channel_id: str, message: str) -> bool:

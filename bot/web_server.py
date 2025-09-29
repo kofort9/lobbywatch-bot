@@ -110,9 +110,7 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             elif digest_type == "mini":
                 digest = run_mini_digest(hours_back, channel_id)
                 if not digest:
-                    return jsonify(
-                        {"message": "Mini-digest thresholds not met"}
-                    )
+                    return jsonify({"message": "Mini-digest thresholds not met"})
             else:
                 return jsonify({"error": "Invalid digest type"})
 

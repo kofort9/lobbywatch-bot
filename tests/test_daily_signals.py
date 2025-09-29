@@ -74,12 +74,8 @@ class TestDailySignalsCollector:
         assert collector.regulations_gov_api_key is None
 
     @patch("bot.daily_signals.DailySignalsCollector._collect_congress_signals")
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_federal_register_signals"
-    )
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals"
-    )
+    @patch("bot.daily_signals.DailySignalsCollector._collect_federal_register_signals")
+    @patch("bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals")
     @patch("bot.daily_signals.SignalsRulesEngine.process_signal")
     def test_collect_signals(
         self,
@@ -134,12 +130,8 @@ class TestDailySignalsCollector:
         assert len(signals) == 3
 
     @patch("bot.daily_signals.DailySignalsCollector._collect_congress_signals")
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_federal_register_signals"
-    )
-    @patch(
-        "bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals"
-    )
+    @patch("bot.daily_signals.DailySignalsCollector._collect_federal_register_signals")
+    @patch("bot.daily_signals.DailySignalsCollector._collect_regulations_gov_signals")
     def test_collect_signals_with_errors(
         self,
         mock_regs_signals: Mock,
@@ -166,9 +158,7 @@ class TestDailySignalsCollector:
         self, mock_get: Mock, config: Dict[str, str]
     ) -> None:
         """Test Congress signal collection without API key."""
-        config_no_key = {
-            k: v for k, v in config.items() if k != "CONGRESS_API_KEY"
-        }
+        config_no_key = {k: v for k, v in config.items() if k != "CONGRESS_API_KEY"}
         collector = DailySignalsCollector(config_no_key)
 
         signals = collector._collect_congress_signals(24)
@@ -321,9 +311,7 @@ class TestDailySignalsCollector:
 
         assert len(signals) == 0
 
-    def test_extract_issue_codes(
-        self, collector: DailySignalsCollector
-    ) -> None:
+    def test_extract_issue_codes(self, collector: DailySignalsCollector) -> None:
         """Test issue code extraction from text."""
         # Test technology keywords
         tech_text = "artificial intelligence and cybersecurity measures"
@@ -346,9 +334,7 @@ class TestDailySignalsCollector:
         empty_codes = collector._extract_issue_codes("random unrelated text")
         assert len(empty_codes) == 0
 
-    def test_calculate_priority_score(
-        self, collector: DailySignalsCollector
-    ) -> None:
+    def test_calculate_priority_score(self, collector: DailySignalsCollector) -> None:
         """Test priority score calculation."""
         # Test high priority signal
         high_priority_signal = SignalV2(

@@ -91,9 +91,7 @@ def run_scheduled_update():
     elif result["status"] == "disabled":
         print("ℹ️  LDA features are disabled (ENABLE_LDA_V1=false)")
     else:
-        print(
-            f"❌ LDA quarterly update failed: {result.get('error', 'Unknown error')}"
-        )
+        print(f"❌ LDA quarterly update failed: {result.get('error', 'Unknown error')}")
         exit(1)
 
 
@@ -103,9 +101,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "backfill":
         # Manual backfill mode
         if len(sys.argv) < 4:
-            print(
-                "Usage: python -m bot.lda_scheduler backfill <start_year> <end_year>"
-            )
+            print("Usage: python -m bot.lda_scheduler backfill <start_year> <end_year>")
             exit(1)
 
         start_year = int(sys.argv[2])
@@ -121,9 +117,7 @@ if __name__ == "__main__":
             print(f"   Updated: {result.get('updated', 0)} filings")
             print(f"   Errors: {result.get('errors', 0)}")
         else:
-            print(
-                f"❌ LDA backfill failed: {result.get('error', 'Unknown error')}"
-            )
+            print(f"❌ LDA backfill failed: {result.get('error', 'Unknown error')}")
             exit(1)
     else:
         # Regular quarterly update

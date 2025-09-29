@@ -25,9 +25,7 @@ logger = logging.getLogger(__name__)
 def main():
     """Run daily digest collection and posting."""
     print("🔄 Starting LobbyLens V2 Daily Digest...")
-    print(
-        f"📅 Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
-    )
+    print(f"📅 Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
 
     try:
         # Import V2 system components
@@ -93,7 +91,8 @@ def main():
         print(f"  - Signals collected: {len(signals)}")
         print(f"  - Digest length: {len(digest)} characters")
         print(
-            f"  - Slack delivery: {'✅ Success' if slack_webhook else '⚠️ Skipped (no webhook)'}"
+            f"  - Slack delivery: "
+            f"{'✅ Success' if slack_webhook else '⚠️ Skipped (no webhook)'}"
         )
 
         return 0

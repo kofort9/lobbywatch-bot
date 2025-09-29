@@ -57,7 +57,8 @@ def test_etl_pipeline():
             print(f"\nFilings created: {len(filings)}")
             for filing in filings:
                 print(
-                    f"  - {filing['client_name']} → {filing['registrant_name']} (${filing['amount']:,})"
+                    f"  - {filing['client_name']} → "
+                    f"{filing['registrant_name']} (${filing['amount']:,})"
                 )
 
         print("\n✅ ETL pipeline test completed successfully!")

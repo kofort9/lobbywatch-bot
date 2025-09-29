@@ -19,9 +19,7 @@ console = Console()
 
 
 # V2 System Functions
-def run_daily_digest(
-    hours_back: int = 24, channel_id: str = "test_channel"
-) -> str:
+def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> str:
     """Run daily digest collection and formatting using v2 system"""
     import logging
 
@@ -121,9 +119,7 @@ def fetch_data() -> tuple[int, int]:
     # The v2 system now uses direct government API calls instead of
     # the lobbywatch package which relied on deprecated OpenSecrets/ProPublica
     # APIs.
-    logger.info(
-        "Legacy data fetching disabled - using v2 system for fresh data"
-    )
+    logger.info("Legacy data fetching disabled - using v2 system for fresh data")
     return 0, 0
 
 
@@ -184,9 +180,7 @@ def main(dry_run: bool, skip_fetch: bool, log_level: str) -> None:
         digest_text = run_daily_digest(hours_back=24, channel_id="default")
 
         if not digest_text:
-            digest_text = (
-                "No government activity detected in the last 24 hours."
-            )
+            digest_text = "No government activity detected in the last 24 hours."
 
     except Exception as e:
         logger.error(f"Failed to generate V2 digest: {e}")

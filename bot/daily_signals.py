@@ -36,9 +36,7 @@ class DailySignalsCollector:
     - Enhanced database schema with signal events
     """
 
-    def __init__(
-        self, config: Dict[str, Any], watchlist: Optional[List[str]] = None
-    ):
+    def __init__(self, config: Dict[str, Any], watchlist: Optional[List[str]] = None):
         self.config = config
         self.watchlist = watchlist or []
         self.session = requests.Session()
@@ -161,18 +159,14 @@ class DailySignalsCollector:
         try:
             fedreg_signals = self._collect_federal_register_signals(hours_back)
             all_signals.extend(fedreg_signals)
-            logger.info(
-                f"Collected {len(fedreg_signals)} Federal Register signals"
-            )
+            logger.info(f"Collected {len(fedreg_signals)} Federal Register signals")
         except Exception as e:
             logger.error(f"Failed to collect Federal Register signals: {e}")
 
         try:
             regs_signals = self._collect_regulations_gov_signals(hours_back)
             all_signals.extend(regs_signals)
-            logger.info(
-                f"Collected {len(regs_signals)} Regulations.gov signals"
-            )
+            logger.info(f"Collected {len(regs_signals)} Regulations.gov signals")
         except Exception as e:
             logger.error(f"Failed to collect Regulations.gov signals: {e}")
 
@@ -182,9 +176,7 @@ class DailySignalsCollector:
             processed_signal = self.rules_engine.process_signal(signal)
             processed_signals.append(processed_signal)
 
-        logger.info(
-            f"Total signals collected and processed: {len(processed_signals)}"
-        )
+        logger.info(f"Total signals collected and processed: {len(processed_signals)}")
         return processed_signals
 
     def _collect_congress_signals(self, hours_back: int) -> List[SignalV2]:
@@ -246,9 +238,7 @@ class DailySignalsCollector:
 
         return signals
 
-    def _collect_federal_register_signals(
-        self, hours_back: int
-    ) -> List[SignalV2]:
+    def _collect_federal_register_signals(self, hours_back: int) -> List[SignalV2]:
         """Collect signals from Federal Register API."""
         signals = []
         cutoff_date = (
@@ -277,9 +267,7 @@ class DailySignalsCollector:
 
         return signals
 
-    def _collect_regulations_gov_signals(
-        self, hours_back: int
-    ) -> List[SignalV2]:
+    def _collect_regulations_gov_signals(self, hours_back: int) -> List[SignalV2]:
         """Collect signals from Regulations.gov API."""
         if not self.regulations_gov_api_key:
             logger.warning("No Regulations.gov API key configured")
@@ -413,9 +401,7 @@ class DailySignalsCollector:
             logger.error(f"Error creating Federal Register signal: {e}")
             return None
 
-    def _create_regulations_gov_signal(
-        self, doc: Dict[str, Any]
-    ) -> Optional[SignalV2]:
+    def _create_regulations_gov_signal(self, doc: Dict[str, Any]) -> Optional[SignalV2]:
         """Create a signal from a Regulations.gov document."""
         try:
             attributes = doc.get("attributes", {})
@@ -443,9 +429,7 @@ class DailySignalsCollector:
                 source="regulations_gov",
                 source_id=doc.get("id", ""),
                 timestamp=datetime.fromisoformat(
-                    attributes.get("lastModifiedDate", "").replace(
-                        "Z", "+00:00"
-                    )
+                    attributes.get("lastModifiedDate", "").replace("Z", "+00:00")
                 ),
                 title=title,
                 link=f"https://www.regulations.gov/document/{doc.get('id', '')}",
@@ -487,9 +471,7 @@ class DailySignalsCollector:
             response.raise_for_status()
             data = response.json()
 
-            cutoff_time = datetime.now(timezone.utc) - timedelta(
-                hours=hours_back
-            )
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
 
             for hearing in data.get("hearings", []):
                 # Check if hearing is recent enough
@@ -517,9 +499,7 @@ class DailySignalsCollector:
             committee_name = committee.get("name", "")
 
             # Determine issue codes
-            issue_codes = self._extract_issue_codes(
-                title + " " + committee_name
-            )
+            issue_codes = self._extract_issue_codes(title + " " + committee_name)
 
             # Create metrics
             metrics = {

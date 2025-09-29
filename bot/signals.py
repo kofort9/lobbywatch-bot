@@ -384,9 +384,7 @@ class SignalsRulesEngine:
                     return urgency
 
         # Check for time-sensitive indicators
-        if any(
-            word in text for word in ["deadline", "due", "expires", "closing"]
-        ):
+        if any(word in text for word in ["deadline", "due", "expires", "closing"]):
             return Urgency.HIGH
 
         # Default based on signal type
@@ -512,9 +510,7 @@ class SignalDeduplicator:
 
         return unique_signals
 
-    def _calculate_similarity(
-        self, signal1: SignalV2, signal2: SignalV2
-    ) -> float:
+    def _calculate_similarity(self, signal1: SignalV2, signal2: SignalV2) -> float:
         """Calculate content similarity between two signals."""
         # Simple implementation - could be enhanced with more sophisticated NLP
         title1_words = set(signal1.title.lower().split())
@@ -550,9 +546,7 @@ class LegacySignal:
     def __post_init__(self):
         import logging
 
-        logging.warning(
-            "Using legacy V1 Signal. Consider upgrading to SignalV2."
-        )
+        logging.warning("Using legacy V1 Signal. Consider upgrading to SignalV2.")
 
 
 class LegacySignalsProcessor:

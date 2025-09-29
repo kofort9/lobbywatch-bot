@@ -13,14 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class LDAFrontPageDigest:
-    """Computes LDA front page digest focusing on biggest hitters and interesting changes."""
+    """Computes LDA front page digest focusing on biggest hitters and
+    interesting changes."""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
 
-    def generate_digest(
-        self, channel_id: str, quarter: Optional[str] = None
-    ) -> str:
+    def generate_digest(self, channel_id: str, quarter: Optional[str] = None) -> str:
         """Generate the front page digest for a channel.
 
         Args:
@@ -78,7 +77,10 @@ class LDAFrontPageDigest:
                     for reg in top_registrants[:5]:  # Cap at 5
                         if total_lines >= max_lines_main:
                             break
-                        line = f"• {reg['name']} — {format_amount(reg['total'])} ({reg['count']})"
+                        line = (
+                            f"• {reg['name']} — {format_amount(reg['total'])} "
+                            f"({reg['count']})"
+                        )
                         section_lines.append(line)
                         total_lines += 1
 
@@ -99,7 +101,10 @@ class LDAFrontPageDigest:
                     for issue in top_issues[:6]:  # Cap at 6
                         if total_lines >= max_lines_main:
                             break
-                        line = f"• {issue['code']} {format_amount(issue['total'])} ({issue['count']})"
+                        line = (
+                            f"• {issue['code']} {format_amount(issue['total'])} "
+                            f"({issue['count']})"
+                        )
                         section_lines.append(line)
                         total_lines += 1
 
@@ -200,12 +205,11 @@ class LDAFrontPageDigest:
 
             if overflow_count > 0:
                 digest_lines.append(
-                    f"+{overflow_count} more in thread · /lobbylens lda help · Updated {current_time}"
+                    f"+{overflow_count} more in thread · /lobbylens lda help · "
+                    f"Updated {current_time}"
                 )
             else:
-                digest_lines.append(
-                    f"/lobbylens lda help · Updated {current_time}"
-                )
+                digest_lines.append(f"/lobbylens lda help · Updated {current_time}")
 
             # Update last digest timestamp
             self._update_last_digest_at(channel_id)
@@ -258,7 +262,8 @@ class LDAFrontPageDigest:
                 # Create default settings
                 conn.execute(
                     """
-                    INSERT INTO channel_digest_settings (channel_id, min_amount, max_lines_main)
+                    INSERT INTO channel_digest_settings
+                    (channel_id, min_amount, max_lines_main)
                     VALUES (?, 10000, 15)
                 """,
                     (channel_id,),
@@ -305,8 +310,10 @@ class LDAFrontPageDigest:
                        e2.name as registrant_name,
                        GROUP_CONCAT(i.code) as issue_codes
                 FROM filing f
-                LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
-                LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
+                LEFT JOIN entity e1 ON f.client_id = e1.id
+                    AND e1.type = 'client'
+                LEFT JOIN entity e2 ON f.registrant_id = e2.id
+                    AND e2.type = 'registrant'
                 LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                 LEFT JOIN issue i ON fi.issue_id = i.id
                 WHERE {where_clause}
@@ -318,22 +325,23 @@ class LDAFrontPageDigest:
 
             return [dict(row) for row in cursor.fetchall()]
 
-    def _get_top_registrants(
-        self, year: int, quarter: int
-    ) -> List[Dict[str, Any]]:
+    def _get_top_registrants(self, year: int, quarter: int) -> List[Dict[str, Any]]:
         """Get top registrants by total amount in quarter."""
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute(
                 """
                 SELECT e.name,
-                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total,
+                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                       as total,
                        COUNT(f.id) as count
                 FROM filing f
-                JOIN entity e ON f.registrant_id = e.id AND e.type = 'registrant'
+                JOIN entity e ON f.registrant_id = e.id
+                    AND e.type = 'registrant'
                 WHERE f.year = ? AND f.quarter = ?
                 GROUP BY e.id, e.name
                 HAVING total > 0
-                   AND SUM(CASE WHEN f.amount IS NOT NULL AND f.amount > 0 THEN 1 ELSE 0 END) > 0
+                   AND SUM(CASE WHEN f.amount IS NOT NULL AND f.amount > 0
+                           THEN 1 ELSE 0 END) > 0
                 ORDER BY total DESC
             """,
                 (year, f"{year}Q{quarter}"),
@@ -347,7 +355,8 @@ class LDAFrontPageDigest:
             cursor = conn.execute(
                 """
                 SELECT i.code,
-                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total,
+                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                       as total,
                        COUNT(f.id) as count
                 FROM filing f
                 JOIN filing_issue fi ON f.id = fi.filing_id
@@ -382,16 +391,21 @@ class LDAFrontPageDigest:
                 SELECT e.name,
                        COALESCE(cur.total, 0) as cur_total,
                        COALESCE(prev.total, 0) as prev_total,
-                       (COALESCE(cur.total, 0) - COALESCE(prev.total, 0)) as delta
+                       (COALESCE(cur.total, 0) - COALESCE(prev.total, 0))
+                       as delta
                 FROM entity e
                 LEFT JOIN (
-                    SELECT f.registrant_id, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
+                    SELECT f.registrant_id,
+                           SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                           as total
                     FROM filing f
                     WHERE f.year = ? AND f.quarter = ?
                     GROUP BY f.registrant_id
                 ) cur ON e.id = cur.registrant_id
                 LEFT JOIN (
-                    SELECT f.registrant_id, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
+                    SELECT f.registrant_id,
+                           SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                           as total
                     FROM filing f
                     WHERE f.year = ? AND f.quarter = ?
                     GROUP BY f.registrant_id
@@ -425,7 +439,9 @@ class LDAFrontPageDigest:
             with self.db_manager.get_connection() as conn:
                 cursor = conn.execute(
                     """
-                    SELECT e.name, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
+                    SELECT e.name,
+                           SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                           as total
                     FROM filing f
                     JOIN entity e ON f.client_id = e.id AND e.type = 'client'
                     WHERE f.year = ? AND f.quarter = ?
@@ -487,9 +503,7 @@ class LDAFrontPageDigest:
                 ",".join(["?" for _ in exclude_uids]) if exclude_uids else "''"
             )
             exclude_clause = (
-                f"AND f.filing_uid NOT IN ({placeholders})"
-                if exclude_uids
-                else ""
+                f"AND f.filing_uid NOT IN ({placeholders})" if exclude_uids else ""
             )
 
             cursor = conn.execute(
@@ -499,8 +513,10 @@ class LDAFrontPageDigest:
                        e2.name as registrant_name,
                        GROUP_CONCAT(i.code) as issue_codes
                 FROM filing f
-                LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
-                LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
+                LEFT JOIN entity e1 ON f.client_id = e1.id
+                    AND e1.type = 'client'
+                LEFT JOIN entity e2 ON f.registrant_id = e2.id
+                    AND e2.type = 'registrant'
                 LEFT JOIN filing_issue fi ON f.id = fi.filing_id
                 LEFT JOIN issue i ON fi.issue_id = i.id
                 WHERE f.year = ? AND f.quarter = ?
@@ -560,9 +576,12 @@ class LDAFrontPageDigest:
             # Top registrant
             cursor = conn.execute(
                 """
-                SELECT e.name, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
+                SELECT e.name,
+                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                       as total
                 FROM filing f
-                JOIN entity e ON f.registrant_id = e.id AND e.type = 'registrant'
+                JOIN entity e ON f.registrant_id = e.id
+                    AND e.type = 'registrant'
                 WHERE f.year = ? AND f.quarter = ?
                 GROUP BY e.id, e.name
                 ORDER BY total DESC
@@ -581,7 +600,9 @@ class LDAFrontPageDigest:
             # Top issue
             cursor = conn.execute(
                 """
-                SELECT i.code, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total,
+                SELECT i.code,
+                       SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                       as total,
                        COUNT(f.id) as count
                 FROM filing f
                 JOIN filing_issue fi ON f.id = fi.filing_id
@@ -596,7 +617,8 @@ class LDAFrontPageDigest:
 
             top_issue = cursor.fetchone()
             top_issue_str = (
-                f"{top_issue['code']} ({format_amount(top_issue['total'])}, {top_issue['count']})"
+                f"{top_issue['code']} ({format_amount(top_issue['total'])}, "
+                f"{top_issue['count']})"
                 if top_issue
                 else "—"
             )
@@ -605,15 +627,24 @@ class LDAFrontPageDigest:
             cursor = conn.execute(
                 """
                 SELECT e.name,
-                       (COALESCE(cur.total, 0) - COALESCE(prev.total, 0)) as delta
+                       (COALESCE(cur.total, 0) - COALESCE(prev.total, 0))
+                       as delta
                 FROM entity e
                 LEFT JOIN (
-                    SELECT f.registrant_id, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
-                    FROM filing f WHERE f.year = ? AND f.quarter = ? GROUP BY f.registrant_id
+                    SELECT f.registrant_id,
+                           SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                           as total
+                    FROM filing f
+                    WHERE f.year = ? AND f.quarter = ?
+                    GROUP BY f.registrant_id
                 ) cur ON e.id = cur.registrant_id
                 LEFT JOIN (
-                    SELECT f.registrant_id, SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END) as total
-                    FROM filing f WHERE f.year = ? AND f.quarter = ? GROUP BY f.registrant_id
+                    SELECT f.registrant_id,
+                           SUM(CASE WHEN f.amount IS NULL THEN 0 ELSE f.amount END)
+                           as total
+                    FROM filing f
+                    WHERE f.year = ? AND f.quarter = ?
+                    GROUP BY f.registrant_id
                 ) prev ON e.id = prev.registrant_id
                 WHERE e.type = 'registrant' AND COALESCE(cur.total, 0) >= 50000
                 ORDER BY delta DESC
@@ -629,7 +660,8 @@ class LDAFrontPageDigest:
 
             biggest_riser = cursor.fetchone()
             riser_str = (
-                f"{biggest_riser['name']} (+{format_amount(biggest_riser['delta'])})"
+                f"{biggest_riser['name']} "
+                f"(+{format_amount(biggest_riser['delta'])})"
                 if biggest_riser and biggest_riser["delta"] > 0
                 else "—"
             )
@@ -639,9 +671,12 @@ class LDAFrontPageDigest:
                 """
                 SELECT f.amount, e1.name as client_name, e2.name as registrant_name
                 FROM filing f
-                LEFT JOIN entity e1 ON f.client_id = e1.id AND e1.type = 'client'
-                LEFT JOIN entity e2 ON f.registrant_id = e2.id AND e2.type = 'registrant'
-                WHERE f.year = ? AND f.quarter = ? AND f.amount IS NOT NULL AND f.amount > 0
+                LEFT JOIN entity e1 ON f.client_id = e1.id
+                    AND e1.type = 'client'
+                LEFT JOIN entity e2 ON f.registrant_id = e2.id
+                    AND e2.type = 'registrant'
+                WHERE f.year = ? AND f.quarter = ?
+                    AND f.amount IS NOT NULL AND f.amount > 0
                 ORDER BY f.amount DESC
                 LIMIT 1
             """,
@@ -650,15 +685,18 @@ class LDAFrontPageDigest:
 
             largest = cursor.fetchone()
             largest_str = (
-                f"{largest['client_name']} → {largest['registrant_name']} ({format_amount(largest['amount'])})"
+                f"{largest['client_name']} → {largest['registrant_name']} "
+                f"({format_amount(largest['amount'])})"
                 if largest
                 else "—"
             )
 
             return (
-                f"💵 **LDA {year}Q{quarter}** disclosed {format_amount(current_total)} ({qoq_str} QoQ). "
+                f"💵 **LDA {year}Q{quarter}** disclosed "
+                f"{format_amount(current_total)} ({qoq_str} QoQ). "
                 f"Top registrant: {top_reg_str}. Top issue: {top_issue_str}. "
-                f"Biggest riser: {riser_str}. Largest filing: {largest_str}.")
+                f"Biggest riser: {riser_str}. Largest filing: {largest_str}."
+            )
 
     def _format_new_item(self, item: Dict[str, Any]) -> str:
         """Format a new/amended item line."""
@@ -677,9 +715,7 @@ class LDAFrontPageDigest:
             issue_str = "—"
 
         # Amendment tag
-        amended_tag = (
-            " (amended)" if item.get("filing_status") == "amended" else ""
-        )
+        amended_tag = " (amended)" if item.get("filing_status") == "amended" else ""
 
         # URL
         url = item.get("url", "")
@@ -688,7 +724,10 @@ class LDAFrontPageDigest:
         else:
             url_part = ""
 
-        return f"• {client} → {registrant} ({amount}) • Issues: {issue_str}{url_part}{amended_tag}"
+        return (
+            f"• {client} → {registrant} ({amount}) • "
+            f"Issues: {issue_str}{url_part}{amended_tag}"
+        )
 
     def _format_filing_item(self, item: Dict[str, Any]) -> str:
         """Format a filing item line."""

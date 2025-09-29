@@ -4,11 +4,7 @@
 import os
 import sys
 
-from bot.utils import (
-    derive_quarter_from_date,
-    format_amount,
-    normalize_entity_name,
-)
+from bot.utils import derive_quarter_from_date, format_amount, normalize_entity_name
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 
@@ -52,7 +48,8 @@ def test_normalize_entity_name():
         result = normalize_entity_name(name)
         status = "✅" if result == expected else "❌"
         print(
-            f"  {status} normalize_entity_name('{name}') = '{result}' (expected '{expected}')"
+            f"  {status} normalize_entity_name('{name}') = '{result}' "
+            f"(expected '{expected}')"
         )
 
 
@@ -71,7 +68,8 @@ def test_derive_quarter_from_date():
         result = derive_quarter_from_date(date_str)
         status = "✅" if result == expected else "❌"
         print(
-            f"  {status} derive_quarter_from_date('{date_str}') = {result} (expected {expected})"
+            f"  {status} derive_quarter_from_date('{date_str}') = {result} "
+            f"(expected {expected})"
         )
 
 

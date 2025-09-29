@@ -138,9 +138,7 @@ def derive_quarter_from_date(filing_date: str) -> Tuple[str, int]:
     try:
         # Handle various date formats
         if "T" in filing_date:
-            date_obj = datetime.fromisoformat(
-                filing_date.replace("Z", "+00:00")
-            )
+            date_obj = datetime.fromisoformat(filing_date.replace("Z", "+00:00"))
         else:
             # Try parsing as date only
             date_obj = datetime.strptime(filing_date, "%Y-%m-%d")

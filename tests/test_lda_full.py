@@ -53,7 +53,8 @@ def test_lda_full_pipeline():
         print(f"   ✅ Found {len(top_registrants)} registrants:")
         for i, reg in enumerate(top_registrants, 1):
             print(
-                f"      {i}. {reg['name']} - ${reg['total_amount']:,} ({reg['filing_count']} filings)"
+                f"      {i}. {reg['name']} - ${reg['total_amount']:,} "
+                f"({reg['filing_count']} filings)"
             )
 
         # Step 5: Test top clients
@@ -62,7 +63,8 @@ def test_lda_full_pipeline():
         print(f"   ✅ Found {len(top_clients)} clients:")
         for i, client in enumerate(top_clients, 1):
             print(
-                f"      {i}. {client['name']} - ${client['total_amount']:,} ({client['filing_count']} filings)"
+                f"      {i}. {client['name']} - ${client['total_amount']:,} "
+                f"({client['filing_count']} filings)"
             )
 
         # Step 6: Test issues summary
@@ -71,7 +73,8 @@ def test_lda_full_pipeline():
         print(f"   ✅ Found {len(issues)} issues:")
         for issue in issues:
             print(
-                f"      • {issue['code']}: {issue['filing_count']} filings (${issue['total_amount']:,})"
+                f"      • {issue['code']}: {issue['filing_count']} filings "
+                f"(${issue['total_amount']:,})"
             )
 
         # Step 7: Test entity search
@@ -81,7 +84,8 @@ def test_lda_full_pipeline():
             entity = entity_result["entity"]
             print(f"   ✅ Found entity: {entity['name']} ({entity['type']})")
             print(
-                f"      Total: ${entity_result['total_amount']:,} ({entity_result['filing_count']} filings)"
+                f"      Total: ${entity_result['total_amount']:,} "
+                f"({entity_result['filing_count']} filings)"
             )
         else:
             print(f"   ⚠️  Entity search: {entity_result['error']}")
@@ -103,9 +107,7 @@ def test_lda_full_pipeline():
         real_slack_app = SlackApp("mock_token", "mock_secret", db_manager, None)
 
         # Test LDA help command
-        real_slack_app._handle_lda_subcommands(
-            ["help"], "test_channel", "test_user"
-        )
+        real_slack_app._handle_lda_subcommands(["help"], "test_channel", "test_user")
         print("   ✅ LDA help command works")
 
         # Test top registrants command
@@ -127,9 +129,7 @@ def test_lda_full_pipeline():
                 "ingest_log",
             ]
             for table in tables:
-                count = conn.execute(
-                    f"SELECT COUNT(*) FROM {table}"
-                ).fetchone()[0]
+                count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
                 print(f"   • {table}: {count} records")
 
         print("\n🎉 LDA V1 MVP Full Pipeline Test PASSED!")
@@ -168,18 +168,15 @@ def test_smoke_tests():
         etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
-            filing_count = conn.execute(
-                "SELECT COUNT(*) FROM filing"
-            ).fetchone()[0]
-            entity_count = conn.execute(
-                "SELECT COUNT(*) FROM entity"
-            ).fetchone()[0]
-            issue_count = conn.execute(
-                "SELECT COUNT(*) FROM filing_issue"
-            ).fetchone()[0]
+            filing_count = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
+            entity_count = conn.execute("SELECT COUNT(*) FROM entity").fetchone()[0]
+            issue_count = conn.execute("SELECT COUNT(*) FROM filing_issue").fetchone()[
+                0
+            ]
 
         print(
-            f"   ✅ Row counts: {filing_count} filings, {entity_count} entities, {issue_count} filing-issues"
+            f"   ✅ Row counts: {filing_count} filings, {entity_count} entities, "
+            f"{issue_count} filing-issues"
         )
 
         # Smoke Test 2: Idempotency
@@ -187,12 +184,8 @@ def test_smoke_tests():
         etl.run_etl(mode="update")
 
         with db_manager.get_connection() as conn:
-            filing_count2 = conn.execute(
-                "SELECT COUNT(*) FROM filing"
-            ).fetchone()[0]
-            entity_count2 = conn.execute(
-                "SELECT COUNT(*) FROM entity"
-            ).fetchone()[0]
+            filing_count2 = conn.execute("SELECT COUNT(*) FROM filing").fetchone()[0]
+            entity_count2 = conn.execute("SELECT COUNT(*) FROM entity").fetchone()[0]
 
             # Check for duplicate filing_uids
             duplicate_count = conn.execute(
@@ -206,9 +199,7 @@ def test_smoke_tests():
             """
             ).fetchone()[0]
 
-        print(
-            f"   ✅ Counts stable: {filing_count2} filings, {entity_count2} entities"
-        )
+        print(f"   ✅ Counts stable: {filing_count2} filings, {entity_count2} entities")
         print(f"   ✅ No duplicate filing_uids: {duplicate_count} duplicates")
 
         # Smoke Test 3: Slack digest
@@ -222,9 +213,7 @@ def test_smoke_tests():
             "Top registrants",
             "Top issues",
         ]
-        sections_found = sum(
-            1 for section in required_sections if section in digest
-        )
+        sections_found = sum(1 for section in required_sections if section in digest)
 
         print(f"   ✅ Digest generated ({len(digest)} chars)")
         print(
@@ -235,18 +224,14 @@ def test_smoke_tests():
         print("\n4. Entity lookup test...")
         entity_result = lda_digest.search_entity("Google")
         if "error" not in entity_result:
-            print(
-                f"   ✅ Entity lookup works: {entity_result['entity']['name']}"
-            )
+            print(f"   ✅ Entity lookup works: {entity_result['entity']['name']}")
         else:
             print(f"   ⚠️  Entity lookup: {entity_result['error']}")
 
         # Smoke Test 5: Watchlist
         print("\n5. Watchlist test...")
         # Add to watchlist
-        success = db_manager.add_to_watchlist(
-            "test_channel", "client", "Google"
-        )
+        success = db_manager.add_to_watchlist("test_channel", "client", "Google")
         print(f"   ✅ Watchlist add: {success}")
 
         # Re-run digest to check for watchlist hits

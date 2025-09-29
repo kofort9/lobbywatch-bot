@@ -229,8 +229,11 @@ class FuzzyMatcher:
                 message = f"Multiple exact matches for '{search_term}':\n"
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
-                message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                    len(candidates))
+                message += (
+                    "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                        len(candidates)
+                    )
+                )
                 return message, candidates
 
         # High confidence - auto-accept single, prompt for multiple
@@ -242,8 +245,11 @@ class FuzzyMatcher:
                 message = f"High confidence matches for '{search_term}':\n"
                 for i, match in enumerate(candidates, 1):
                     message += f"{i}) {match['name']}\n"
-                message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                    len(candidates))
+                message += (
+                    "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                        len(candidates)
+                    )
+                )
                 return message, candidates
 
         # Medium confidence - always prompt
@@ -251,13 +257,9 @@ class FuzzyMatcher:
             candidates = medium_confidence[:3]  # Limit to top 3
             message = f"Possible matches for '{search_term}':\n"
             for i, match in enumerate(candidates, 1):
-                message += (
-                    f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
-                )
-            message += (
-                "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
-                    len(candidates)
-                )
+                message += f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
+            message += "\nReply with number (1-{}), 'all', or 'q' to cancel.".format(
+                len(candidates)
             )
             return message, candidates
 
@@ -266,9 +268,7 @@ class FuzzyMatcher:
             candidates = low_confidence[:3]
             message = f"Weak matches for '{search_term}' (try a more complete name):\n"
             for i, match in enumerate(candidates, 1):
-                message += (
-                    f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
-                )
+                message += f"{i}) {match['name']} ({match['score']:.0f}% match)\n"
             message += "\nReply with number (1-{}) or 'q' to cancel.".format(
                 len(candidates)
             )

@@ -120,10 +120,12 @@ class TestLDAFrontPageDigest(unittest.TestCase):
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO filing
-                    (id, filing_uid, client_id, registrant_id, filing_date, quarter, year, amount,
-                     filing_type, filing_status, is_amendment, source_system, ingested_at, url)
+                    (id, filing_uid, client_id, registrant_id, filing_date,
+                     quarter, year, amount, filing_type, filing_status,
+                     is_amendment, source_system, ingested_at, url)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Q3', ?, ?, 'senate', ?,
-                            'https://lda.senate.gov/filings/public/filing/' || ? || '/print/')
+                            'https://lda.senate.gov/filings/public/filing/' ||
+                            ? || '/print/')
                 """,
                     (
                         filing_id,

@@ -88,9 +88,7 @@ def populated_db(temp_db: Path) -> Path:
         (5, "Capitol Consulting", "registrant"),
         (6, "Influence Partners", "registrant"),
     ]
-    conn.executemany(
-        "INSERT INTO entity (id, name, type) VALUES (?, ?, ?)", entities
-    )
+    conn.executemany("INSERT INTO entity (id, name, type) VALUES (?, ?, ?)", entities)
 
     # Insert test issues
     issues = [

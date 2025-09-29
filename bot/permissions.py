@@ -78,9 +78,7 @@ class PermissionManager:
             )
 
             if not info_response.ok:
-                logger.error(
-                    f"Failed to get channel info: {info_response.status_code}"
-                )
+                logger.error(f"Failed to get channel info: {info_response.status_code}")
                 return set()
 
             info_data = info_response.json()
