@@ -449,13 +449,13 @@ class FRDigestFormatter:
         date_str = datetime.now().strftime("%Y-%m-%d")
 
         stats_str = (
-            f"Final {mini_stats['final']} · Proposed {mini_stats['proposed']} · "
-            f"Notices {mini_stats['notices']} · "
+            f"Final {mini_stats['final']} | Proposed {mini_stats['proposed']} | "
+            f"Notices {mini_stats['notices']} | "
             f"High-priority {mini_stats['high_priority']}"
         )
 
         return (
-            f"📋 **Federal Register Daily Digest** — {date_str}\n"
+            f"📋 *Federal Register Daily Digest* — {date_str}\n"
             f"Mini-stats: {stats_str} · Updated {current_time}"
         )
 
@@ -613,7 +613,7 @@ class FRDigestFormatter:
         date_str = datetime.now().strftime("%Y-%m-%d")
 
         return (
-            f"📋 **Federal Register Daily Digest** — {date_str}\n\n"
+            f"📋 *Federal Register Daily Digest* — {date_str}\n\n"
             f"📭 No significant FR activity detected today.\n\n"
             f"_Updated {current_time}_"
         )

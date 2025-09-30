@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from bot.config import Settings
-from bot.run import fetch_data, run_daily_digest, setup_logging
+from bot.run import create_notifier, fetch_data, run_daily_digest, setup_logging
 
 
 class TestFetchData:
@@ -67,11 +67,22 @@ class TestCreateNotifier:
         # assert hasattr(notifier, "send")
         # assert hasattr(notifier, "webhook_url")
 
-    def test_create_notifier_no_config(self) -> None:
+    @patch("bot.run.settings")
+    def test_create_notifier_no_config(self, mock_settings: Any) -> None:
         """Test error when no notifier is configured."""
-        # Skip this test since Settings loads from .env file
-        # The actual error handling is tested in integration tests
-        pytest.skip("Settings class loads from .env file - tested in integration")
+        # Mock settings to have no configuration
+        mock_settings.notifier_type = None
+        mock_settings.slack_webhook_url = None
+        mock_settings.slack_bot_token = None
+        mock_settings.slack_signing_secret = None
+
+        # Mock validate_notifier_config to raise ValueError
+        mock_settings.validate_notifier_config.side_effect = ValueError(
+            "No Slack configuration found"
+        )
+
+        with pytest.raises(ValueError, match="No Slack configuration found"):
+            create_notifier()
 
 
 class TestSetupLogging:
@@ -107,161 +118,6 @@ class TestMainCommand:
         # assert "Run LobbyLens daily digest bot" in result.output
         # assert "--dry-run" in result.output
         # assert "--skip-fetch" in result.output
-
-    # COMMENTED OUT: V1 legacy test - compute_digest function doesn't exist in V2
-    # @patch("bot.run.compute_digest")
-    # @patch("bot.run.fetch_data")
-    # @patch("bot.run.create_notifier")
-    # @patch("bot.run.settings")
-    def test_main_dry_run(
-        self,
-        # mock_settings: Any,
-        # mock_create_notifier: Any,
-        # mock_fetch_data: Any,
-        # mock_compute_digest: Any,
-    ) -> None:
-        """Test main command in dry-run mode."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
-        # mock_settings.database_file = "test.db"
-        # mock_settings.log_level = "INFO"
-        # mock_settings.dry_run = False  # Will be overridden by CLI flag
-
-        # mock_fetch_data.return_value = (1, 0)
-        # mock_compute_digest.return_value = "Test digest message"
-
-        # runner = CliRunner()
-        # result = runner.invoke(main, ["--dry-run"])
-
-        # assert result.exit_code == 0
-        # assert "DRY RUN" in result.output
-        # assert "Test digest message" in result.output
-
-        # # Should not create notifier in dry run
-        # mock_create_notifier.assert_not_called()
-
-    # @patch("bot.run.compute_digest")
-    # @patch("bot.run.fetch_data")
-    # @patch("bot.run.create_notifier")
-    # @patch("bot.run.settings")
-    def test_main_skip_fetch(
-        self,
-        # mock_settings: Any,
-        # mock_create_notifier: Any,
-        # mock_fetch_data: Any,
-        # mock_compute_digest: Any,
-    ) -> None:
-        """Test main command with skip-fetch option."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
-        # mock_settings.database_file = "test.db"
-        # mock_settings.log_level = "INFO"
-        # mock_settings.dry_run = False
-        # mock_settings.slack_webhook_url = "https://hooks.slack.com/test"
-
-        # mock_compute_digest.return_value = "Test digest"
-        # mock_notifier = Mock()
-        # mock_create_notifier.return_value = mock_notifier
-
-        # runner = CliRunner()
-        # result = runner.invoke(main, ["--skip-fetch", "--dry-run"])
-
-        # assert result.exit_code == 0
-
-        # Should not call fetch_data
-        # mock_fetch_data.assert_not_called()
-
-    # @patch("bot.run.compute_digest")
-    # @patch("bot.run.fetch_data")
-    # @patch("bot.run.create_notifier")
-    # @patch("bot.run.settings")
-    def test_main_send_notification(
-        self,
-        # mock_settings: Any,
-        # mock_create_notifier: Any,
-        # mock_fetch_data: Any,
-        # mock_compute_digest: Any,
-    ) -> None:
-        """Test main command sending notification."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
-        # mock_settings.database_file = "test.db"
-        # mock_settings.log_level = "INFO"
-        # mock_settings.dry_run = False
-        # mock_settings.slack_webhook_url = "https://hooks.slack.com/test"
-
-        # mock_fetch_data.return_value = (1, 0)
-        # mock_compute_digest.return_value = "Test digest message"
-        # mock_notifier = Mock()
-        # mock_create_notifier.return_value = mock_notifier
-
-        # runner = CliRunner()
-        # result = runner.invoke(main, [])
-
-        # assert result.exit_code == 0
-        # mock_notifier.send.assert_called_once_with("Test digest message")
-
-    # @patch("bot.run.compute_digest")
-    # @patch("bot.run.fetch_data")
-    # @patch("bot.run.create_notifier")
-    # @patch("bot.run.settings")
-    def test_main_notification_error(
-        self,
-        # mock_settings: Any,
-        # mock_create_notifier: Any,
-        # mock_fetch_data: Any,
-        # mock_compute_digest: Any,
-    ) -> None:
-        """Test main command handling notification errors."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
-        # mock_settings.database_file = "test.db"
-        # mock_settings.log_level = "INFO"
-        # mock_settings.dry_run = False
-
-        # mock_fetch_data.return_value = (1, 0)
-        # mock_compute_digest.return_value = "Test digest"
-        # mock_notifier = Mock()
-        # mock_notifier.send.side_effect = NotificationError("Send failed")
-        # mock_create_notifier.return_value = mock_notifier
-
-        # runner = CliRunner()
-        # result = runner.invoke(main, [])
-
-        # assert result.exit_code == 1
-        # assert "Send failed" in result.output
-
-    # @patch("bot.run.compute_digest")
-    # @patch("bot.run.fetch_data")
-    # @patch("bot.run.create_notifier")
-    # @patch("bot.run.settings")
-    def test_main_with_fetch_errors(
-        self,
-        # mock_settings: Any,
-        # mock_create_notifier: Any,
-        # mock_fetch_data: Any,
-        # mock_compute_digest: Any,
-    ) -> None:
-        """Test main command with fetch errors."""
-        pytest.skip("V1 legacy test - compute_digest function doesn't exist in V2")
-        # mock_settings.database_file = "test.db"
-        # mock_settings.log_level = "INFO"
-        # mock_settings.dry_run = False
-        # mock_settings.slack_webhook_url = "https://hooks.slack.com/test"
-
-        # Simulate some fetch failures
-        # mock_fetch_data.return_value = (1, 2)  # 1 success, 2 failures
-        # mock_compute_digest.return_value = "Test digest"
-        # mock_notifier = Mock()
-        # mock_create_notifier.return_value = mock_notifier
-
-        # runner = CliRunner()
-        # result = runner.invoke(main, [])
-
-        # assert result.exit_code == 0
-
-        # Digest should include error information
-        # sent_message = mock_notifier.send.call_args[0][0]
-        # assert (
-        #     "Errors during processing" in sent_message or
-        #     "Test digest" in sent_message
-        # )
 
 
 class TestRunV2Functions:

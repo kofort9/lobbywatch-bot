@@ -52,7 +52,7 @@ class DigestFormatter:
         # Get front page sections
         what_changed = self._get_front_page_what_changed(enhanced_signals)
         industry_snapshots = self._get_front_page_industry_snapshots(enhanced_signals)
-        outlier = self._get_outlier(enhanced_signals)
+        high_priority_signals = self._get_high_priority_signals(enhanced_signals)
 
         # Get mini-stats
         mini_stats = self._get_mini_stats(enhanced_signals)
@@ -65,24 +65,42 @@ class DigestFormatter:
             self._format_front_page_header(enhanced_signals, hours_back, mini_stats)
         )
 
-        # What Changed (max 5 items, high priority only)
+        # What Changed (max 5 items, high priority only, grouped by type)
         if what_changed:
-            lines.append(f"\n📈 **What Changed** ({min(len(what_changed), 5)}):")
-            for signal in what_changed[:5]:  # Max 5
-                lines.append(self._format_front_page_signal(signal))
+            lines.append(f"\n📈 *What Changed* ({min(len(what_changed), 5)}):")
+            grouped_signals = self._group_signals_by_type(what_changed[:5])  # Max 5
+            for signal_type, signals in grouped_signals.items():
+                if signals:  # Only show groups that have signals
+                    lines.append(f"\n{signal_type}:")
+                    for signal in signals:
+                        lines.append(self._format_front_page_signal(signal))
 
         # Industry Snapshot (5-7 categories max)
         if industry_snapshots:
-            lines.append("\n🏭 **Industry Snapshot**:")
+            lines.append("\n🏭 *Industry Snapshot*:")
             for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
                 lines.append(
                     self._format_front_page_industry_snapshot(industry, snapshot)
                 )
 
-        # Outlier (exactly 1)
-        if outlier:
-            lines.append("\n🧪 **Outlier**:")
-            lines.append(self._format_outlier_signal(outlier))
+        # High-Priority Signals (all high-priority signals, excluding What Changed)
+        if high_priority_signals:
+            # Exclude signals already shown in What Changed
+            what_changed_ids = {s.source_id for s in what_changed}
+            remaining_high_priority = [
+                s for s in high_priority_signals if s.source_id not in what_changed_ids
+            ]
+
+            if remaining_high_priority:
+                lines.append(f"\n🧪 *High-Priority* ({len(remaining_high_priority)}):")
+                grouped_high_priority = self._group_signals_by_type(
+                    remaining_high_priority
+                )
+                for signal_type, signals in grouped_high_priority.items():
+                    if signals:  # Only show groups that have signals
+                        lines.append(f"\n{signal_type}:")
+                        for signal in signals:
+                            lines.append(self._format_front_page_signal(signal))
 
         # Footer with thread link
         lines.append(self._format_front_page_footer())
@@ -101,15 +119,15 @@ class DigestFormatter:
         watchlist_signals = self._get_watchlist_signals(processed_signals)
 
         lines = []
-        lines.append(f"🔔 **LobbyLens Mini Alert** — {len(signals)} new signals")
+        lines.append(f"🔔 *LobbyLens Mini Alert* — {len(signals)} new signals")
 
         if watchlist_signals:
-            lines.append(f"\n🔎 **Watchlist Hits** ({len(watchlist_signals)}):")
+            lines.append(f"\n🔎 *Watchlist Hits* ({len(watchlist_signals)}):")
             for signal in watchlist_signals[:3]:
                 lines.append(self._format_watchlist_signal(signal))
 
         if high_priority:
-            lines.append(f"\n⚡ **High Priority** ({len(high_priority)}):")
+            lines.append(f"\n⚡ *High Priority* ({len(high_priority)}):")
             for signal in high_priority[:5]:
                 lines.append(self._format_what_changed_signal(signal))
 
@@ -380,16 +398,26 @@ class DigestFormatter:
         time_str = current_time.strftime("%H:%M PT")
 
         return (
-            f"🔍 **LobbyLens Daily Digest** — {date_str}\n\n"
+            f"🔍 *LobbyLens Daily Digest* — {date_str}\n\n"
             f"📭 No significant government activity detected in the last 24 hours.\n\n"
             f"_Updated {time_str}_"
         )
 
     def _truncate_text(self, text: str, max_length: int) -> str:
-        """Truncate text to fit within character budget."""
+        """Truncate text to fit within character budget at word boundary."""
         if len(text) <= max_length:
             return text
-        return text[: max_length - 3] + "..."
+
+        # Truncate to max_length and find the last space
+        truncated = text[:max_length]
+        last_space = truncated.rfind(" ")
+
+        # If we found a space and it's not too close to the beginning, use it
+        if last_space > max_length * 0.7:  # At least 70% of the way through
+            return truncated[:last_space]
+        else:
+            # Fallback to character truncation without ellipses
+            return truncated
 
     # =============================================================================
     # Front Page Digest Methods (Focused, High-Quality Format)
@@ -610,6 +638,31 @@ class DigestFormatter:
 
         return sorted_industries
 
+    def _get_high_priority_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+        """Get all high-priority signals (priority_score >= 3.0)."""
+        high_priority = [s for s in signals if s.priority_score >= 3.0]
+        return sorted(high_priority, key=lambda s: s.priority_score, reverse=True)
+
+    def _group_signals_by_type(
+        self, signals: List[SignalV2]
+    ) -> Dict[str, List[SignalV2]]:
+        """Group signals by type for What Changed section."""
+        groups: Dict[str, List[SignalV2]] = {"Dockets": [], "Notices": [], "Rules": []}
+
+        for signal in signals:
+            signal_type = self._get_signal_type_name(signal)
+            if signal_type == "dockets":
+                groups["Dockets"].append(signal)
+            elif signal_type == "notices":
+                groups["Notices"].append(signal)
+            elif signal_type == "rules":
+                groups["Rules"].append(signal)
+            else:
+                # Default to Notices for unknown types
+                groups["Notices"].append(signal)
+
+        return groups
+
     def _get_outlier(self, signals: List[SignalV2]) -> Optional[SignalV2]:
         """Get the single outlier signal based on comment surge, absolute delta, or
         industry impact.
@@ -677,13 +730,13 @@ class DigestFormatter:
         date_str = current_time.strftime("%Y-%m-%d")
 
         stats_str = (
-            f"Bills {mini_stats['bills']} · FR {mini_stats['fr']} · "
-            f"Dockets {mini_stats['dockets']} · "
+            f"Bills {mini_stats['bills']} | FR {mini_stats['fr']} | "
+            f"Dockets {mini_stats['dockets']} | "
             f"High-priority {mini_stats['high_priority']}"
         )
 
         return (
-            f"🔍 **LobbyLens** — Daily Signals ({date_str}) · {hours_back}h\n"
+            f"🔍 *LobbyLens* — Daily Signals ({date_str}) · {hours_back}h\n"
             f"Mini-stats: {stats_str}"
         )
 
@@ -795,6 +848,29 @@ class DigestFormatter:
         total = snapshot["total"]
 
         return f"• {industry}: {total} ({rules} rules, {notices} notices)"
+
+    def _format_high_priority_signal(self, signal: SignalV2) -> str:
+        """Format high-priority signal with High Impact label."""
+        title_truncated = self._truncate_text(signal.title, 80)
+
+        # Determine label by source
+        if signal.source == "federal_register":
+            label = "FR"
+        elif signal.source == "regulations_gov":
+            label = "Docket" if signal.docket_id else "Document"
+        elif signal.source == "congress":
+            label = "Congress"
+        else:
+            label = "View"
+
+        # Create link using helper
+        link = slack_link(signal.link, label)
+
+        # Format line - only include link if it exists
+        if link:
+            return f"• **High Impact** — {title_truncated} • {link}"
+        else:
+            return f"• **High Impact** — {title_truncated}"
 
     def _format_outlier_signal(self, signal: SignalV2) -> str:
         """Format outlier signal."""
