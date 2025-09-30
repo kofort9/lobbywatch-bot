@@ -127,6 +127,22 @@ The daily digest includes:
 
 ## 🚀 **Recent Updates (September 2025)**
 
+### Real Slack Links Implementation ✅
+- **Real URLs Everywhere**: All digest links now use actual URLs instead of placeholders
+- **Slack mrkdwn Formatting**: Proper `<URL|Label>` formatting for all links
+- **Source-Specific Labels**: FR, Docket, Document, Congress labels based on data source
+- **URL Priority Logic**: Federal Register (html_url → pdf_url), Regulations.gov (docket_id → document_id)
+- **Graceful Error Handling**: Missing URLs are omitted rather than showing placeholders
+- **Comprehensive Testing**: 25+ new tests covering all link scenarios
+
+### Federal Register Daily Digest Enhancement ✅
+- **Outlier Section**: High-scoring signals that don't make top 7 get dedicated outlier section
+- **Industry Mapping**: Automatic agency-to-industry categorization (FAA→Aviation, EPA→Environment, etc.)
+- **Priority Scoring**: Deterministic scoring with boosts for deadlines, high-impact agencies, keywords
+- **FAA AD Bundling**: Airworthiness Directives bundled into single line with manufacturer counts
+- **Why-It-Matters Clauses**: Deterministic explanations (Effective date, Comments close, etc.)
+- **Clean Formatting**: Removed confusing footer messages, improved mobile readability
+
 ### LDA V1 MVP Complete ✅
 - **PostgreSQL Migration**: Migrated from SQLite to Railway PostgreSQL for production
 - **Front Page Digest**: Implemented focused "biggest hitters" digest (not data firehose)
@@ -307,25 +323,30 @@ Options:
 
 ## Sample Output
 
-### V2: Daily Government Activity Digest
+### V2: Federal Register Daily Digest
 ```
-🔍 LobbyLens Daily Digest — 2024-10-15
+📋 **Federal Register Daily Digest** — 2025-09-29
+Mini-stats: Final 2 · Proposed 2 · Notices 3 · High-priority 4 · Updated 16:11 PT
 
-🔎 Watchlist Alerts:
-• Google mentioned in FCC net neutrality hearing
-• Microsoft Azure mentioned in DOD cloud contract RFP
+📈 **What Changed** (6):
+• [Health] Final Rule — Medicare Program; Hospital Inpatient Prospective Payment Systems — Effective Oct 20 • <https://www.federalregister.gov/documents/2024/01/15/CMS-2024-0001|FR>
+• [Energy] Final Rule — Electric Transmission Incentives Policy Statement — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/FERC-2024-0001|FR>
+• [Trade/Tech] Proposed Rule — Export Administration Regulations: Revisions to License Exception ENC — Comments close in 11 days • <https://www.federalregister.gov/documents/2024/01/15/BIS-2024-0001|FR>
+• [Tech/Telecom] Proposed Rule — Spectrum Rules and Policies for the 6 GHz Band — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/FCC-2024-0001|FR>
+• [Cyber] Meeting/Hearing — Cybersecurity and Infrastructure Security Agency Advisory Committee Meeting — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/CISA-2024-0001|FR>
+• [Finance] Notice — Enforcement Policy for Sanctions Violations — Enforcement • <https://www.federalregister.gov/documents/2024/01/15/OFAC-2024-0001|FR>
 
-📈 What Changed:
-• 12 new bills introduced in House Energy & Commerce
-• FCC opened comment period on broadband privacy rules
-• FDA issued guidance on AI in medical devices
+🏭 **Industry Snapshot**:
+• Trade/Tech: 1 proposed
+• Health: 1 rules
+• Energy: 1 rules
+• Tech/Telecom: 1 proposed
+• Finance: 1 notices
+• Cyber: 1 notices
+• Aviation: 1 notices
 
-🏭 Industry Snapshots:
-• Tech: 8 regulatory actions, 3 congressional hearings
-• Health: 5 FDA guidances, 2 CMS rule changes
-• Energy: 4 DOE announcements, 1 FERC proceeding
-
-Updated at 15:00 UTC
+✈️ **FAA Airworthiness Directives**:
+• FAA Airworthiness Directives — 5 notices today (Airbus, Boeing, De Havilland, Other) • <https://www.federalregister.gov/agencies/federal-aviation-administration?publication_date=2025-09-29|FAA>
 ```
 
 ### V1: LDA Front Page Digest (Biggest Hitters)
@@ -420,6 +441,10 @@ The test suite includes:
 - **Integration tests**: End-to-end CLI testing
 - **Mock testing**: External API calls and notifications
 - **Snapshot testing**: Digest format validation
+- **Link testing**: Real URL validation and Slack mrkdwn formatting
+- **Outlier testing**: Federal Register digest outlier section logic
+- **Signal testing**: Government API data processing and URL creation
+- **Digest testing**: All formatter types with real link integration
 
 ```bash
 # Run all tests
@@ -427,6 +452,12 @@ pytest -v
 
 # Run specific test files
 pytest tests/test_digest.py -v
+
+# Run link-related tests
+pytest tests/test_digest_links.py tests/test_slack_link_helper.py tests/test_signal_link_creation.py -v
+
+# Run FR digest tests
+pytest tests/test_fr_digest_outlier.py -v
 
 # Run with debugging
 pytest -v -s --pdb
@@ -440,6 +471,8 @@ lobbylens/
 │   ├── __init__.py
 │   ├── config.py          # Settings and environment
 │   ├── digest.py          # Daily digest computation
+│   ├── fr_digest.py       # Federal Register digest formatter
+│   ├── utils.py           # Utility functions (slack_link helper)
 │   ├── run.py             # CLI entry point
 │   └── notifiers/         # Notification providers
 │       ├── __init__.py
@@ -448,6 +481,10 @@ lobbylens/
 ├── tests/                 # Test suite
 │   ├── conftest.py       # Pytest fixtures
 │   ├── test_*.py         # Test modules
+│   ├── test_digest_links.py      # Real URL testing
+│   ├── test_slack_link_helper.py # Link helper testing
+│   ├── test_signal_link_creation.py # Signal URL creation
+│   ├── test_fr_digest_outlier.py  # FR digest outlier testing
 │   └── snapshots/        # Expected outputs
 ├── state/                # Runtime state files
 ├── .github/workflows/    # GitHub Actions
