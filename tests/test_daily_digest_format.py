@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from bot.digest import DigestFormatter, TITLE_MAX_LEN
+from bot.digest import TITLE_MAX_LEN, DigestFormatter
 from bot.signals import SignalType, SignalV2
 
 

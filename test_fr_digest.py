@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "bot"))
 
 # Import after path modification
 from fr_digest import FRDigestFormatter  # noqa: E402
+
 from test_fr_digest_fixture import create_test_fixture  # noqa: E402
 
 

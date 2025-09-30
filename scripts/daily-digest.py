@@ -9,8 +9,8 @@ Designed to run in GitHub Actions or other CI/CD environments.
 import logging
 import os
 import sys
-from typing import Dict
 from datetime import datetime, timezone
+from typing import Dict
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
