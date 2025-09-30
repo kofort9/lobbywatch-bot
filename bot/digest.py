@@ -52,6 +52,7 @@ class DigestFormatter:
         # Get front page sections
         what_changed = self._get_front_page_what_changed(enhanced_signals)
         industry_snapshots = self._get_front_page_industry_snapshots(enhanced_signals)
+        high_impact_signals = self._get_high_impact_signals(enhanced_signals)
         high_priority_signals = self._get_high_priority_signals(enhanced_signals)
 
         # Get mini-stats
@@ -65,6 +66,14 @@ class DigestFormatter:
             self._format_front_page_header(enhanced_signals, hours_back, mini_stats)
         )
 
+        # Industry Snapshot (moved right after mini-stats)
+        if industry_snapshots:
+            lines.append("\n🏭 *Industry Snapshot*:")
+            for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
+                lines.append(
+                    self._format_front_page_industry_snapshot(industry, snapshot)
+                )
+
         # What Changed (max 5 items, high priority only, grouped by type)
         if what_changed:
             lines.append(f"\n📈 *What Changed* ({min(len(what_changed), 5)}):")
@@ -75,20 +84,22 @@ class DigestFormatter:
                     for signal in signals:
                         lines.append(self._format_front_page_signal(signal))
 
-        # Industry Snapshot (5-7 categories max)
-        if industry_snapshots:
-            lines.append("\n🏭 *Industry Snapshot*:")
-            for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
-                lines.append(
-                    self._format_front_page_industry_snapshot(industry, snapshot)
-                )
+        # High Impact (exceptional signals)
+        if high_impact_signals:
+            lines.append(f"\n⚡ *High Impact* ({len(high_impact_signals)}):")
+            for signal in high_impact_signals:
+                lines.append(self._format_front_page_signal(signal))
 
-        # High-Priority Signals (all high-priority signals, excluding What Changed)
+        # High-Priority Signals (all high-priority signals, excluding What Changed and High Impact)
         if high_priority_signals:
-            # Exclude signals already shown in What Changed
+            # Exclude signals already shown in What Changed and High Impact
             what_changed_ids = {s.source_id for s in what_changed}
+            high_impact_ids = {s.source_id for s in high_impact_signals}
             remaining_high_priority = [
-                s for s in high_priority_signals if s.source_id not in what_changed_ids
+                s
+                for s in high_priority_signals
+                if s.source_id not in what_changed_ids
+                and s.source_id not in high_impact_ids
             ]
 
             if remaining_high_priority:
@@ -179,6 +190,37 @@ class DigestFormatter:
         ]
 
         return sorted(significant_signals, key=lambda s: s.priority_score, reverse=True)
+
+    def _get_high_impact_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
+        """Get high impact signals (exceptional cases with comment surge, deadlines, etc.)."""
+        high_impact = []
+
+        for signal in signals:
+            # Check for comment surge (≥200% increase)
+            if (
+                hasattr(signal, "comment_surge")
+                and signal.comment_surge
+                and signal.comment_surge >= 2.0
+            ):
+                high_impact.append(signal)
+            # Check for urgent deadlines (≤3 days)
+            elif hasattr(signal, "deadline") and signal.deadline:
+                try:
+                    from datetime import datetime
+
+                    deadline = datetime.fromisoformat(
+                        signal.deadline.replace("Z", "+00:00")
+                    )
+                    days_until = (deadline - datetime.now(timezone.utc)).days
+                    if days_until <= 3:
+                        high_impact.append(signal)
+                except (ValueError, AttributeError):
+                    pass
+            # Check for very high priority score (≥4.0)
+            elif signal.priority_score >= 4.0:
+                high_impact.append(signal)
+
+        return sorted(high_impact, key=lambda s: s.priority_score, reverse=True)
 
     def _get_industry_snapshots(self, signals: List[SignalV2]) -> Dict[str, Dict]:
         """Generate industry snapshots from signals."""
@@ -647,7 +689,12 @@ class DigestFormatter:
         self, signals: List[SignalV2]
     ) -> Dict[str, List[SignalV2]]:
         """Group signals by type for What Changed section."""
-        groups: Dict[str, List[SignalV2]] = {"Dockets": [], "Notices": [], "Rules": []}
+        groups: Dict[str, List[SignalV2]] = {
+            "Dockets": [],
+            "Notices": [],
+            "Rules": [],
+            "Bills": [],
+        }
 
         for signal in signals:
             signal_type = self._get_signal_type_name(signal)
@@ -657,6 +704,12 @@ class DigestFormatter:
                 groups["Notices"].append(signal)
             elif signal_type == "rules":
                 groups["Rules"].append(signal)
+            elif signal_type in ["bills", "hearings"]:
+                # Group congressional activity under "Bills"
+                groups["Bills"].append(signal)
+            elif signal_type in ["regulatory actions", "activities"]:
+                # Group other regulatory actions under "Notices"
+                groups["Notices"].append(signal)
             else:
                 # Default to Notices for unknown types
                 groups["Notices"].append(signal)
@@ -827,15 +880,14 @@ class DigestFormatter:
         if signal.committee:
             clauses.append(f"{signal.committee}")
 
-        # Fallback
+        # Fallback - only add if we have no other clauses
         if not clauses:
             if signal.signal_type in [
                 SignalType.FINAL_RULE,
                 SignalType.PROPOSED_RULE,
             ]:
                 clauses.append("regulatory action")
-            else:
-                clauses.append("government activity")
+            # Remove the generic "government activity" fallback to avoid redundancy
 
         return " • ".join(clauses[:2])  # Max 2 clauses
 
