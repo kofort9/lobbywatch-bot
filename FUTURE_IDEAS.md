@@ -44,7 +44,22 @@
 
 ---
 
-### 2. **Public-Facing Bot** (Medium-term)
+### 2. **Legal & Compliance Integration** (Medium-term)
+*Early warning system for law firms and corporate legal departments*
+
+#### **Red Flag Detection**
+- **Regulatory Alerts**: Automated detection of high-risk regulatory changes
+- **Compliance Triggers**: Industry-specific compliance monitoring
+- **Client Advisory Automation**: Generate alerts for potential legal impacts
+- **Risk Scoring**: Rate regulatory changes by potential legal exposure
+
+#### **Law Firm Integration**
+- **Client-Specific Alerts**: "This affects your tech clients"
+- **Practice Area Filtering**: Show only relevant regulatory changes
+- **Deadline Tracking**: Comment periods, effective dates, compliance deadlines
+- **Document Generation**: Auto-generate client advisories and compliance briefs
+
+### 3. **Public-Facing Bot** (Medium-term)
 *Twitter/Bluesky/X automated posting*
 
 #### **Ticker-Style Updates**
@@ -68,7 +83,7 @@
 
 ---
 
-### 3. **Analyst/Knowledge Product** (Long-term)
+### 4. **Analyst/Knowledge Product** (Long-term)
 *Professional-grade reporting and visualization*
 
 #### **Weekly/Quarterly Reports**
@@ -91,7 +106,7 @@
 
 ---
 
-### 4. **Stretch Ideas** (Future Vision)
+### 5. **Stretch Ideas** (Future Vision)
 *The "dream features" that would make this truly powerful*
 
 #### **V1 + V2 Cross-Reference** 🎯
@@ -109,6 +124,11 @@
 Microsoft lobbied $320K on TEC (AI/Export) → 
 FCC proposed AI export rule today
 Confidence: 85% | <Docket Link>
+
+⚖️ **Legal Alert**
+FAA proposes new safety standards for Boeing 737
+Risk Level: HIGH | Affects: Aviation clients
+Comment Period: 30 days | <FR Link>
 ```
 
 #### **Personalized Watchlist Overlay**
@@ -122,6 +142,18 @@ Confidence: 85% | <Docket Link>
 - **Trend Detection**: "AI lobbying up 300% this quarter"
 - **Risk Assessment**: "This regulation could impact your portfolio"
 - **Competitive Intelligence**: "Your competitors are lobbying on..."
+
+#### **Legal & Compliance Integration**
+- **Situational Awareness → Legal Signals**: Early warning feed for regulatory red flags
+- **Law Firm Integration**: Direct alerts to lawyers for compliance reviews
+- **Client Advisory Triggers**: Automated alerts for potential lawsuits or regulatory changes
+- **Compliance Monitoring**: Track regulatory changes affecting specific industries or clients
+
+#### **Content Marketing & Audience Building**
+- **Public Signal Surfacing**: Twitter/Bluesky bot posting high-impact filings and rules
+- **Thought Leadership**: Build audience through consistent, valuable government intelligence
+- **Content Repurposing**: Transform raw signals into interpretable content for broader audience
+- **Community Building**: Attract audience interested in deeper regulatory analysis
 
 ---
 
@@ -197,6 +229,8 @@ POST /webhooks/custom
 - **News Organizations**: Data feeds and analysis
 - **Academic Institutions**: Research partnerships
 - **Think Tanks**: Policy analysis tools
+- **Law Firms**: Compliance monitoring and client advisory services
+- **Corporate Legal Departments**: Regulatory change alerts and risk assessment
 
 ---
 
