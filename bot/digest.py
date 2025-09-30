@@ -14,7 +14,7 @@ Architecture:
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytz
 
@@ -99,6 +99,14 @@ class DigestFormatter:
         # Convert SignalV2 objects to dict format for processing
         signal_dicts = []
         for signal in signals:
+            signal_type_attr = getattr(signal, "signal_type", None)
+            if isinstance(signal_type_attr, SignalType):
+                signal_type_value = signal_type_attr.value
+            elif signal_type_attr is None:
+                signal_type_value = ""
+            else:
+                signal_type_value = str(signal_type_attr)
+
             signal_dict = {
                 "uid": getattr(signal, "source_id", None),
                 "document_number": (
@@ -114,11 +122,7 @@ class DigestFormatter:
                 "priority_score": signal.priority_score,
                 "timestamp": signal.timestamp,
                 "agency": getattr(signal, "agency", None),
-                "signal_type": (
-                    signal.signal_type.value
-                    if hasattr(signal.signal_type, "value")
-                    else str(signal.signal_type)
-                ),
+                "signal_type": signal_type_value,
                 "filing_status": getattr(signal, "filing_status", None),
                 "issue_codes": getattr(signal, "issue_codes", []),
             }
@@ -133,14 +137,20 @@ class DigestFormatter:
                 continue
 
             current = best[key]
-            new_ts = s.get("timestamp")
-            cur_ts = current.get("timestamp")
+            new_ts_raw = s.get("timestamp")
+            cur_ts_raw = current.get("timestamp")
 
-            if cur_ts is None or (new_ts and new_ts > cur_ts):
+            new_ts: Optional[datetime]
+            cur_ts: Optional[datetime]
+
+            new_ts = new_ts_raw if isinstance(new_ts_raw, datetime) else None
+            cur_ts = cur_ts_raw if isinstance(cur_ts_raw, datetime) else None
+
+            if cur_ts is None or (new_ts is not None and new_ts > cur_ts):
                 best[key] = s
                 continue
 
-            if new_ts and cur_ts and new_ts == cur_ts:
+            if new_ts is not None and cur_ts is not None and new_ts == cur_ts:
                 current_status = current.get("filing_status")
                 new_status = s.get("filing_status")
                 if new_status == "amended" and current_status != "amended":
@@ -150,14 +160,19 @@ class DigestFormatter:
         deduped_signals = list(best.values())
 
         # Section assignment with precedence + dedupe
-        high_impact = []
-        what_changed = []
-        groups = {"rules": [], "notices": [], "dockets": [], "bills": []}
-        seen = set()
+        high_impact: List[Dict[str, Any]] = []
+        what_changed: List[Dict[str, Any]] = []
+        groups: Dict[str, List[Dict[str, Any]]] = {
+            "rules": [],
+            "notices": [],
+            "dockets": [],
+            "bills": [],
+        }
+        seen: set[str] = set()
 
         # First pass: FAA AD handling
-        faa_ads = []
-        non_faa = []
+        faa_ads: List[Dict[str, Any]] = []
+        non_faa: List[Dict[str, Any]] = []
 
         for item in deduped_signals:
             if is_faa_ad(item):
@@ -215,10 +230,10 @@ class DigestFormatter:
             if len(manufacturers) > 3:
                 sample_manufacturers += "…"
 
-            timestamps = [
-                item.get("timestamp")
-                for item in non_emergency_faa_ads
-                if item.get("timestamp")
+            timestamps: List[datetime] = [
+                ts
+                for ts in (item.get("timestamp") for item in non_emergency_faa_ads)
+                if isinstance(ts, datetime)
             ]
             max_ad_timestamp = (
                 max(timestamps) if timestamps else datetime.now(timezone.utc)
