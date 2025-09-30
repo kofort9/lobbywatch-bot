@@ -279,14 +279,14 @@ def setup_railway() -> None:
 
         conn.close()
 
-        print(f"\n🎉 Railway PostgreSQL Setup Complete!")
-        print(f"   ✅ Database: railway")
-        print(f"   ✅ Host: switchback.proxy.rlwy.net:37990")
-        print(f"   ✅ Schema: Enhanced LDA schema created")
-        print(f"   ✅ Data: Test data populated")
-        print(f"   ✅ Ready: For LDA front page digest")
-        print(f"\n   🔗 Your DATABASE_URL is already configured in .env")
-        print(f"   🚀 Run: python scripts/lda-cli.py status")
+        print("\n🎉 Railway PostgreSQL Setup Complete!")
+        print("   ✅ Database: railway")
+        print("   ✅ Host: switchback.proxy.rlwy.net:37990")
+        print("   ✅ Schema: Enhanced LDA schema created")
+        print("   ✅ Data: Test data populated")
+        print("   ✅ Ready: For LDA front page digest")
+        print("\n   🔗 Your DATABASE_URL is already configured in .env")
+        print("   🚀 Run: python scripts/lda-cli.py status")
 
     except Exception as e:
         print(f"\n❌ Railway Setup FAILED: {e}")

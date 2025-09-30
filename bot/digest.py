@@ -12,6 +12,7 @@ Architecture:
 # V2: Enhanced Digest Formatter (Current Active System)
 # =============================================================================
 
+import hashlib
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -19,6 +20,58 @@ import pytz
 
 from bot.signals import SignalDeduplicator, SignalType, SignalV2
 from bot.utils import slack_link
+
+# Constants
+HIGH_IMPACT_MIN = 5.0
+WHAT_CHANGED_MIN = 3.0
+TITLE_MAX_LEN = 70
+
+
+def _item_sort_key(item: Dict) -> tuple:
+    """Sort helper favoring higher priority, then newer timestamps."""
+    priority = item.get("priority_score") or 0.0
+    timestamp = item.get("timestamp")
+    ts_value = timestamp.timestamp() if isinstance(timestamp, datetime) else 0.0
+    return (-priority, -ts_value)
+
+
+# Helper functions
+def get_signal_key(s):
+    """Get unique key for signal deduplication."""
+    return (
+        s.get("uid")
+        or s.get("document_number")
+        or s.get("docket_id")
+        or s.get("bill_id")
+        or f'{s.get("source", "")}:{hashlib.sha1((s.get("title", "") + s.get("link", "")).encode()).hexdigest()}'
+    )
+
+
+def truncate_title(txt):
+    """Truncate title while respecting word boundaries when possible."""
+    if len(txt) <= TITLE_MAX_LEN:
+        return txt
+
+    cut = txt[:TITLE_MAX_LEN]
+    i = cut.rfind(" ")
+    if i > 50:
+        return cut[:i].rstrip()
+
+    trimmed = cut.rstrip()
+    return f"{trimmed}…"
+
+
+def is_faa_ad(s):
+    """Check if signal is FAA Airworthiness Directive."""
+    return (s.get("agency") == "Federal Aviation Administration") and s.get(
+        "title", ""
+    ).startswith("Airworthiness Directives")
+
+
+def is_emergency_ad(s):
+    """Check if FAA AD is emergency/immediate adoption."""
+    t = s.get("title", "").lower()
+    return ("emergency" in t) or ("immediate adoption" in t)
 
 
 class DigestFormatter:
@@ -43,80 +96,352 @@ class DigestFormatter:
         if not signals:
             return self._format_empty_digest()
 
-        # Process and deduplicate signals
-        processed_signals = self._process_signals(signals)
+        # Convert SignalV2 objects to dict format for processing
+        signal_dicts = []
+        for signal in signals:
+            signal_dict = {
+                "uid": getattr(signal, "source_id", None),
+                "document_number": (
+                    signal.metrics.get("document_number")
+                    if hasattr(signal, "metrics")
+                    else None
+                ),
+                "docket_id": getattr(signal, "docket_id", None),
+                "bill_id": getattr(signal, "bill_id", None),
+                "source": signal.source,
+                "title": signal.title,
+                "link": signal.link,
+                "priority_score": signal.priority_score,
+                "timestamp": signal.timestamp,
+                "agency": getattr(signal, "agency", None),
+                "signal_type": (
+                    signal.signal_type.value
+                    if hasattr(signal.signal_type, "value")
+                    else str(signal.signal_type)
+                ),
+                "filing_status": getattr(signal, "filing_status", None),
+                "issue_codes": getattr(signal, "issue_codes", []),
+            }
+            signal_dicts.append(signal_dict)
 
-        # Apply enhanced scoring with deadline/effective date boosts
-        enhanced_signals = self._apply_enhanced_scoring(processed_signals)
+        # Pre-pass: collapse amended duplicates
+        best = {}
+        for s in signal_dicts:
+            key = get_signal_key(s)
+            if key not in best:
+                best[key] = s
+                continue
 
-        # Get front page sections
-        what_changed = self._get_front_page_what_changed(enhanced_signals)
-        industry_snapshots = self._get_front_page_industry_snapshots(enhanced_signals)
-        high_impact_signals = self._get_high_impact_signals(enhanced_signals)
-        high_priority_signals = self._get_high_priority_signals(enhanced_signals)
+            current = best[key]
+            new_ts = s.get("timestamp")
+            cur_ts = current.get("timestamp")
 
-        # Get mini-stats
-        mini_stats = self._get_mini_stats(enhanced_signals)
+            if cur_ts is None or (new_ts and new_ts > cur_ts):
+                best[key] = s
+                continue
 
-        # Build focused front page digest
+            if new_ts and cur_ts and new_ts == cur_ts:
+                current_status = current.get("filing_status")
+                new_status = s.get("filing_status")
+                if new_status == "amended" and current_status != "amended":
+                    best[key] = s
+
+        # Work only on deduplicated signals
+        deduped_signals = list(best.values())
+
+        # Section assignment with precedence + dedupe
+        high_impact = []
+        what_changed = []
+        groups = {"rules": [], "notices": [], "dockets": [], "bills": []}
+        seen = set()
+
+        # First pass: FAA AD handling
+        faa_ads = []
+        non_faa = []
+
+        for item in deduped_signals:
+            if is_faa_ad(item):
+                faa_ads.append(item)
+            else:
+                non_faa.append(item)
+
+        # Promote emergency FAA ADs to high impact
+        for item in faa_ads:
+            if (
+                is_emergency_ad(item)
+                and item.get("priority_score", 0) >= HIGH_IMPACT_MIN
+            ):
+                high_impact.append(item)
+                seen.add(get_signal_key(item))
+
+        # Second pass: all non_faa items (exclude FAA ADs)
+        for item in non_faa:
+            key = get_signal_key(item)
+            if key in seen:
+                continue
+
+            score = item.get("priority_score", 0)
+            if score >= HIGH_IMPACT_MIN:
+                high_impact.append(item)
+                seen.add(key)
+                continue
+
+            if WHAT_CHANGED_MIN <= score < HIGH_IMPACT_MIN:
+                what_changed.append(item)
+                seen.add(key)
+                continue
+
+            signal_type = self._normalize_signal_type(item)
+            if signal_type in groups:
+                groups[signal_type].append(item)
+                seen.add(key)
+
+        # FAA AD bundle (as a single "notices" line)
+        non_emergency_faa_ads = [
+            item for item in faa_ads if get_signal_key(item) not in seen
+        ]
+        if non_emergency_faa_ads:
+            manufacturers = []
+
+            for item in non_emergency_faa_ads:
+                title = item.get("title", "")
+                manuf = self._extract_faa_manufacturer(title)
+                if manuf and manuf not in manufacturers:
+                    manufacturers.append(manuf)
+
+            sample_manufacturers = (
+                ", ".join(manufacturers[:3]) if manufacturers else "Various"
+            )
+            if len(manufacturers) > 3:
+                sample_manufacturers += "…"
+
+            timestamps = [
+                item.get("timestamp")
+                for item in non_emergency_faa_ads
+                if item.get("timestamp")
+            ]
+            max_ad_timestamp = (
+                max(timestamps) if timestamps else datetime.now(timezone.utc)
+            )
+            issue_codes = sorted(
+                {
+                    code
+                    for item in non_emergency_faa_ads
+                    for code in item.get("issue_codes", [])
+                }
+            )
+
+            bundle_count = len(non_emergency_faa_ads)
+            bundle_title = (
+                "FAA Airworthiness Directives — "
+                f"{bundle_count} notices today ({sample_manufacturers})"
+            )
+
+            faa_bundle = {
+                "title": bundle_title,
+                "link": "https://www.federalregister.gov/agencies/federal-aviation-administration",
+                "priority_score": 1.0,
+                "timestamp": max_ad_timestamp,
+                "synthetic": True,
+                "source": "federal_register",
+                "issue_codes": issue_codes,
+                "synthetic_count": len(non_emergency_faa_ads),
+            }
+            groups["notices"].append(faa_bundle)
+
+        # Sort all sections
+        high_impact.sort(key=_item_sort_key)
+        what_changed.sort(key=_item_sort_key)
+        for group_name in groups:
+            groups[group_name].sort(key=_item_sort_key)
+
+        # Build digest
         lines = []
 
-        # Header with mini-stats
-        lines.append(
-            self._format_front_page_header(enhanced_signals, hours_back, mini_stats)
+        # Header
+        current_time = datetime.now(self.pt_tz)
+        date_str = current_time.strftime("%Y-%m-%d")
+
+        # Calculate mini-stats
+        grouped_items = [item for items in groups.values() for item in items]
+        all_shown = high_impact + what_changed + grouped_items
+        bills_count = len([s for s in all_shown if s.get("source") == "congress"])
+        fr_count = len([s for s in all_shown if s.get("source") == "federal_register"])
+        dockets_count = len(
+            [s for s in all_shown if s.get("source") == "regulations_gov"]
+        )
+        high_priority_count = len(
+            [s for s in all_shown if s.get("priority_score", 0) >= WHAT_CHANGED_MIN]
         )
 
-        # Industry Snapshot (moved right after mini-stats)
-        if industry_snapshots:
-            lines.append("\n🏭 *Industry Snapshot*:")
-            for industry, snapshot in list(industry_snapshots.items())[:7]:  # Max 7
-                lines.append(
-                    self._format_front_page_industry_snapshot(industry, snapshot)
+        lines.append(f"LobbyLens — Daily Signals ({date_str}) · {hours_back}h")
+        mini_stats_line = (
+            "Mini-stats: "
+            f"Bills {bills_count} | FR {fr_count} | "
+            f"Dockets {dockets_count} | High-priority {high_priority_count}"
+        )
+        lines.append(mini_stats_line)
+
+        # What Changed
+        if what_changed or any(groups.values()):
+            lines.append("\nWhat Changed")
+            self._format_what_changed_section(lines, what_changed, groups)
+
+        # Outlier — High Impact
+        if high_impact:
+            lines.append("\nOutlier — High Impact")
+            for item in high_impact:
+                title = truncate_title(item.get("title", ""))
+                link_text = self._get_link_text(item)
+                if link_text:
+                    lines.append(f"• {title} • {link_text}")
+                else:
+                    lines.append(f"• {title}")
+
+        # Industry Snapshot
+        industry_snapshot = self._compute_industry_snapshot(all_shown)
+        if industry_snapshot:
+            lines.append("\nIndustry Snapshot")
+            for industry, counts in industry_snapshot.items():
+                rules = counts.get("rules", 0)
+                proposed = counts.get("proposed", 0)
+                notices = counts.get("notices", 0)
+                dockets = counts.get("dockets", 0)
+                snapshot_total = sum(counts.values())
+                snapshot_line = (
+                    f"• {industry}: {snapshot_total} "
+                    f"(rules {rules}, proposed {proposed}, "
+                    f"notices {notices}, dockets {dockets})"
                 )
-
-        # What Changed (max 5 items, high priority only, grouped by type)
-        if what_changed:
-            lines.append(f"\n📈 *What Changed* ({min(len(what_changed), 5)}):")
-            grouped_signals = self._group_signals_by_type(what_changed[:5])  # Max 5
-            for signal_type, signals in grouped_signals.items():
-                if signals:  # Only show groups that have signals
-                    lines.append(f"\n{signal_type}:")
-                    for signal in signals:
-                        lines.append(self._format_front_page_signal(signal))
-
-        # High Impact (exceptional signals)
-        if high_impact_signals:
-            lines.append(f"\n⚡ *High Impact* ({len(high_impact_signals)}):")
-            for signal in high_impact_signals:
-                lines.append(self._format_front_page_signal(signal))
-
-        # High-Priority Signals (all high-priority signals, excluding What Changed and High Impact)
-        if high_priority_signals:
-            # Exclude signals already shown in What Changed and High Impact
-            what_changed_ids = {s.source_id for s in what_changed}
-            high_impact_ids = {s.source_id for s in high_impact_signals}
-            remaining_high_priority = [
-                s
-                for s in high_priority_signals
-                if s.source_id not in what_changed_ids
-                and s.source_id not in high_impact_ids
-            ]
-
-            if remaining_high_priority:
-                lines.append(f"\n🧪 *High-Priority* ({len(remaining_high_priority)}):")
-                grouped_high_priority = self._group_signals_by_type(
-                    remaining_high_priority
-                )
-                for signal_type, signals in grouped_high_priority.items():
-                    if signals:  # Only show groups that have signals
-                        lines.append(f"\n{signal_type}:")
-                        for signal in signals:
-                            lines.append(self._format_front_page_signal(signal))
-
-        # Footer with thread link
-        lines.append(self._format_front_page_footer())
+                lines.append(snapshot_line)
 
         return "\n".join(lines)
+
+    def _normalize_signal_type(self, item):
+        """Normalize signal type to one of: rule, notice, docket, bill."""
+        signal_type = item.get("signal_type", "").lower()
+        source = item.get("source", "")
+
+        if source == "congress":
+            return "bills"
+        elif source == "regulations_gov":
+            return "dockets"
+        elif source == "federal_register":
+            if "rule" in signal_type:
+                return "rules"
+            else:
+                return "notices"
+        else:
+            return "notices"  # default
+
+    def _format_what_changed_section(self, lines, what_changed, groups):
+        """Format What Changed section with per-type subgroups."""
+        grouped = {"rules": [], "notices": [], "dockets": [], "bills": []}
+
+        for item in what_changed:
+            signal_type = self._normalize_signal_type(item)
+            if signal_type in grouped:
+                grouped[signal_type].append(item)
+
+        for group_name, group_items in groups.items():
+            if group_name in grouped:
+                grouped[group_name].extend(group_items)
+
+        for group_name in ("rules", "notices", "dockets", "bills"):
+            items = grouped.get(group_name, [])
+            if not items:
+                continue
+
+            items.sort(key=_item_sort_key)
+            lines.append(f"{group_name.title()}:")
+            for item in items:
+                title = truncate_title(item.get("title", ""))
+                link_text = self._get_link_text(item)
+                if link_text:
+                    lines.append(f"• {title} • {link_text}")
+                else:
+                    lines.append(f"• {title}")
+
+    def _extract_faa_manufacturer(self, title: str) -> Optional[str]:
+        """Approximate manufacturer extraction from FAA AD titles."""
+        if not title:
+            return None
+
+        # FAA titles typically look like "Airworthiness Directives; Manufacturer — Topic"
+        if ";" in title:
+            candidate = title.split(";", 1)[1]
+        else:
+            candidate = title
+
+        for separator in ("—", "-", ":", "("):
+            candidate = candidate.split(separator, 1)[0]
+
+        candidate = candidate.strip(" ·,;:-")
+        if not candidate:
+            return None
+
+        # Normalize casing/spaces
+        return " ".join(candidate.split())
+
+    def _get_link_text(self, item):
+        """Get link text for item."""
+        link = item.get("link")
+        if not link:
+            return None
+
+        source = item.get("source", "")
+        if source == "federal_register":
+            return f"<{link}|FR>"
+        elif source == "regulations_gov":
+            return f"<{link}|Docket>"
+        elif source == "congress":
+            return f"<{link}|Congress>"
+        else:
+            return f"<{link}|View>"
+
+    def _compute_industry_snapshot(self, all_shown):
+        """Compute industry snapshot from shown items."""
+        industry_mapping = {
+            "TEC": "Tech",
+            "HCR": "Health",
+            "FIN": "Finance",
+            "DEF": "Defense",
+            "ENV": "Environment",
+            "EDU": "Education",
+            "TRA": "Transport",
+            "FUE": "Energy",
+            "AGR": "Agriculture",
+        }
+
+        snapshots = {}
+
+        for item in all_shown:
+            issue_codes = item.get("issue_codes", [])
+            signal_type = self._normalize_signal_type(item)
+            weight = item.get("synthetic_count", 1)
+
+            for code in issue_codes:
+                if code in industry_mapping:
+                    industry = industry_mapping[code]
+                    if industry not in snapshots:
+                        snapshots[industry] = {
+                            "rules": 0,
+                            "proposed": 0,
+                            "notices": 0,
+                            "dockets": 0,
+                        }
+
+                    if signal_type == "rules":
+                        if "proposed" in item.get("signal_type", "").lower():
+                            snapshots[industry]["proposed"] += weight
+                        else:
+                            snapshots[industry]["rules"] += weight
+                    elif signal_type == "notices":
+                        snapshots[industry]["notices"] += weight
+                    elif signal_type == "dockets":
+                        snapshots[industry]["dockets"] += weight
+
+        return snapshots
 
     def format_mini_digest(self, signals: List[SignalV2], threshold: int = 5) -> str:
         """Format mini digest for threshold-based alerts."""

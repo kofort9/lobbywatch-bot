@@ -2,7 +2,6 @@
 """Verify LobbyLens setup and configuration."""
 
 import os
-import sys
 
 # from pathlib import Path  # Unused
 

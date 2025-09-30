@@ -201,7 +201,7 @@ def test_outlier_excludes_faa_bundles() -> None:
         ),
     ]
 
-    what_changed = []  # No signals in what_changed
+    what_changed: list[SignalV2] = []  # No signals in what_changed
 
     # Test outlier selection
     selected_outlier = fmt._get_outlier(signals, what_changed)

@@ -1,0 +1,48 @@
+name: LobbyLens Weekly Collector
+
+on:
+  schedule:
+    # Fridays at 23:00 UTC (Friday 16:00 PT / 19:00 ET)
+    - cron: "0 23 * * FRI"
+  workflow_dispatch: {}
+
+jobs:
+  run-weekly-collector:
+    name: Refresh Signals and Generate Weekly Digest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run weekly collector
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          REGULATIONS_GOV_API_KEY: ${{ secrets.REGULATIONS_GOV_API_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOBBYLENS_CHANNELS: ${{ secrets.LOBBYLENS_CHANNELS }}
+          DATABASE_FILE: "signals.db"
+          LOG_LEVEL: "INFO"
+        run: |
+          python scripts/daily-digest.py
+
+      - name: Upload database snapshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: weekly-signals-snapshot
+          path: "*.db"
+          retention-days: 7

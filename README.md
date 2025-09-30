@@ -43,7 +43,7 @@ A two-layer government monitoring system providing daily government activity sig
 
 ### Platform Features
 - 🚀 **Slack Integration**: Clean, formatted messages with direct links
-- ⚙️ **Automated Scheduling**: Quarterly reports + daily digests
+- ⚙️ **Automated Scheduling**: Daily digests, weekly refresh, and quarterly reports via GitHub Actions
 - 🔒 **Secure**: Environment-based configuration
 - 🧪 **Well Tested**: Comprehensive test suite with deterministic logic
 - 💬 **Interactive Commands**: Full Slack slash command support
@@ -196,6 +196,16 @@ The daily digest includes:
 - **Bill Keywords → Issue Codes**: Deterministic keyword mapping
 - **Priority Scoring**: Rule-based scoring with configurable weights
 
+### Weekly Collector Workflow ✅
+- Added `.github/workflows/weekly-collector.yml` to run the signals collector each Friday at 23:00 UTC (16:00 PT)
+- Weekly run keeps the `signal_event` table fresh and uploads the SQLite snapshot for debugging
+- Uses the same secret set as the daily workflow; no additional configuration is required once secrets live in GitHub
+
+### Local Digest Preview Utilities ✅
+- `scripts/preview_local_digest.py` renders the digest from either SQLite or Railway PostgreSQL data sources
+- `scripts/sync_signals_from_postgres.py` copies recent `signal_event` rows from Railway into a local SQLite cache for offline checks
+- Consolidated legacy markdown docs into `docs/LDA_OVERVIEW.md` and `docs/OPERATIONS_GUIDE.md` for easier reference
+
 ## Quick Start
 
 ### 1. Clone and Install
@@ -260,6 +270,8 @@ Add these secrets in your GitHub repository settings (`Settings > Secrets and va
 ### Workflows
 
 - **Daily Digest** (`.github/workflows/daily.yml`): Runs at 8:00 AM PT daily
+- **Weekly Collector** (`.github/workflows/weekly-collector.yml`): Runs Fridays at 23:00 UTC (16:00 PT)
+- **Quarterly LDA Update** (`.github/workflows/lda-quarterly.yml`): Runs on the 15th of each month to refresh lobbying data
 - **Testing** (`.github/workflows/test.yml`): Runs on every push/PR
 
 ### Manual Triggers
@@ -310,6 +322,35 @@ Options:
   --log-level TEXT  Set logging level [DEBUG|INFO|WARNING|ERROR]
   --help           Show this message and exit
 ```
+
+## Developer Utilities
+
+### Preview the Daily Digest Locally
+
+```bash
+# Render digest from local SQLite cache (defaults to signals.db)
+python scripts/preview_local_digest.py --db signals.db --hours 24
+
+# Render digest directly from Railway PostgreSQL
+python scripts/preview_local_digest.py --db "$DATABASE_URL" --hours 48
+```
+
+### Sync Railway Signals into SQLite
+
+```bash
+python scripts/sync_signals_from_postgres.py \
+  --postgres "$DATABASE_URL" \
+  --sqlite signals.db \
+  --hours 72
+```
+
+This helper copies recent `signal_event` rows into `signals.db`, making it easy to preview formatting changes offline.
+
+### Documentation
+
+- `docs/LDA_OVERVIEW.md` – combined history of the LDA V1 implementation
+- `docs/OPERATIONS_GUIDE.md` – consolidated deployment, readiness, and secrets reference
+- Additional reference material lives under `docs/`
 
 ### Slack Commands
 
