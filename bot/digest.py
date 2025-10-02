@@ -13,7 +13,8 @@ Architecture:
 # =============================================================================
 
 import hashlib
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import pytz
@@ -25,6 +26,13 @@ from bot.utils import slack_link
 HIGH_IMPACT_MIN = 5.0
 WHAT_CHANGED_MIN = 3.0
 TITLE_MAX_LEN = 70
+FRONT_BUDGET_TOTAL = 20
+BUDGET_WHAT_CHANGED = 8
+BUDGET_HIGH_IMPACT = 6
+BUDGET_GROUPS = 4
+BUDGET_SURGES = 2  # Reserved for future surge sections
+BUDGET_CONGRESS = 4
+MAX_PER_AGENCY = 2
 
 
 def _item_sort_key(item: Dict) -> tuple:
@@ -74,6 +82,148 @@ def is_emergency_ad(s):
     return ("emergency" in t) or ("immediate adoption" in t)
 
 
+MANUFACTURER_PATTERN = re.compile(
+    r"Boeing|Airbus(?:\s+Helicopters)?|De Havilland|Embraer|Bombardier|Textron|Gulfstream|Leonardo|Sikorsky|Robinson|Piper|Cessna",
+    re.IGNORECASE,
+)
+
+SRO_PATTERN = re.compile(
+    r"FINRA|NASDAQ|NYSE|CBOE|IEX|MIAX|BOX|MEMX|NYSE(?:\s+(?:Arca|American))?|LTSE|MSRB",
+    re.IGNORECASE,
+)
+
+IRS_ROUTINE_PATTERN = re.compile(
+    r"\b(Revenue (?:Procedure|Ruling)|Preparer Tax Identification Number|PTIN|OMB Control Number|Paperwork Reduction Act|Information Collection)\b",
+    re.IGNORECASE,
+)
+
+IRS_ROUTINE_EXCLUSIONS = re.compile(
+    r"\b(guidance|enforcement|penalty)\b",
+    re.IGNORECASE,
+)
+
+EPA_ADMIN_EXCLUSIONS = re.compile(
+    r"\b(guidance|enforcement|emergency|penalty|waiver|recall|tariff|privacy|antitrust|approval|denial)\b",
+    re.IGNORECASE,
+)
+
+
+def extract_manufacturers(title: str) -> List[str]:
+    """Return up to four manufacturer names mentioned in the title."""
+    if not title:
+        return []
+
+    matches = MANUFACTURER_PATTERN.findall(title)
+    seen: List[str] = []
+    for match in matches:
+        normalized = match.strip()
+        if normalized and normalized not in seen:
+            seen.append(normalized)
+        if len(seen) >= 4:
+            break
+    return seen
+
+
+def is_sec_sro(item: Dict[str, Any]) -> bool:
+    """Return True if item is an SEC self-regulatory organization filing."""
+    if item.get("agency") != "Securities and Exchange Commission":
+        return False
+    title = item.get("title", "")
+    return bool(re.search(r"(?i)\bSelf-?Regulatory Organizations?\b", title))
+
+
+def extract_sro_names(title: str) -> List[str]:
+    """Extract SRO entity names from title string."""
+    if not title:
+        return []
+
+    matches = SRO_PATTERN.findall(title)
+    seen: List[str] = []
+    for match in matches:
+        normalized = match.replace("  ", " ").strip()
+        if normalized and normalized not in seen:
+            seen.append(normalized)
+        if len(seen) >= 4:
+            break
+    return seen
+
+
+def is_irs_routine(item: Dict[str, Any]) -> bool:
+    """Identify routine IRS notice items (no substantive guidance)."""
+    agency = item.get("agency") or ""
+    title = item.get("title", "")
+    if agency not in {"Internal Revenue Service", "Department of the Treasury"}:
+        return False
+    if not IRS_ROUTINE_PATTERN.search(title):
+        return False
+    if IRS_ROUTINE_EXCLUSIONS.search(title):
+        return False
+    return True
+
+
+def is_epa_admin_notice(item: Dict[str, Any]) -> bool:
+    """Return True when EPA notice is purely administrative (no deadlines)."""
+    if item.get("agency") != "Environmental Protection Agency":
+        return False
+    doc_type = (item.get("document_type") or "").lower()
+    if doc_type != "notice":
+        return False
+    if item.get("comment_end_date"):
+        return False
+    title = item.get("title", "")
+    return not EPA_ADMIN_EXCLUSIONS.search(title)
+
+
+def normalize_type(item: Dict[str, Any]) -> str:
+    """Normalize signal type to canonical categories."""
+    signal_type = (item.get("signal_type") or "").lower()
+    document_type = (item.get("document_type") or "").lower()
+    title = (item.get("title") or "").lower()
+    source = item.get("source")
+
+    if "hearing" in signal_type or "markup" in signal_type or "markup" in document_type:
+        return "hearing"
+    if "bill" in signal_type or source == "congress":
+        return "bill"
+    if "proposed" in signal_type or "proposed" in document_type or "notice of proposed" in title:
+        return "proposed"
+    if "final" in signal_type or "final rule" in title:
+        return "rule"
+    if "rule" in signal_type or "rule" in document_type:
+        return "rule"
+    if source == "regulations_gov":
+        return "docket"
+    return "notice"
+
+
+def days_until(date_str: Optional[str], pt_tz: pytz.BaseTzInfo) -> Optional[int]:
+    """Return integer days until the supplied date in PT."""
+    if not date_str:
+        return None
+
+    try:
+        if "T" in date_str:
+            target = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        else:
+            target = datetime.fromisoformat(f"{date_str}T00:00:00+00:00")
+        if target.tzinfo is None:
+            target = target.replace(tzinfo=timezone.utc)
+        target_pt = target.astimezone(pt_tz)
+        now_pt = datetime.now(pt_tz)
+        delta = target_pt.date() - now_pt.date()
+        return delta.days
+    except ValueError:
+        return None
+
+
+def is_closing_soon(item: Dict[str, Any], pt_tz: pytz.BaseTzInfo) -> bool:
+    """Return True when comment period closes within 14 days."""
+    days = days_until(item.get("comment_end_date"), pt_tz)
+    if days is None:
+        return False
+    return 0 <= days <= 14
+
+
 class DigestFormatter:
     """Enhanced digest formatter with V2 features.
 
@@ -96,258 +246,729 @@ class DigestFormatter:
         if not signals:
             return self._format_empty_digest()
 
-        # Convert SignalV2 objects to dict format for processing
-        signal_dicts = []
-        for signal in signals:
-            signal_type_attr = getattr(signal, "signal_type", None)
-            if isinstance(signal_type_attr, SignalType):
-                signal_type_value = signal_type_attr.value
-            elif signal_type_attr is None:
-                signal_type_value = ""
-            else:
-                signal_type_value = str(signal_type_attr)
+        items = [self._signal_to_item(signal) for signal in signals]
+        items = [item for item in items if item]
+        if not items:
+            return self._format_empty_digest()
 
-            signal_dict = {
-                "uid": getattr(signal, "source_id", None),
-                "document_number": (
-                    signal.metrics.get("document_number")
-                    if hasattr(signal, "metrics")
-                    else None
-                ),
-                "docket_id": getattr(signal, "docket_id", None),
-                "bill_id": getattr(signal, "bill_id", None),
-                "source": signal.source,
-                "title": signal.title,
-                "link": signal.link,
-                "priority_score": signal.priority_score,
-                "timestamp": signal.timestamp,
-                "agency": getattr(signal, "agency", None),
-                "signal_type": signal_type_value,
-                "filing_status": getattr(signal, "filing_status", None),
-                "issue_codes": getattr(signal, "issue_codes", []),
-            }
-            signal_dicts.append(signal_dict)
+        deduped = self._dedupe_items(items)
+        classification = self._classify_items(deduped)
+        self._apply_bundles(classification)
+        self._enforce_agency_caps(classification)
+        selection = self._select_with_budgets(classification)
+        return self._render_digest(selection, hours_back)
 
-        # Pre-pass: collapse amended duplicates
-        best = {}
-        for s in signal_dicts:
-            key = get_signal_key(s)
-            if key not in best:
-                best[key] = s
-                continue
+    def _signal_to_item(self, signal: SignalV2) -> Optional[Dict[str, Any]]:
+        """Convert SignalV2 to normalized dict for processing."""
+        if not signal.title:
+            return None
 
-            current = best[key]
-            new_ts_raw = s.get("timestamp")
-            cur_ts_raw = current.get("timestamp")
+        signal_type_attr = getattr(signal, "signal_type", None)
+        if isinstance(signal_type_attr, SignalType):
+            signal_type_value = signal_type_attr.value
+        elif signal_type_attr is None:
+            signal_type_value = ""
+        else:
+            signal_type_value = str(signal_type_attr)
 
-            new_ts: Optional[datetime]
-            cur_ts: Optional[datetime]
+        metrics = getattr(signal, "metrics", {}) or {}
+        comment_end_date = (
+            getattr(signal, "comment_end_date", None)
+            or metrics.get("comment_end_date")
+            or metrics.get("commentEndDate")
+        )
+        document_type = (
+            metrics.get("document_type")
+            or metrics.get("documentType")
+            or ""
+        )
+        comment_surge = (
+            getattr(signal, "comment_surge", False)
+            or bool(metrics.get("comment_surge"))
+        )
+        comments_24h = getattr(signal, "comments_24h", None) or metrics.get("comments_24h")
+        comments_delta = getattr(signal, "comments_delta", None) or metrics.get("comments_delta")
 
-            new_ts = new_ts_raw if isinstance(new_ts_raw, datetime) else None
-            cur_ts = cur_ts_raw if isinstance(cur_ts_raw, datetime) else None
-
-            if cur_ts is None or (new_ts is not None and new_ts > cur_ts):
-                best[key] = s
-                continue
-
-            if new_ts is not None and cur_ts is not None and new_ts == cur_ts:
-                current_status = current.get("filing_status")
-                new_status = s.get("filing_status")
-                if new_status == "amended" and current_status != "amended":
-                    best[key] = s
-
-        # Work only on deduplicated signals
-        deduped_signals = list(best.values())
-
-        # Section assignment with precedence + dedupe
-        high_impact: List[Dict[str, Any]] = []
-        what_changed: List[Dict[str, Any]] = []
-        groups: Dict[str, List[Dict[str, Any]]] = {
-            "rules": [],
-            "notices": [],
-            "dockets": [],
-            "bills": [],
+        item = {
+            "uid": getattr(signal, "source_id", None),
+            "document_number": metrics.get("document_number"),
+            "docket_id": getattr(signal, "docket_id", None),
+            "bill_id": getattr(signal, "bill_id", None),
+            "source": signal.source,
+            "title": signal.title,
+            "link": signal.link,
+            "priority_score": signal.priority_score or 0.0,
+            "timestamp": signal.timestamp,
+            "agency": getattr(signal, "agency", None),
+            "signal_type": signal_type_value,
+            "document_type": document_type,
+            "comment_end_date": comment_end_date,
+            "comment_surge": comment_surge,
+            "comments_24h": comments_24h,
+            "comments_delta": comments_delta,
+            "issue_codes": getattr(signal, "issue_codes", []),
+            "filing_status": getattr(signal, "filing_status", None),
+            "committee": getattr(signal, "committee", None) or metrics.get("committee"),
+            "chamber": metrics.get("chamber"),
+            "start_datetime": self._extract_congress_datetime(metrics),
+            "metrics": metrics,
+            "original": signal,
         }
-        seen: set[str] = set()
 
-        # First pass: FAA AD handling
-        faa_ads: List[Dict[str, Any]] = []
+        if item["timestamp"] and item["timestamp"].tzinfo is None:
+            item["timestamp"] = item["timestamp"].replace(tzinfo=timezone.utc)
+
+        item["normalized_type"] = normalize_type(item)
+        return item
+
+    def _extract_congress_datetime(self, metrics: Dict[str, Any]) -> Optional[datetime]:
+        """Extract congress hearing datetime from metrics if available."""
+        candidates = [
+            metrics.get("start_datetime"),
+            metrics.get("startDateTime"),
+            metrics.get("start_date_time"),
+            metrics.get("hearing_datetime"),
+        ]
+
+        for value in candidates:
+            if value:
+                dt = self._parse_datetime(value)
+                if dt:
+                    return dt
+
+        date_str = metrics.get("date") or metrics.get("start_date")
+        time_str = metrics.get("time") or metrics.get("start_time")
+        if date_str and time_str:
+            dt = self._parse_datetime(f"{date_str}T{time_str}")
+            if dt:
+                return dt
+        if date_str:
+            dt = self._parse_datetime(date_str)
+            if dt:
+                return dt
+        return None
+
+    def _parse_datetime(self, value: str) -> Optional[datetime]:
+        """Parse iso/date strings to timezone-aware datetimes."""
+        if not value:
+            return None
+        try:
+            if "T" in value:
+                dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            else:
+                dt = datetime.fromisoformat(f"{value}T00:00:00+00:00")
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except ValueError:
+            return None
+
+    def _dedupe_items(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Collapse duplicates by key keeping most recent / amended version."""
+        best: Dict[str, Dict[str, Any]] = {}
+        for item in items:
+            key = get_signal_key(item)
+            current = best.get(key)
+            if not current:
+                best[key] = item
+                continue
+
+            new_ts = item.get("timestamp")
+            cur_ts = current.get("timestamp")
+
+            if not isinstance(cur_ts, datetime) or (
+                isinstance(new_ts, datetime) and new_ts > cur_ts
+            ):
+                best[key] = item
+                continue
+
+            if isinstance(new_ts, datetime) and isinstance(cur_ts, datetime) and new_ts == cur_ts:
+                if item.get("filing_status") == "amended" and current.get("filing_status") != "amended":
+                    best[key] = item
+
+        return list(best.values())
+
+    def _classify_items(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Classify items into digest sections prior to bundling."""
+        classification: Dict[str, Any] = {
+            "high_impact": [],
+            "what_changed": [],
+            "groups": {"rules": [], "notices": [], "dockets": [], "bills": []},
+            "congress_items": [],
+            "faa_pool": [],
+            "sec_pool": [],
+            "irs_pool": [],
+            "epa_pool": [],
+            "all_items": items,
+        }
+
+        seen: set[str] = set()
         non_faa: List[Dict[str, Any]] = []
 
-        for item in deduped_signals:
+        for item in items:
+            item["normalized_type"] = normalize_type(item)
+            if item.get("source") == "congress" and item["normalized_type"] in {"hearing", "markup"}:
+                classification["congress_items"].append(item)
+                continue
+
             if is_faa_ad(item):
-                faa_ads.append(item)
-            else:
-                non_faa.append(item)
+                if (
+                    is_emergency_ad(item)
+                    and item.get("priority_score", 0) >= HIGH_IMPACT_MIN
+                ):
+                    classification["high_impact"].append(item)
+                    seen.add(get_signal_key(item))
+                else:
+                    classification["faa_pool"].append(item)
+                continue
 
-        # Promote emergency FAA ADs to high impact
-        for item in faa_ads:
-            if (
-                is_emergency_ad(item)
-                and item.get("priority_score", 0) >= HIGH_IMPACT_MIN
-            ):
-                high_impact.append(item)
-                seen.add(get_signal_key(item))
+            non_faa.append(item)
 
-        # Second pass: all non_faa items (exclude FAA ADs)
         for item in non_faa:
             key = get_signal_key(item)
             if key in seen:
                 continue
-
             score = item.get("priority_score", 0)
             if score >= HIGH_IMPACT_MIN:
-                high_impact.append(item)
+                classification["high_impact"].append(item)
                 seen.add(key)
                 continue
+            if is_closing_soon(item, self.pt_tz) or item.get("comment_surge"):
+                if score < HIGH_IMPACT_MIN:
+                    classification["what_changed"].append(item)
+                    seen.add(key)
+
+        for item in non_faa:
+            key = get_signal_key(item)
+            if key in seen:
+                continue
+            score = item.get("priority_score", 0)
+            norm_type = item.get("normalized_type") or "notice"
 
             if WHAT_CHANGED_MIN <= score < HIGH_IMPACT_MIN:
-                what_changed.append(item)
+                classification["what_changed"].append(item)
                 seen.add(key)
                 continue
 
-            signal_type = self._normalize_signal_type(item)
-            if signal_type in groups:
-                groups[signal_type].append(item)
-                seen.add(key)
+            bucket = {
+                "rule": "rules",
+                "proposed": "rules",
+                "notice": "notices",
+                "docket": "dockets",
+                "bill": "bills",
+            }.get(norm_type, "notices")
 
-        # FAA AD bundle (as a single "notices" line)
-        non_emergency_faa_ads = [
-            item for item in faa_ads if get_signal_key(item) not in seen
-        ]
-        if non_emergency_faa_ads:
-            manufacturers = []
+            classification["groups"][bucket].append(item)
+            seen.add(key)
 
-            for item in non_emergency_faa_ads:
-                title = item.get("title", "")
-                manuf = self._extract_faa_manufacturer(title)
-                if manuf and manuf not in manufacturers:
-                    manufacturers.append(manuf)
+            if is_sec_sro(item):
+                classification["sec_pool"].append(item)
+            if is_irs_routine(item):
+                classification["irs_pool"].append(item)
+            if is_epa_admin_notice(item):
+                classification["epa_pool"].append(item)
 
-            sample_manufacturers = (
-                ", ".join(manufacturers[:3]) if manufacturers else "Various"
-            )
-            if len(manufacturers) > 3:
-                sample_manufacturers += "…"
+        return classification
 
-            timestamps: List[datetime] = [
-                ts
-                for ts in (item.get("timestamp") for item in non_emergency_faa_ads)
-                if isinstance(ts, datetime)
+    def _apply_bundles(self, classification: Dict[str, Any]) -> None:
+        """Create synthetic bundle rows for FAA, SEC, IRS, EPA sets."""
+        groups = classification["groups"]
+
+        faa_pool = classification.get("faa_pool", [])
+        if faa_pool:
+            manufacturers: List[str] = []
+            for item in faa_pool:
+                manufacturers.extend(extract_manufacturers(item.get("title", "")))
+            unique_manufacturers: List[str] = []
+            for name in manufacturers:
+                normalized = name.strip()
+                if normalized and normalized not in unique_manufacturers:
+                    unique_manufacturers.append(normalized)
+                if len(unique_manufacturers) >= 3:
+                    break
+            if len(manufacturers) > len(unique_manufacturers):
+                unique_manufacturers.append("…")
+
+            timestamps = [
+                item.get("timestamp")
+                for item in faa_pool
+                if isinstance(item.get("timestamp"), datetime)
             ]
-            max_ad_timestamp = (
-                max(timestamps) if timestamps else datetime.now(timezone.utc)
-            )
-            issue_codes = sorted(
-                {
-                    code
-                    for item in non_emergency_faa_ads
-                    for code in item.get("issue_codes", [])
-                }
-            )
-
-            bundle_count = len(non_emergency_faa_ads)
-            bundle_title = (
-                "FAA Airworthiness Directives — "
-                f"{bundle_count} notices today ({sample_manufacturers})"
-            )
-
-            faa_bundle = {
-                "title": bundle_title,
+            bundle = {
+                "title": "FAA Airworthiness Directives — "
+                f"{len(faa_pool)} notices today ({', '.join(unique_manufacturers) or 'Various'})",
                 "link": "https://www.federalregister.gov/agencies/federal-aviation-administration",
                 "priority_score": 1.0,
-                "timestamp": max_ad_timestamp,
+                "timestamp": max(timestamps)
+                if timestamps
+                else datetime.now(timezone.utc),
                 "synthetic": True,
                 "source": "federal_register",
-                "issue_codes": issue_codes,
-                "synthetic_count": len(non_emergency_faa_ads),
+                "signal_type": "notice",
+                "issue_codes": sorted(
+                    {code for item in faa_pool for code in item.get("issue_codes", [])}
+                ),
+                "bundle_count": len(faa_pool),
+                "bundle_agency": "Federal Aviation Administration",
+                "link_label": "FR",
             }
-            groups["notices"].append(faa_bundle)
+            groups["notices"].append(bundle)
 
-        # Sort all sections
-        high_impact.sort(key=_item_sort_key)
-        what_changed.sort(key=_item_sort_key)
-        for group_name in groups:
-            groups[group_name].sort(key=_item_sort_key)
+        def bundle_items(pool: List[Dict[str, Any]], title_builder, link, link_label):
+            if not pool:
+                return
+            self._remove_from_groups(groups, pool)
+            timestamps = [
+                item.get("timestamp")
+                for item in pool
+                if isinstance(item.get("timestamp"), datetime)
+            ]
+            bundle = {
+                "title": title_builder(pool),
+                "link": link,
+                "priority_score": 1.0,
+                "timestamp": max(timestamps)
+                if timestamps
+                else datetime.now(timezone.utc),
+                "synthetic": True,
+                "source": pool[0].get("source"),
+                "signal_type": pool[0].get("signal_type"),
+                "issue_codes": sorted(
+                    {code for item in pool for code in item.get("issue_codes", [])}
+                ),
+                "bundle_count": len(pool),
+                "bundle_agency": pool[0].get("agency"),
+                "link_label": link_label,
+            }
+            groups["notices"].append(bundle)
 
-        # Build digest
-        lines = []
+        sec_pool = classification.get("sec_pool", [])
+        if sec_pool:
+            def sec_title(pool: List[Dict[str, Any]]) -> str:
+                names = []
+                for item in pool:
+                    names.extend(extract_sro_names(item.get("title", "")))
+                seen_names: List[str] = []
+                for name in names:
+                    if name not in seen_names:
+                        seen_names.append(name)
+                    if len(seen_names) >= 4:
+                        break
+                if len(pool) > len(seen_names):
+                    seen_names.append("…")
+                return (
+                    f"SEC SRO filings — {len(pool)} today ({', '.join(seen_names) or 'Various'})"
+                )
 
-        # Header
+            bundle_items(
+                sec_pool,
+                sec_title,
+                "https://www.sec.gov/rules/sro.shtml",
+                "SEC",
+            )
+
+        irs_pool = classification.get("irs_pool", [])
+        if irs_pool:
+            def irs_title(pool: List[Dict[str, Any]]) -> str:
+                return (
+                    f"IRS routine notices — {len(pool)} today (PTIN fee, Rev. Proc, OMB paperwork)"
+                )
+
+            bundle_items(
+                irs_pool,
+                irs_title,
+                "https://www.federalregister.gov/agencies/internal-revenue-service",
+                "FR",
+            )
+
+        epa_pool = classification.get("epa_pool", [])
+        if epa_pool:
+            def epa_title(pool: List[Dict[str, Any]]) -> str:
+                return (
+                    f"EPA administrative notices — {len(pool)} today (Air, Water, Compliance)"
+                )
+
+            bundle_items(
+                epa_pool,
+                epa_title,
+                "https://www.federalregister.gov/agencies/environmental-protection-agency",
+                "FR",
+            )
+
+    def _remove_from_groups(
+        self, groups: Dict[str, List[Dict[str, Any]]], items: List[Dict[str, Any]]
+    ) -> None:
+        """Remove items from group buckets before bundling."""
+        items_set = {id(item) for item in items}
+        for name, bucket in groups.items():
+            groups[name] = [entry for entry in bucket if id(entry) not in items_set]
+
+    def _enforce_agency_caps(self, classification: Dict[str, Any]) -> None:
+        """Limit standalone lines per agency and collapse overflow into bundles."""
+        agency_counts: Dict[str, int] = {}
+        overflow: Dict[str, List[Dict[str, Any]]] = {}
+
+        def process_list(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+            result = []
+            for item in items:
+                if item.get("synthetic"):
+                    result.append(item)
+                    continue
+                agency = item.get("agency")
+                if not agency:
+                    result.append(item)
+                    continue
+                count = agency_counts.get(agency, 0)
+                if count >= MAX_PER_AGENCY:
+                    overflow.setdefault(agency, []).append(item)
+                else:
+                    agency_counts[agency] = count + 1
+                    result.append(item)
+            return result
+
+        classification["high_impact"] = process_list(classification["high_impact"])
+        classification["what_changed"] = process_list(classification["what_changed"])
+        for group_name, bucket in classification["groups"].items():
+            classification["groups"][group_name] = process_list(bucket)
+
+        for agency, items in overflow.items():
+            if not items:
+                continue
+            first = items[0]
+            timestamps = [
+                item.get("timestamp")
+                for item in items
+                if isinstance(item.get("timestamp"), datetime)
+            ]
+            link = first.get("link") or "https://www.federalregister.gov/"
+            bundle = {
+                "title": f"{agency} administrative items — {len(items)} today",
+                "link": link,
+                "priority_score": 1.0,
+                "timestamp": max(timestamps)
+                if timestamps
+                else datetime.now(timezone.utc),
+                "synthetic": True,
+                "source": first.get("source"),
+                "signal_type": first.get("signal_type"),
+                "issue_codes": sorted(
+                    {code for item in items for code in item.get("issue_codes", [])}
+                ),
+                "bundle_count": len(items),
+                "bundle_agency": agency,
+                "link_label": "View",
+            }
+            classification["groups"]["notices"].append(bundle)
+
+    def _select_with_budgets(self, classification: Dict[str, Any]) -> Dict[str, Any]:
+        """Trim sections to configured budgets and prepare congress data."""
+        high_impact = sorted(classification["high_impact"], key=_item_sort_key)
+        what_changed = sorted(classification["what_changed"], key=_item_sort_key)
+        high_impact = high_impact[:BUDGET_HIGH_IMPACT]
+        what_changed = what_changed[:BUDGET_WHAT_CHANGED]
+
+        selected_groups = {"rules": [], "notices": [], "dockets": [], "bills": []}
+        groups = classification["groups"]
+        total_selected = 0
+        for group_name in ["rules", "notices", "dockets", "bills"]:
+            sorted_bucket = sorted(groups[group_name], key=_item_sort_key)
+            for item in sorted_bucket:
+                if total_selected >= BUDGET_GROUPS:
+                    break
+                selected_groups[group_name].append(item)
+                total_selected += 1
+
+        congress_lines, congress_meta = self._prepare_congress_section(
+            classification["congress_items"]
+        )
+
+        def count_lines() -> int:
+            return (
+                len(high_impact)
+                + len(what_changed)
+                + sum(len(bucket) for bucket in selected_groups.values())
+                + len(congress_lines)
+            )
+
+        while count_lines() > FRONT_BUDGET_TOTAL:
+            if sum(len(bucket) for bucket in selected_groups.values()) > 0:
+                for group_name in ["bills", "dockets", "notices", "rules"]:
+                    if selected_groups[group_name]:
+                        selected_groups[group_name].pop()
+                        break
+            elif len(what_changed) > 0:
+                what_changed.pop()
+            elif len(congress_lines) > 0:
+                congress_lines.pop()
+            elif len(high_impact) > 0:
+                high_impact.pop()
+            else:
+                break
+
+        final_items: List[Dict[str, Any]] = []
+        final_items.extend(high_impact)
+        final_items.extend(what_changed)
+        for bucket in selected_groups.values():
+            final_items.extend(bucket)
+
+        selection = {
+            "high_impact": high_impact,
+            "what_changed": what_changed,
+            "groups": selected_groups,
+            "congress": congress_lines,
+            "congress_meta": congress_meta,
+            "industry_items": final_items,
+            "final_items": final_items,
+        }
+        return selection
+
+    def _prepare_congress_section(
+        self, congress_items: List[Dict[str, Any]]
+    ) -> (List[Dict[str, Any]], Dict[str, Any]):
+        """Prepare Congress committee lines with chamber caps and bundles."""
+        if not congress_items:
+            return [], {"total_count": 0}
+
+        now_pt = datetime.now(self.pt_tz)
+        window_pt = now_pt + timedelta(hours=72)
+
+        def infer_chamber(item: Dict[str, Any]) -> str:
+            chamber = item.get("chamber")
+            if chamber:
+                chamber = chamber.title()
+                if chamber in {"House", "Senate"}:
+                    return chamber
+            committee = (item.get("committee") or "").lower()
+            if "senate" in committee:
+                return "Senate"
+            if "house" in committee:
+                return "House"
+            return "House"
+
+        def sort_key(item: Dict[str, Any]):
+            start = item.get("start_datetime")
+            if isinstance(start, datetime):
+                start_pt = start.astimezone(self.pt_tz)
+                if start_pt <= window_pt:
+                    return (0, start_pt)
+            score = item.get("priority_score", 0)
+            ts = item.get("timestamp")
+            ts_value = ts.timestamp() if isinstance(ts, datetime) else 0
+            return (1, -score, -ts_value)
+
+        chamber_map: Dict[str, List[Dict[str, Any]]] = {"House": [], "Senate": []}
+        for item in congress_items:
+            chamber_map[infer_chamber(item)].append(item)
+
+        for chamber in chamber_map:
+            chamber_map[chamber].sort(key=sort_key)
+
+        selected_lines: List[Dict[str, Any]] = []
+        meta = {
+            "total_count": len(congress_items),
+            "house_overflow": 0,
+            "senate_overflow": 0,
+        }
+
+        def committee_slug(name: str) -> str:
+            if not name:
+                return "Committee"
+            cleaned = re.sub(r"(?i)committee( on)? ", "", name).strip()
+            tokens = re.split(r"[\s&]+", cleaned)
+            letters = [t[0].upper() for t in tokens if t and t.lower() not in {"and", "of", "the"}]
+            if not letters:
+                return cleaned[:3].upper()
+            if len(letters) == 2:
+                return f"{letters[0]}&{letters[1]}"
+            return "".join(letters[:4])
+
+        def format_time(item: Dict[str, Any]) -> str:
+            start = item.get("start_datetime")
+            if not isinstance(start, datetime):
+                return ""
+            start_pt = start.astimezone(self.pt_tz)
+            return start_pt.strftime("%b %d %H:%M PT")
+
+        def build_line(item: Dict[str, Any]) -> Dict[str, Any]:
+            chamber = infer_chamber(item)
+            committee = item.get("committee") or "Committee"
+            slug = committee_slug(committee)
+            meeting_type = "Markup" if "markup" in (item.get("normalized_type") or "") else "Hearing"
+            return {
+                "type": "item",
+                "chamber": chamber,
+                "committee": committee,
+                "committee_slug": slug,
+                "meeting_type": meeting_type,
+                "title": item.get("title", ""),
+                "start": item.get("start_datetime"),
+                "time_str": format_time(item),
+                "link": item.get("link"),
+            }
+
+        chamber_limits = {"House": 0, "Senate": 0}
+        for chamber in ["House", "Senate"]:
+            for item in chamber_map[chamber]:
+                if len(selected_lines) >= BUDGET_CONGRESS:
+                    break
+                if chamber_limits[chamber] >= 2:
+                    break
+                selected_lines.append(build_line(item))
+                chamber_limits[chamber] += 1
+            overflow_count = len(chamber_map[chamber]) - chamber_limits[chamber]
+            meta_key = f"{chamber.lower()}_overflow"
+            meta[meta_key] = max(0, overflow_count)
+            if overflow_count > 0 and len(selected_lines) < BUDGET_CONGRESS:
+                remaining = chamber_map[chamber][chamber_limits[chamber]:]
+                committee_samples = [
+                    committee_slug(item.get("committee") or "Committee")
+                    for item in remaining[:3]
+                ]
+                bundle_title = (
+                    f"{chamber} — +{overflow_count} more hearings today "
+                    f"({', '.join(committee_samples)})"
+                )
+                selected_lines.append(
+                    {
+                        "type": "bundle",
+                        "chamber": chamber,
+                        "title": bundle_title,
+                        "link": "https://www.congress.gov/committees",
+                    }
+                )
+
+        return selected_lines[:BUDGET_CONGRESS], meta
+
+    def _render_digest(self, selection: Dict[str, Any], hours_back: int) -> str:
+        """Render final digest text from selection data."""
+        lines: List[str] = []
         current_time = datetime.now(self.pt_tz)
         date_str = current_time.strftime("%Y-%m-%d")
 
-        # Calculate mini-stats
-        grouped_items = [item for items in groups.values() for item in items]
-        all_shown = high_impact + what_changed + grouped_items
-        bills_count = len([s for s in all_shown if s.get("source") == "congress"])
-        fr_count = len([s for s in all_shown if s.get("source") == "federal_register"])
-        dockets_count = len(
-            [s for s in all_shown if s.get("source") == "regulations_gov"]
-        )
-        high_priority_count = len(
-            [s for s in all_shown if s.get("priority_score", 0) >= WHAT_CHANGED_MIN]
-        )
+        mini_stats_line = self._build_mini_stats(selection)
 
-        lines.append(f"LobbyLens — Daily Signals ({date_str}) · {hours_back}h")
-        mini_stats_line = (
-            "Mini-stats: "
-            f"Bills {bills_count} | FR {fr_count} | "
-            f"Dockets {dockets_count} | High-priority {high_priority_count}"
-        )
+        lines.append(f"*LobbyLens* — Daily Signals ({date_str}) · {hours_back}h")
         lines.append(mini_stats_line)
 
-        # What Changed
-        if what_changed or any(groups.values()):
-            lines.append("\nWhat Changed")
-            self._format_what_changed_section(lines, what_changed, groups)
+        if selection["what_changed"]:
+            lines.append("\n*What Changed*")
+            what_changed_map = {"rules": [], "notices": [], "dockets": [], "bills": []}
+            for item in selection["what_changed"]:
+                norm_type = item.get("normalized_type") or normalize_type(item)
+                bucket = {
+                    "rule": "rules",
+                    "proposed": "rules",
+                    "notice": "notices",
+                    "docket": "dockets",
+                    "bill": "bills",
+                }.get(norm_type, "notices")
+                what_changed_map[bucket].append(item)
 
-        # Outlier — High Impact
-        if high_impact:
-            lines.append("\nOutlier — High Impact")
-            for item in high_impact:
+            for bucket in ["rules", "notices", "dockets", "bills"]:
+                if not what_changed_map[bucket]:
+                    continue
+                lines.append(f"{bucket.title()}:")
+                for item in what_changed_map[bucket]:
+                    title = truncate_title(item.get("title", ""))
+                    context = self._build_item_context(item)
+                    link_text = self._get_link_text(item)
+                    if context:
+                        bullet = f"• {title} — {context}"
+                    else:
+                        bullet = f"• {title}"
+                    if link_text:
+                        bullet += f" • {link_text}"
+                    lines.append(bullet)
+
+        if selection["high_impact"]:
+            lines.append("\n*Outlier* — High Impact")
+            for item in selection["high_impact"]:
                 title = truncate_title(item.get("title", ""))
+                context = self._build_item_context(item)
                 link_text = self._get_link_text(item)
+                bullet = f"• {title}"
+                if context:
+                    bullet += f" — {context}"
                 if link_text:
-                    lines.append(f"• {title} • {link_text}")
-                else:
-                    lines.append(f"• {title}")
+                    bullet += f" • {link_text}"
+                lines.append(bullet)
 
-        # Industry Snapshot
-        industry_snapshot = self._compute_industry_snapshot(all_shown)
-        if industry_snapshot:
-            lines.append("\nIndustry Snapshot")
-            for industry, counts in industry_snapshot.items():
+        congress_lines: List[Dict[str, Any]] = selection["congress"]
+        if congress_lines:
+            lines.append("\n*Congress Committees*")
+            for entry in congress_lines:
+                if entry.get("type") == "bundle":
+                    link_text = slack_link(entry.get("link"), "Congress")
+                    bullet = f"• {entry['title']}"
+                    if link_text:
+                        bullet += f" • {link_text}"
+                    lines.append(bullet)
+                    continue
+                label = f"[{entry['chamber']}–{entry['committee_slug']}]"
+                meeting_type = entry.get("meeting_type", "Hearing")
+                title = truncate_title(entry.get("title", ""))
+                time_str = entry.get("time_str")
+                parts = [f"• {label} {meeting_type} — {title}"]
+                if time_str:
+                    parts.append(f"— {time_str}")
+                link_text = slack_link(entry.get("link"), "Congress")
+                if link_text:
+                    parts.append(f"• {link_text}")
+                lines.append(" ".join(parts))
+
+        for bucket in ["Rules", "Notices", "Dockets", "Bills"]:
+            items = selection["groups"][bucket.lower()]
+            if not items:
+                continue
+            lines.append(f"\n{bucket}:")
+            for item in items:
+                title = truncate_title(item.get("title", ""))
+                context = self._build_item_context(item)
+                link_text = self._get_link_text(item)
+                bullet = f"• {title}"
+                if context:
+                    bullet += f" — {context}"
+                if link_text:
+                    bullet += f" • {link_text}"
+                lines.append(bullet)
+
+        snapshot = self._compute_industry_snapshot(selection["industry_items"])
+        if snapshot:
+            lines.append("\n*Industry Snapshot*")
+            for industry, counts in snapshot.items():
                 rules = counts.get("rules", 0)
                 proposed = counts.get("proposed", 0)
                 notices = counts.get("notices", 0)
                 dockets = counts.get("dockets", 0)
-                snapshot_total = sum(counts.values())
-                snapshot_line = (
-                    f"• {industry}: {snapshot_total} "
-                    f"(rules {rules}, proposed {proposed}, "
-                    f"notices {notices}, dockets {dockets})"
+                total = sum(counts.values())
+                lines.append(
+                    f"• {industry}: {total} (rules {rules}, proposed {proposed}, notices {notices}, dockets {dockets})"
                 )
-                lines.append(snapshot_line)
 
         return "\n".join(lines)
 
+    def _build_mini_stats(self, selection: Dict[str, Any]) -> str:
+        """Build mini stats line including hearings when present."""
+        items = selection["final_items"]
+        bills = len([i for i in items if i.get("source") == "congress" and i.get("normalized_type") == "bill"])
+        fr = len([i for i in items if i.get("source") == "federal_register"])
+        dockets = len([i for i in items if i.get("source") == "regulations_gov"])
+        high_priority = len([i for i in items if i.get("priority_score", 0) >= WHAT_CHANGED_MIN])
+        hearings = selection["congress_meta"].get("total_count", 0)
+
+        parts = [
+            f"Mini-stats: Bills {bills}",
+            f"FR {fr}",
+            f"Dockets {dockets}",
+            f"High-priority {high_priority}",
+        ]
+        if hearings:
+            parts.append(f"Hearings {hearings}")
+        return " | ".join(parts)
+
     def _normalize_signal_type(self, item):
         """Normalize signal type to one of: rule, notice, docket, bill."""
-        signal_type = item.get("signal_type", "").lower()
-        source = item.get("source", "")
-
-        if source == "congress":
-            return "bills"
-        elif source == "regulations_gov":
-            return "dockets"
-        elif source == "federal_register":
-            if "rule" in signal_type:
-                return "rules"
-            else:
-                return "notices"
-        else:
-            return "notices"  # default
+        return normalize_type(item)
 
     def _format_what_changed_section(self, lines, what_changed, groups):
         """Format What Changed section with per-type subgroups."""
@@ -372,10 +993,17 @@ class DigestFormatter:
             for item in items:
                 title = truncate_title(item.get("title", ""))
                 link_text = self._get_link_text(item)
+                context = self._build_item_context(item)
                 if link_text:
-                    lines.append(f"• {title} • {link_text}")
+                    if context:
+                        lines.append(f"• {title} — {context} • {link_text}")
+                    else:
+                        lines.append(f"• {title} • {link_text}")
                 else:
-                    lines.append(f"• {title}")
+                    if context:
+                        lines.append(f"• {title} — {context}")
+                    else:
+                        lines.append(f"• {title}")
 
     def _extract_faa_manufacturer(self, title: str) -> Optional[str]:
         """Approximate manufacturer extraction from FAA AD titles."""
@@ -403,6 +1031,10 @@ class DigestFormatter:
         link = item.get("link")
         if not link:
             return None
+
+        label = item.get("link_label")
+        if label:
+            return slack_link(link, label)
 
         source = item.get("source", "")
         if source == "federal_register":
@@ -1186,17 +1818,24 @@ class DigestFormatter:
         """Get why-it-matters clause (deadline/effective/venue)."""
         clauses = []
 
-        # Check for deadline
-        if hasattr(signal, "deadline") and signal.deadline:
+        # Check for Regulations.gov comment deadline
+        comment_deadline = getattr(signal, "comment_end_date", None) or getattr(
+            signal, "deadline", None
+        )
+        if comment_deadline:
             try:
                 from datetime import datetime
 
-                deadline = datetime.fromisoformat(
-                    signal.deadline.replace("Z", "+00:00")
+                deadline_dt = datetime.fromisoformat(
+                    comment_deadline.replace("Z", "+00:00")
                 )
-                days_until = (deadline - datetime.now(timezone.utc)).days
-                if days_until <= 7:
-                    clauses.append(f"deadline in {days_until}d")
+                days_until = (deadline_dt - datetime.now(timezone.utc)).days
+                if days_until <= 1:
+                    clauses.append(
+                        "comments close today" if days_until == 0 else "comments close tomorrow"
+                    )
+                elif days_until <= 14:
+                    clauses.append(f"comments close in {days_until}d")
                 elif days_until <= 30:
                     clauses.append(f"deadline in {days_until}d")
             except (ValueError, AttributeError):
@@ -1216,6 +1855,19 @@ class DigestFormatter:
             except (ValueError, AttributeError):
                 pass
 
+        # Comment surge indicator
+        comment_surge = getattr(signal, "comment_surge", False) or signal.metrics.get(
+            "comment_surge"
+        )
+        if comment_surge:
+            comments_24h = getattr(signal, "comments_24h", None) or signal.metrics.get(
+                "comments_24h", 0
+            )
+            if comments_24h:
+                clauses.append(f"{comments_24h:,} comments (24h surge)")
+            else:
+                clauses.append("comment surge")
+
         # Check for venue/time
         if signal.committee:
             clauses.append(f"{signal.committee}")
@@ -1230,6 +1882,33 @@ class DigestFormatter:
             # Remove the generic "government activity" fallback to avoid redundancy
 
         return " • ".join(clauses[:2])  # Max 2 clauses
+
+    def _build_item_context(self, item: Dict[str, Any]) -> str:
+        """Build context clause for dict-based items in What Changed."""
+        original_signal = item.get("original")
+        if isinstance(original_signal, SignalV2):
+            return self._get_why_matters_clause(original_signal)
+
+        clauses: List[str] = []
+
+        comment_deadline = item.get("comment_end_date")
+        days = days_until(comment_deadline, self.pt_tz)
+        if days is not None:
+            if days <= 1:
+                clauses.append("comments close today" if days == 0 else "comments close tomorrow")
+            elif days <= 14:
+                clauses.append(f"comments close in {days}d")
+            elif days <= 30:
+                clauses.append(f"deadline in {days}d")
+
+        if item.get("comment_surge"):
+            comments_24h = item.get("comments_24h") or 0
+            if comments_24h:
+                clauses.append(f"{int(comments_24h):,} comments (24h surge)")
+            else:
+                clauses.append("comment surge")
+
+        return " • ".join(clauses[:2])
 
     def _format_front_page_industry_snapshot(
         self, industry: str, snapshot: Dict

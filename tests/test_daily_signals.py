@@ -123,7 +123,9 @@ class TestDailySignalsCollector:
         # Verify calls
         mock_congress_signals.assert_called_once_with(24)
         mock_fedreg_signals.assert_called_once_with(24)
-        mock_regs_signals.assert_called_once_with(24)
+        mock_regs_signals.assert_called_once_with(
+            24, federal_register_signals=[fedreg_signal]
+        )
 
         # Verify processing
         assert mock_process_signal.call_count == 3
@@ -151,7 +153,7 @@ class TestDailySignalsCollector:
         assert len(signals) == 0  # No signals due to errors
         mock_congress_signals.assert_called_once()
         mock_fedreg_signals.assert_called_once()
-        mock_regs_signals.assert_called_once()
+        mock_regs_signals.assert_called_once_with(24, federal_register_signals=[])
 
     @patch("bot.daily_signals.requests.Session.get")
     def test_collect_congress_signals_no_api_key(
@@ -273,9 +275,10 @@ class TestDailySignalsCollector:
     ) -> None:
         """Test successful Regulations.gov signal collection."""
         # Mock API response
-        mock_response = Mock()
-        mock_response.raise_for_status.return_value = None
-        mock_response.json.return_value = {
+        documents_response = Mock()
+        documents_response.raise_for_status.return_value = None
+        recent = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        documents_response.json.return_value = {
             "data": [
                 {
                     "id": "FTC-2024-0001-0001",
@@ -284,15 +287,27 @@ class TestDailySignalsCollector:
                         "documentType": "Notice",
                         "agencyId": "FTC",
                         "docketId": "FTC-2024-0001",
-                        "postedDate": "2024-01-15T10:00:00Z",
-                        "lastModifiedDate": "2024-01-15T10:00:00Z",
-                        "commentEndDate": "2024-02-15T23:59:59Z",
+                        "postedDate": recent,
+                        "lastModifiedDate": recent,
+                        "commentEndDate": recent,
                         "commentCount": 25,
                     },
                 }
             ]
         }
-        mock_get.return_value = mock_response
+        detail_response = Mock()
+        detail_response.raise_for_status.return_value = None
+        detail_response.json.return_value = {
+            "data": {
+                "attributes": {
+                    "commentEndDate": recent,
+                    "openForComment": True,
+                }
+            }
+        }
+
+        collector.regs_max_surge_dockets = 0
+        mock_get.side_effect = [documents_response, detail_response]
 
         signals = collector._collect_regulations_gov_signals(24)
 

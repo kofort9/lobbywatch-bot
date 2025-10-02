@@ -412,7 +412,19 @@ This document lists all GitHub repository secrets required for automated daily V
 | Secret Name | Description | Required For | How to Get |
 |-------------|-------------|--------------|------------|
 | `CONGRESS_API_KEY` | Congress.gov API key | V2 Daily | https://api.congress.gov/sign-up/ |
-| `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | V2 Daily | https://open.gsa.gov/api/regulationsgov/ |
+| `REGULATIONS_GOV_API_KEY` | Regulations.gov API key (a data.gov/Open GSA key) | V2 Daily | https://open.gsa.gov/api/regulationsgov/ |
+
+#### Regulations.gov v4 Filtering Pipeline (2025 update)
+- **What changed:** Daily signals now pull from the Regulations.gov v4 API with a deterministic, multi-step filter so noisy dockets never swamp the digest.
+- **Inputs:** We request the newest documents (page[size]=250, `sort=-postedDate`) and only keep `Rule`, `Proposed Rule`, `Notice`, `Meeting/Hearing` types.
+- **Enrichment:** The pipeline hydrates the first ~300 docs with detail calls, fetches 24h comment activity for the busiest dockets, and merges matching Federal Register items (via `docketId`/`document_number` or high title similarity) to borrow cleaner titles and URLs.
+- **Scoring:** Closing-soon comment periods (+≤14 days) and 24h comment surges get deterministic boosts. Non-emergency FAA airworthiness directives are demoted and later bundled.
+- **Config knobs:**
+  - `REGS_MAX_DETAIL_DOCS` (default 300)
+  - `REGS_MAX_SURGE_DOCKETS` (default 25)
+  - `REGS_SURGE_ABS_MIN` (default 50 new comments/24h)
+  - `REGS_SURGE_REL_MIN` (default 2.0× previous 24h)
+- **Result:** Slack digests list deadlines such as “comments close in 7d” and call out comment surges inline, giving users categories and urgency cues without hand-curating the feed.
 
 **Note:** Federal Register API doesn't require an API key (free service), so no secret needed.
 

@@ -86,6 +86,46 @@ class TestSignalsDatabaseV2:
         assert signals[0].priority_score == 5.0
         # Note: watchlist_hit is not stored in the database schema
 
+    def test_store_regulations_metadata(self, temp_db: Any) -> None:
+        """Ensure Regulations.gov metadata fields are persisted."""
+        now = datetime.now(timezone.utc)
+        comment_deadline = (now + timedelta(days=5, hours=1)).isoformat()
+
+        signal = SignalV2(
+            source="regulations_gov",
+            source_id="doc-xyz",
+            title="Proposed Rule on Data Security",
+            link="https://example.com/doc-xyz",
+            timestamp=now,
+            docket_id="FAA-2025-1234",
+            regs_object_id="obj-123",
+            regs_document_id="doc-xyz",
+            regs_docket_id="FAA-2025-1234",
+            comment_end_date=comment_deadline,
+            comments_24h=120,
+            comments_delta=90,
+            comment_surge=True,
+            issue_codes=["TEC"],
+            priority_score=4.2,
+        )
+
+        signal.metrics = {
+            "comment_end_date": comment_deadline,
+            "comments_24h": 120,
+            "comments_delta": 90,
+            "comment_surge": True,
+        }
+
+        temp_db.save_signals([signal])
+
+        stored = temp_db.get_recent_signals(24)[0]
+        assert stored.regs_object_id == "obj-123"
+        assert stored.regs_docket_id == "FAA-2025-1234"
+        assert stored.comment_end_date == comment_deadline
+        assert stored.comments_24h == 120
+        assert stored.comments_delta == 90
+        assert stored.comment_surge is True
+
     def test_store_signal_duplicate(self, temp_db: Any) -> None:
         """Test storing duplicate signal (should update)."""
         now = datetime.now(timezone.utc)

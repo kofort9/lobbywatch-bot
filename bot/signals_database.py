@@ -62,6 +62,12 @@ class SignalsDatabaseV2:
                 signal_type TEXT,
                 urgency TEXT,
                 watchlist_matches TEXT DEFAULT '[]',
+                regs_object_id TEXT,
+                regs_docket_id TEXT,
+                comment_end_date TEXT,
+                comments_24h INTEGER DEFAULT 0,
+                comments_delta INTEGER DEFAULT 0,
+                comment_surge INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(source, source_id)
             )
@@ -84,6 +90,23 @@ class SignalsDatabaseV2:
             "CREATE INDEX IF NOT EXISTS idx_signal_created ON signal_event(created_at)"
         )
 
+        alter_statements = [
+            "ALTER TABLE signal_event ADD COLUMN regs_object_id TEXT",
+            "ALTER TABLE signal_event ADD COLUMN regs_docket_id TEXT",
+            "ALTER TABLE signal_event ADD COLUMN comment_end_date TEXT",
+            "ALTER TABLE signal_event ADD COLUMN comments_24h INTEGER DEFAULT 0",
+            "ALTER TABLE signal_event ADD COLUMN comments_delta INTEGER DEFAULT 0",
+            "ALTER TABLE signal_event ADD COLUMN comment_surge INTEGER DEFAULT 0",
+        ]
+
+        for statement in alter_statements:
+            try:
+                cur.execute(statement)
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" in str(exc).lower():
+                    continue
+                raise
+
         conn.commit()
         conn.close()
 
@@ -104,8 +127,10 @@ class SignalsDatabaseV2:
                     INSERT OR REPLACE INTO signal_event (
                         source, source_id, ts, title, link, agency, committee,
                         bill_id, rin, docket_id, issue_codes, metric_json,
-                        priority_score, signal_type, urgency, watchlist_matches
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        priority_score, signal_type, urgency, watchlist_matches,
+                        regs_object_id, regs_docket_id, comment_end_date,
+                        comments_24h, comments_delta, comment_surge
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         signal.source,
@@ -124,6 +149,12 @@ class SignalsDatabaseV2:
                         (signal.signal_type.value if signal.signal_type else None),
                         signal.urgency.value if signal.urgency else None,
                         json.dumps(signal.watchlist_matches),
+                        signal.regs_object_id,
+                        signal.regs_docket_id,
+                        signal.comment_end_date,
+                        signal.comments_24h or 0,
+                        signal.comments_delta or 0,
+                        1 if signal.comment_surge else 0,
                     ),
                 )
                 saved_count += 1
@@ -385,9 +416,18 @@ class SignalsDatabaseV2:
             issue_codes=issue_codes,
             metrics=metrics,
             priority_score=row["priority_score"],
+            deadline=row["comment_end_date"] or metrics.get("comment_end_date"),
+            comment_end_date=row["comment_end_date"],
+            comments_24h=row["comments_24h"],
+            comments_delta=row["comments_delta"],
+            comment_surge=bool(row["comment_surge"]),
+            regs_object_id=row["regs_object_id"],
+            regs_document_id=row["source_id"],
+            regs_docket_id=row["regs_docket_id"],
             signal_type=signal_type,
             urgency=urgency,
             watchlist_matches=watchlist_matches,
+            watchlist_hit=bool(watchlist_matches),
         )
 
     # Additional methods for web server compatibility

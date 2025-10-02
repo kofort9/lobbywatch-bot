@@ -3,7 +3,7 @@
 # import os  # Unused for now
 from typing import List, Literal, Optional
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -21,7 +21,14 @@ class Settings(BaseSettings):
     # Daily Signals API Keys
     congress_api_key: Optional[str] = Field(default=None)
     federal_register_api_key: Optional[str] = Field(default=None)
-    regulations_gov_api_key: Optional[str] = Field(default=None)
+    regulations_gov_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("REGULATIONS_GOV_API_KEY", "REGS_GOV_API_KEY"),
+    )
+    regs_max_detail_docs: int = Field(default=300)
+    regs_max_surge_dockets: int = Field(default=25)
+    regs_surge_abs_min: int = Field(default=50)
+    regs_surge_rel_min: float = Field(default=2.0)
 
     # Slack Configuration
     slack_webhook_url: Optional[str] = Field(default=None)  # Legacy webhook support

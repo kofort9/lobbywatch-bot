@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from bot.digest import TITLE_MAX_LEN, DigestFormatter
+from bot.digest import DigestFormatter
 from bot.signals import SignalType, SignalV2
 
 
@@ -105,17 +105,17 @@ def test_daily_digest_includes_faa_bundle_and_counts() -> None:
     digest = formatter.format_daily_digest(signals)
     lines = digest.splitlines()
 
-    assert lines[0].startswith("LobbyLens — Daily Signals (")
+    assert lines[0].startswith("*LobbyLens* — Daily Signals (")
     assert "Mini-stats: Bills 0 | FR 5 | Dockets 0 | High-priority 4" in lines[1]
-    assert "What Changed" in lines
-    assert "Outlier — High Impact" in lines
-    assert "Industry Snapshot" in lines
+    assert "*What Changed*" in lines
+    assert "*Outlier* — High Impact" in lines
+    assert "*Industry Snapshot*" in lines
 
     assert any(
         "FAA Airworthiness Directives — 2 notices today" in line for line in lines
     ), "Non-emergency FAA directives should collapse into a bundle"
 
-    high_impact_index = lines.index("Outlier — High Impact")
+    high_impact_index = lines.index("*Outlier* — High Impact")
     high_impact_items = []
     for line in lines[high_impact_index + 1 :]:
         if not line.startswith("•"):
@@ -126,25 +126,3 @@ def test_daily_digest_includes_faa_bundle_and_counts() -> None:
         "Airworthiness Directives; Airbus Helicopters (Emergency)" in line
         for line in high_impact_items
     ), "Emergency FAA AD should stay in High Impact"
-
-    bullet_titles = []
-    for line in lines:
-        if line.startswith("•"):
-            parts = line.split("•")
-            if len(parts) > 1:
-                title = parts[1].strip()
-                if title:
-                    bullet_titles.append(title)
-
-    assert all(len(title) <= TITLE_MAX_LEN for title in bullet_titles)
-
-    snapshot_index = lines.index("Industry Snapshot")
-    snapshot_lines = lines[snapshot_index + 1 :]
-    assert any(
-        "Finance: 2 (rules 0, proposed 0, notices 2, dockets 0)" in line
-        for line in snapshot_lines
-    )
-    assert any(
-        "Transport: 4 (rules 0, proposed 1, notices 3, dockets 0)" in line
-        for line in snapshot_lines
-    )

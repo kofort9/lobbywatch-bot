@@ -79,6 +79,15 @@ class SignalV2:
     deadline: Optional[str] = None  # ISO format deadline
     effective_date: Optional[str] = None  # ISO format effective date
     comment_surge_pct: Optional[float] = None  # Comment surge percentage
+    comment_end_date: Optional[str] = None
+    comments_24h: Optional[int] = None
+    comments_delta: Optional[int] = None
+    comment_surge: bool = False
+
+    # Regulations.gov enrichment
+    regs_object_id: Optional[str] = None
+    regs_document_id: Optional[str] = None
+    regs_docket_id: Optional[str] = None
 
     # Computed fields (set by rules engine)
     signal_type: Optional[SignalType] = None
@@ -117,6 +126,13 @@ class SignalV2:
             "deadline": self.deadline,
             "effective_date": self.effective_date,
             "comment_surge_pct": self.comment_surge_pct,
+            "comment_end_date": self.comment_end_date,
+            "comments_24h": self.comments_24h,
+            "comments_delta": self.comments_delta,
+            "comment_surge": self.comment_surge,
+            "regs_object_id": self.regs_object_id,
+            "regs_document_id": self.regs_document_id,
+            "regs_docket_id": self.regs_docket_id,
             "signal_type": self.signal_type.value if self.signal_type else None,
             "urgency": self.urgency.value if self.urgency else None,
             "watchlist_matches": self.watchlist_matches,
@@ -154,6 +170,13 @@ class SignalV2:
             deadline=data.get("deadline"),
             effective_date=data.get("effective_date"),
             comment_surge_pct=data.get("comment_surge_pct"),
+            comment_end_date=data.get("comment_end_date"),
+            comments_24h=data.get("comments_24h"),
+            comments_delta=data.get("comments_delta"),
+            comment_surge=data.get("comment_surge", False),
+            regs_object_id=data.get("regs_object_id"),
+            regs_document_id=data.get("regs_document_id"),
+            regs_docket_id=data.get("regs_docket_id"),
             signal_type=signal_type,
             urgency=urgency,
             watchlist_matches=data.get("watchlist_matches", []),

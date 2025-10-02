@@ -12,7 +12,7 @@ Architecture:
 # V2: Enhanced Digest Formatting Tests (Current Active System)
 # =============================================================================
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from bot.digest import DigestFormatter
 from bot.signals import SignalV2
@@ -72,11 +72,43 @@ class TestDigestFormatter:
 
         result = formatter.format_daily_digest(signals)
 
-        assert "LobbyLens — Daily Signals" in result
+        assert "*LobbyLens* — Daily Signals" in result
         assert "Test Privacy Bill" in result
         assert "Privacy Rule Update" in result
-        assert "What Changed" in result
+        assert "*What Changed*" in result
         assert "Mini-stats:" in result
+
+    def test_digest_includes_comment_context(self) -> None:
+        """Regulations.gov items should show comment deadlines and surges."""
+        formatter = DigestFormatter()
+        now = datetime.now(timezone.utc)
+        comment_deadline = (now + timedelta(days=10, hours=1)).isoformat()
+
+        regs_signal = SignalV2(
+            source="regulations_gov",
+            source_id="doc-100",
+            timestamp=now,
+            title="Proposed Rule: Critical Infrastructure Cybersecurity",
+            link="https://example.com/doc-100",
+            docket_id="CISA-2025-0001",
+            comment_end_date=comment_deadline,
+            comments_24h=180,
+            comments_delta=150,
+            comment_surge=True,
+            issue_codes=["TEC"],
+            priority_score=4.2,
+        )
+        regs_signal.metrics = {
+            "comment_end_date": comment_deadline,
+            "comments_24h": 180,
+            "comments_delta": 150,
+            "comment_surge": True,
+        }
+
+        digest_text = formatter.format_daily_digest([regs_signal])
+
+        assert "comments close" in digest_text
+        assert "comments (24h surge)" in digest_text
 
 
 # =============================================================================

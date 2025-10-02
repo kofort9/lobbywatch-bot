@@ -7,6 +7,7 @@ from Federal Register, Regulations.gov, and Congress sources.
 
 import os
 import sys
+from datetime import datetime, timezone
 
 # Add the bot directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -92,7 +93,16 @@ def test_regulations_gov_signal_link_creation() -> None:
         },
     }
 
-    signal = collector._create_regulations_gov_signal(doc_with_docket)
+    fr_index = collector._build_federal_register_index([])
+    cutoff = datetime.now(timezone.utc)
+
+    signal = collector._create_regulations_gov_signal(
+        doc_with_docket,
+        doc_with_docket["attributes"],
+        {},
+        cutoff,
+        fr_index,
+    )
     assert signal is not None
     assert signal.link == "https://www.regulations.gov/docket/EPA-HQ-2025-0001"
     assert signal.source == "regulations_gov"
@@ -111,7 +121,13 @@ def test_regulations_gov_signal_link_creation() -> None:
         },
     }
 
-    signal = collector._create_regulations_gov_signal(doc_with_document_only)
+    signal = collector._create_regulations_gov_signal(
+        doc_with_document_only,
+        doc_with_document_only["attributes"],
+        {},
+        cutoff,
+        fr_index,
+    )
     assert signal is not None
     assert signal.link == "https://www.regulations.gov/document/EPA-HQ-2025-0002-0001"
     assert signal.source == "regulations_gov"
@@ -129,7 +145,13 @@ def test_regulations_gov_signal_link_creation() -> None:
         },
     }
 
-    signal = collector._create_regulations_gov_signal(doc_with_no_ids)
+    signal = collector._create_regulations_gov_signal(
+        doc_with_no_ids,
+        doc_with_no_ids["attributes"],
+        {},
+        cutoff,
+        fr_index,
+    )
     assert signal is not None
     assert signal.link == ""
     assert signal.source == "regulations_gov"
