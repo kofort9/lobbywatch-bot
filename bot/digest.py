@@ -766,7 +766,8 @@ class DigestFormatter:
                 chamber = chamber.title()
                 if chamber in {"House", "Senate"}:
                     return chamber
-            committee = (item.get("committee") or "").lower()
+            committee_val = item.get("committee")
+            committee = (committee_val if isinstance(committee_val, str) else "").lower()
             if "senate" in committee:
                 return "Senate"
             if "house" in committee:
