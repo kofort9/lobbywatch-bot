@@ -1188,7 +1188,9 @@ class DailySignalsCollector:
         self, hours_back: int = 24, min_priority: float = 0.0
     ) -> List[SignalV2]:
         """Get recent signals from database."""
-        result: List[SignalV2] = self.database.get_recent_signals(hours_back, min_priority)
+        result: List[SignalV2] = self.database.get_recent_signals(
+            hours_back, min_priority
+        )
         return result
 
 
