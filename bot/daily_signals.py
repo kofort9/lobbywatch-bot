@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from bot.signals import SignalType, SignalsRulesEngine, SignalV2
+from bot.signals import SignalsRulesEngine, SignalType, SignalV2
 from bot.signals_database import SignalsDatabaseV2
 
 logger = logging.getLogger(__name__)
@@ -62,9 +62,7 @@ class DailySignalsCollector:
             or config.get("REGULATIONS_GOV_API_KEY")
         )
         if self.regulations_gov_api_key:
-            self.session.headers.setdefault(
-                "X-Api-Key", self.regulations_gov_api_key
-            )
+            self.session.headers.setdefault("X-Api-Key", self.regulations_gov_api_key)
 
         # Regulations.gov ingestion tuning knobs
         self.regs_base_url = "https://api.regulations.gov/v4"
@@ -367,7 +365,9 @@ class DailySignalsCollector:
 
             next_url: Optional[str] = url
             while next_url:
-                response = self.session.get(next_url, params=params if next_url == url else None)
+                response = self.session.get(
+                    next_url, params=params if next_url == url else None
+                )
                 response.raise_for_status()
                 data = response.json()
                 params = None  # Only send params on first request
@@ -408,7 +408,9 @@ class DailySignalsCollector:
             return []
 
         # Fetch detail payloads for the most recent documents
-        detail_ids = [doc.get("id") for doc in filtered_docs[: self.regs_max_detail_docs]]
+        detail_ids = [
+            doc.get("id") for doc in filtered_docs[: self.regs_max_detail_docs]
+        ]
         details_map = self._fetch_regulations_gov_details(detail_ids)
 
         # Gather comment surge metrics for the busiest dockets
@@ -580,7 +582,9 @@ class DailySignalsCollector:
             doc_type = attributes.get("documentType", "")
 
             posted_dt = self._parse_iso_datetime(attributes.get("postedDate"))
-            last_modified_dt = self._parse_iso_datetime(attributes.get("lastModifiedDate"))
+            last_modified_dt = self._parse_iso_datetime(
+                attributes.get("lastModifiedDate")
+            )
             timestamp = last_modified_dt or posted_dt or cutoff_dt
 
             comment_end_raw = (
@@ -692,7 +696,9 @@ class DailySignalsCollector:
         else:
             return ""
 
-    def _fetch_regulations_gov_details(self, doc_ids: List[Optional[str]]) -> Dict[str, Any]:
+    def _fetch_regulations_gov_details(
+        self, doc_ids: List[Optional[str]]
+    ) -> Dict[str, Any]:
         """Fetch detailed document metadata for the provided object IDs."""
         details: Dict[str, Any] = {}
         for doc_id in doc_ids:
@@ -738,7 +744,9 @@ class DailySignalsCollector:
         next_url: Optional[str] = f"{self.regs_base_url}/comments"
         try:
             while next_url:
-                response = self.session.get(next_url, params=params if next_url.endswith("/comments") else None)
+                response = self.session.get(
+                    next_url, params=params if next_url.endswith("/comments") else None
+                )
                 response.raise_for_status()
                 payload = response.json()
                 params = None
@@ -772,7 +780,9 @@ class DailySignalsCollector:
                     break
 
         except Exception as exc:
-            logger.debug(f"Failed to fetch comments for Regulations.gov document {doc_id}: {exc}")
+            logger.debug(
+                f"Failed to fetch comments for Regulations.gov document {doc_id}: {exc}"
+            )
 
         delta = comments_24h - comments_prev_24h
         surge = False
@@ -834,7 +844,11 @@ class DailySignalsCollector:
             candidates = fr_index["by_docket"].get(docket_id.lower())
             if candidates:
                 # Prefer the newest FR entry for this docket
-                return max(candidates, key=lambda s: s.timestamp or datetime.min.replace(tzinfo=timezone.utc))
+                return max(
+                    candidates,
+                    key=lambda s: s.timestamp
+                    or datetime.min.replace(tzinfo=timezone.utc),
+                )
 
         if fr_doc_num:
             match = fr_index["by_document"].get(fr_doc_num.lower())
@@ -976,7 +990,10 @@ class DailySignalsCollector:
     def _is_faa_airworthiness(agency_name: str, title: str) -> bool:
         """Identify FAA Airworthiness Directives."""
 
-        if not agency_name or "federal aviation administration" not in agency_name.lower():
+        if (
+            not agency_name
+            or "federal aviation administration" not in agency_name.lower()
+        ):
             return False
         return title.lower().startswith("airworthiness directives")
 

@@ -83,17 +83,27 @@ def is_emergency_ad(s):
 
 
 MANUFACTURER_PATTERN = re.compile(
-    r"Boeing|Airbus(?:\s+Helicopters)?|De Havilland|Embraer|Bombardier|Textron|Gulfstream|Leonardo|Sikorsky|Robinson|Piper|Cessna",
+    (
+        r"Boeing|Airbus(?:\s+Helicopters)?|De Havilland|Embraer|"
+        r"Bombardier|Textron|Gulfstream|Leonardo|Sikorsky|Robinson|"
+        r"Piper|Cessna"
+    ),
     re.IGNORECASE,
 )
 
 SRO_PATTERN = re.compile(
-    r"FINRA|NASDAQ|NYSE|CBOE|IEX|MIAX|BOX|MEMX|NYSE(?:\s+(?:Arca|American))?|LTSE|MSRB",
+    (
+        r"FINRA|NASDAQ|NYSE|CBOE|IEX|MIAX|BOX|MEMX|NYSE(?:\s+(?:Arca|American))?"
+        r"|LTSE|MSRB"
+    ),
     re.IGNORECASE,
 )
 
 IRS_ROUTINE_PATTERN = re.compile(
-    r"\b(Revenue (?:Procedure|Ruling)|Preparer Tax Identification Number|PTIN|OMB Control Number|Paperwork Reduction Act|Information Collection)\b",
+    (
+        r"\b(Revenue (?:Procedure|Ruling)|Preparer Tax Identification Number|"
+        r"PTIN|OMB Control Number|Paperwork Reduction Act|Information Collection)\b"
+    ),
     re.IGNORECASE,
 )
 
@@ -185,7 +195,11 @@ def normalize_type(item: Dict[str, Any]) -> str:
         return "hearing"
     if "bill" in signal_type or source == "congress":
         return "bill"
-    if "proposed" in signal_type or "proposed" in document_type or "notice of proposed" in title:
+    if (
+        "proposed" in signal_type
+        or "proposed" in document_type
+        or "notice of proposed" in title
+    ):
         return "proposed"
     if "final" in signal_type or "final rule" in title:
         return "rule"
@@ -278,16 +292,17 @@ class DigestFormatter:
             or metrics.get("commentEndDate")
         )
         document_type = (
-            metrics.get("document_type")
-            or metrics.get("documentType")
-            or ""
+            metrics.get("document_type") or metrics.get("documentType") or ""
         )
-        comment_surge = (
-            getattr(signal, "comment_surge", False)
-            or bool(metrics.get("comment_surge"))
+        comment_surge = getattr(signal, "comment_surge", False) or bool(
+            metrics.get("comment_surge")
         )
-        comments_24h = getattr(signal, "comments_24h", None) or metrics.get("comments_24h")
-        comments_delta = getattr(signal, "comments_delta", None) or metrics.get("comments_delta")
+        comments_24h = getattr(signal, "comments_24h", None) or metrics.get(
+            "comments_24h"
+        )
+        comments_delta = getattr(signal, "comments_delta", None) or metrics.get(
+            "comments_delta"
+        )
 
         item = {
             "uid": getattr(signal, "source_id", None),
@@ -382,8 +397,15 @@ class DigestFormatter:
                 best[key] = item
                 continue
 
-            if isinstance(new_ts, datetime) and isinstance(cur_ts, datetime) and new_ts == cur_ts:
-                if item.get("filing_status") == "amended" and current.get("filing_status") != "amended":
+            if (
+                isinstance(new_ts, datetime)
+                and isinstance(cur_ts, datetime)
+                and new_ts == cur_ts
+            ):
+                if (
+                    item.get("filing_status") == "amended"
+                    and current.get("filing_status") != "amended"
+                ):
                     best[key] = item
 
         return list(best.values())
@@ -407,7 +429,10 @@ class DigestFormatter:
 
         for item in items:
             item["normalized_type"] = normalize_type(item)
-            if item.get("source") == "congress" and item["normalized_type"] in {"hearing", "markup"}:
+            if item.get("source") == "congress" and item["normalized_type"] in {
+                "hearing",
+                "markup",
+            }:
                 classification["congress_items"].append(item)
                 continue
 
@@ -499,9 +524,9 @@ class DigestFormatter:
                 f"{len(faa_pool)} notices today ({', '.join(unique_manufacturers) or 'Various'})",
                 "link": "https://www.federalregister.gov/agencies/federal-aviation-administration",
                 "priority_score": 1.0,
-                "timestamp": max(timestamps)
-                if timestamps
-                else datetime.now(timezone.utc),
+                "timestamp": (
+                    max(timestamps) if timestamps else datetime.now(timezone.utc)
+                ),
                 "synthetic": True,
                 "source": "federal_register",
                 "signal_type": "notice",
@@ -527,9 +552,9 @@ class DigestFormatter:
                 "title": title_builder(pool),
                 "link": link,
                 "priority_score": 1.0,
-                "timestamp": max(timestamps)
-                if timestamps
-                else datetime.now(timezone.utc),
+                "timestamp": (
+                    max(timestamps) if timestamps else datetime.now(timezone.utc)
+                ),
                 "synthetic": True,
                 "source": pool[0].get("source"),
                 "signal_type": pool[0].get("signal_type"),
@@ -544,6 +569,7 @@ class DigestFormatter:
 
         sec_pool = classification.get("sec_pool", [])
         if sec_pool:
+
             def sec_title(pool: List[Dict[str, Any]]) -> str:
                 names = []
                 for item in pool:
@@ -556,9 +582,7 @@ class DigestFormatter:
                         break
                 if len(pool) > len(seen_names):
                     seen_names.append("…")
-                return (
-                    f"SEC SRO filings — {len(pool)} today ({', '.join(seen_names) or 'Various'})"
-                )
+                return f"SEC SRO filings — {len(pool)} today ({', '.join(seen_names) or 'Various'})"
 
             bundle_items(
                 sec_pool,
@@ -569,10 +593,9 @@ class DigestFormatter:
 
         irs_pool = classification.get("irs_pool", [])
         if irs_pool:
+
             def irs_title(pool: List[Dict[str, Any]]) -> str:
-                return (
-                    f"IRS routine notices — {len(pool)} today (PTIN fee, Rev. Proc, OMB paperwork)"
-                )
+                return f"IRS routine notices — {len(pool)} today (PTIN fee, Rev. Proc, OMB paperwork)"
 
             bundle_items(
                 irs_pool,
@@ -583,10 +606,9 @@ class DigestFormatter:
 
         epa_pool = classification.get("epa_pool", [])
         if epa_pool:
+
             def epa_title(pool: List[Dict[str, Any]]) -> str:
-                return (
-                    f"EPA administrative notices — {len(pool)} today (Air, Water, Compliance)"
-                )
+                return f"EPA administrative notices — {len(pool)} today (Air, Water, Compliance)"
 
             bundle_items(
                 epa_pool,
@@ -645,9 +667,9 @@ class DigestFormatter:
                 "title": f"{agency} administrative items — {len(items)} today",
                 "link": link,
                 "priority_score": 1.0,
-                "timestamp": max(timestamps)
-                if timestamps
-                else datetime.now(timezone.utc),
+                "timestamp": (
+                    max(timestamps) if timestamps else datetime.now(timezone.utc)
+                ),
                 "synthetic": True,
                 "source": first.get("source"),
                 "signal_type": first.get("signal_type"),
@@ -775,7 +797,11 @@ class DigestFormatter:
                 return "Committee"
             cleaned = re.sub(r"(?i)committee( on)? ", "", name).strip()
             tokens = re.split(r"[\s&]+", cleaned)
-            letters = [t[0].upper() for t in tokens if t and t.lower() not in {"and", "of", "the"}]
+            letters = [
+                t[0].upper()
+                for t in tokens
+                if t and t.lower() not in {"and", "of", "the"}
+            ]
             if not letters:
                 return cleaned[:3].upper()
             if len(letters) == 2:
@@ -793,7 +819,11 @@ class DigestFormatter:
             chamber = infer_chamber(item)
             committee = item.get("committee") or "Committee"
             slug = committee_slug(committee)
-            meeting_type = "Markup" if "markup" in (item.get("normalized_type") or "") else "Hearing"
+            meeting_type = (
+                "Markup"
+                if "markup" in (item.get("normalized_type") or "")
+                else "Hearing"
+            )
             return {
                 "type": "item",
                 "chamber": chamber,
@@ -819,7 +849,7 @@ class DigestFormatter:
             meta_key = f"{chamber.lower()}_overflow"
             meta[meta_key] = max(0, overflow_count)
             if overflow_count > 0 and len(selected_lines) < BUDGET_CONGRESS:
-                remaining = chamber_map[chamber][chamber_limits[chamber]:]
+                remaining = chamber_map[chamber][chamber_limits[chamber] :]
                 committee_samples = [
                     committee_slug(item.get("committee") or "Committee")
                     for item in remaining[:3]
@@ -950,10 +980,18 @@ class DigestFormatter:
     def _build_mini_stats(self, selection: Dict[str, Any]) -> str:
         """Build mini stats line including hearings when present."""
         items = selection["final_items"]
-        bills = len([i for i in items if i.get("source") == "congress" and i.get("normalized_type") == "bill"])
+        bills = len(
+            [
+                i
+                for i in items
+                if i.get("source") == "congress" and i.get("normalized_type") == "bill"
+            ]
+        )
         fr = len([i for i in items if i.get("source") == "federal_register"])
         dockets = len([i for i in items if i.get("source") == "regulations_gov"])
-        high_priority = len([i for i in items if i.get("priority_score", 0) >= WHAT_CHANGED_MIN])
+        high_priority = len(
+            [i for i in items if i.get("priority_score", 0) >= WHAT_CHANGED_MIN]
+        )
         hearings = selection["congress_meta"].get("total_count", 0)
 
         parts = [
@@ -1832,7 +1870,9 @@ class DigestFormatter:
                 days_until = (deadline_dt - datetime.now(timezone.utc)).days
                 if days_until <= 1:
                     clauses.append(
-                        "comments close today" if days_until == 0 else "comments close tomorrow"
+                        "comments close today"
+                        if days_until == 0
+                        else "comments close tomorrow"
                     )
                 elif days_until <= 14:
                     clauses.append(f"comments close in {days_until}d")
@@ -1895,7 +1935,9 @@ class DigestFormatter:
         days = days_until(comment_deadline, self.pt_tz)
         if days is not None:
             if days <= 1:
-                clauses.append("comments close today" if days == 0 else "comments close tomorrow")
+                clauses.append(
+                    "comments close today" if days == 0 else "comments close tomorrow"
+                )
             elif days <= 14:
                 clauses.append(f"comments close in {days}d")
             elif days <= 30:

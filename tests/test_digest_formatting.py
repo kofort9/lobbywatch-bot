@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from bot.digest import DigestFormatter, FRONT_BUDGET_TOTAL
+from bot.digest import FRONT_BUDGET_TOTAL, DigestFormatter
 from bot.signals import SignalType, SignalV2
 
 
@@ -91,7 +91,9 @@ def test_digest_bundles_and_congress_section() -> None:
     )
 
     # Non-emergency FAA ADs (bundled)
-    for idx, manufacturer in enumerate(["Airbus", "Textron", "De Havilland", "Embraer", "Sikorsky"], start=2):
+    for idx, manufacturer in enumerate(
+        ["Airbus", "Textron", "De Havilland", "Embraer", "Sikorsky"], start=2
+    ):
         signals.append(
             _make_signal(
                 source="federal_register",
@@ -206,7 +208,10 @@ def test_digest_bundles_and_congress_section() -> None:
 
     # FAA bundling
     assert "FAA Airworthiness Directives —" in digest
-    assert digest.count("Airworthiness Directives; Boeing Model 777 Airplanes — Emergency") == 1
+    assert (
+        digest.count("Airworthiness Directives; Boeing Model 777 Airplanes — Emergency")
+        == 1
+    )
     for manufacturer in ["Airbus", "Textron", "De Havilland", "Embraer", "Sikorsky"]:
         assert f"• Airworthiness Directives; {manufacturer}" not in digest
 
