@@ -1180,7 +1180,8 @@ class DigestFormatter:
         )
 
         # Deduplicate
-        return self.deduplicator.deduplicate(sorted_signals)
+        result: List[SignalV2] = self.deduplicator.deduplicate(sorted_signals)
+        return result
 
     def _get_watchlist_signals(self, signals: List[SignalV2]) -> List[SignalV2]:
         """Get signals that match watchlist entities."""

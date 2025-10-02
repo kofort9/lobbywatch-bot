@@ -1181,13 +1181,15 @@ class DailySignalsCollector:
 
     def save_signals(self, signals: List[SignalV2]) -> int:
         """Save signals to database."""
-        return self.database.save_signals(signals)
+        result: int = self.database.save_signals(signals)
+        return result
 
     def get_recent_signals(
         self, hours_back: int = 24, min_priority: float = 0.0
     ) -> List[SignalV2]:
         """Get recent signals from database."""
-        return self.database.get_recent_signals(hours_back, min_priority)
+        result: List[SignalV2] = self.database.get_recent_signals(hours_back, min_priority)
+        return result
 
 
 # =============================================================================
