@@ -17,7 +17,7 @@ import logging
 import re
 from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -319,14 +319,17 @@ class DailySignalsCollector:
                 ("fields[]", "comments_close_on"),
             ]
 
-            params = list(base_params.items()) + field_params
+            params_list: List[Tuple[str, str]] = [
+                (key, value) for key, value in base_params.items()
+            ]
+            params_list.extend(field_params)
 
             try:
-                response = self.session.get(url, params=params)  # type: ignore
+                response = self.session.get(url, params=params_list)
                 response.raise_for_status()
             except requests.HTTPError as exc:  # type: ignore
                 if exc.response is not None and exc.response.status_code == 400:
-                    response = self.session.get(url, params=base_params)  # type: ignore
+                    response = self.session.get(url, params=base_params)
                     response.raise_for_status()
                 else:
                     raise
@@ -357,20 +360,18 @@ class DailySignalsCollector:
         documents: List[Dict[str, Any]] = []
         try:
             url = f"{self.regs_base_url}/documents"
-            params: Dict[str, Any] = {
+            request_params: Optional[Dict[str, str]] = {
                 "filter[postedDate][ge]": cutoff_date,
-                "page[size]": 250,
+                "page[size]": "250",
                 "sort": "-postedDate",
             }
 
             next_url: Optional[str] = url
             while next_url:
-                response = self.session.get(
-                    next_url, params=params if next_url == url else None
-                )
+                response = self.session.get(next_url, params=request_params)
                 response.raise_for_status()
                 data = response.json()
-                params = None  # Only send params on first request
+                request_params = None  # Only send params on first request
 
                 documents.extend(data.get("data", []))
 
@@ -393,6 +394,8 @@ class DailySignalsCollector:
         filtered_docs: List[Dict[str, Any]] = []
         for doc in documents:
             attributes = doc.get("attributes", {})
+            if not isinstance(attributes, dict):
+                continue
             doc_type = attributes.get("documentType")
             if doc_type not in self.regs_allowed_types:
                 continue
@@ -424,7 +427,9 @@ class DailySignalsCollector:
             docket_counter[docket_id] = docket_counter.get(docket_id, 0) + 1
             # Keep the first (already sorted newest) document id for comment lookups
             if docket_id not in latest_doc_for_docket:
-                latest_doc_for_docket[docket_id] = doc.get("id")
+                doc_identifier = doc.get("id")
+                if isinstance(doc_identifier, str):
+                    latest_doc_for_docket[docket_id] = doc_identifier
 
         top_dockets = sorted(
             docket_counter.items(), key=lambda item: item[1], reverse=True
@@ -444,11 +449,23 @@ class DailySignalsCollector:
         fr_index = self._build_federal_register_index(federal_register_signals or [])
 
         for doc in filtered_docs:
-            doc_id = doc.get("id")
-            attributes = doc.get("attributes", {})
+            doc_identifier = doc.get("id")
+            if not isinstance(doc_identifier, str):
+                continue
+            doc_id = doc_identifier
 
-            detail = details_map.get(doc_id, {})
-            combined_attributes = {**attributes, **detail.get("attributes", {})}
+            attributes = doc.get("attributes", {})
+            if not isinstance(attributes, dict):
+                continue
+
+            detail = details_map.get(doc_id)
+            detail_attrs = {}
+            if isinstance(detail, dict):
+                potential = detail.get("attributes")
+                if isinstance(potential, dict):
+                    detail_attrs = potential
+
+            combined_attributes: Dict[str, Any] = {**attributes, **detail_attrs}
 
             signal = self._create_regulations_gov_signal(
                 doc,
@@ -576,9 +593,14 @@ class DailySignalsCollector:
     ) -> Optional[SignalV2]:
         """Create a Regulations.gov signal with enriched metadata."""
         try:
-            doc_id = doc.get("id", "")
-            document_id = attributes.get("documentId") or doc_id
-            docket_id = attributes.get("docketId")
+            doc_identifier = doc.get("id")
+            if not isinstance(doc_identifier, str):
+                return None
+            doc_id = doc_identifier
+            document_raw = attributes.get("documentId")
+            document_id = document_raw if isinstance(document_raw, str) and document_raw else doc_id
+            docket_raw = attributes.get("docketId")
+            docket_id = docket_raw if isinstance(docket_raw, str) and docket_raw else None
             doc_type = attributes.get("documentType", "")
 
             posted_dt = self._parse_iso_datetime(attributes.get("postedDate"))
@@ -732,9 +754,9 @@ class DailySignalsCollector:
         if cutoff_dt < prev_24h:
             prev_24h = cutoff_dt
 
-        params = {
+        params: Dict[str, str] = {
             "filter[commentOnId]": doc_id,
-            "page[size]": 250,
+            "page[size]": "250",
             "sort": "-lastModifiedDate",
         }
 
@@ -749,7 +771,7 @@ class DailySignalsCollector:
                 )
                 response.raise_for_status()
                 payload = response.json()
-                params = None
+                params = {}
 
                 for comment in payload.get("data", []):
                     ts = self._parse_iso_datetime(
@@ -844,15 +866,17 @@ class DailySignalsCollector:
             candidates = fr_index["by_docket"].get(docket_id.lower())
             if candidates:
                 # Prefer the newest FR entry for this docket
-                return max(
+                result = max(
                     candidates,
                     key=lambda s: s.timestamp
                     or datetime.min.replace(tzinfo=timezone.utc),
                 )
+                if isinstance(result, SignalV2):
+                    return result
 
         if fr_doc_num:
             match = fr_index["by_document"].get(fr_doc_num.lower())
-            if match:
+            if match and isinstance(match, SignalV2):
                 return match
 
         norm_title = self._normalize_text(title)

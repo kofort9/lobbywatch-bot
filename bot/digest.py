@@ -15,7 +15,7 @@ Architecture:
 import hashlib
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import pytz
 
@@ -260,8 +260,12 @@ class DigestFormatter:
         if not signals:
             return self._format_empty_digest()
 
-        items = [self._signal_to_item(signal) for signal in signals]
-        items = [item for item in items if item]
+        items: List[Dict[str, Any]] = []
+        for signal in signals:
+            converted = self._signal_to_item(signal)
+            if converted:
+                items.append(converted)
+
         if not items:
             return self._format_empty_digest()
 
@@ -330,8 +334,9 @@ class DigestFormatter:
             "original": signal,
         }
 
-        if item["timestamp"] and item["timestamp"].tzinfo is None:
-            item["timestamp"] = item["timestamp"].replace(tzinfo=timezone.utc)
+        timestamp_value = item.get("timestamp")
+        if isinstance(timestamp_value, datetime) and timestamp_value.tzinfo is None:
+            item["timestamp"] = timestamp_value.replace(tzinfo=timezone.utc)
 
         item["normalized_type"] = normalize_type(item)
         return item
@@ -384,24 +389,20 @@ class DigestFormatter:
         for item in items:
             key = get_signal_key(item)
             current = best.get(key)
-            if not current:
+            if current is None:
                 best[key] = item
                 continue
 
-            new_ts = item.get("timestamp")
-            cur_ts = current.get("timestamp")
+            new_ts_val = item.get("timestamp")
+            cur_ts_val = current.get("timestamp")
+            new_ts = new_ts_val if isinstance(new_ts_val, datetime) else None
+            cur_ts = cur_ts_val if isinstance(cur_ts_val, datetime) else None
 
-            if not isinstance(cur_ts, datetime) or (
-                isinstance(new_ts, datetime) and new_ts > cur_ts
-            ):
+            if cur_ts is None or (new_ts is not None and new_ts > cur_ts):
                 best[key] = item
                 continue
 
-            if (
-                isinstance(new_ts, datetime)
-                and isinstance(cur_ts, datetime)
-                and new_ts == cur_ts
-            ):
+            if new_ts is not None and cur_ts is not None and new_ts == cur_ts:
                 if (
                     item.get("filing_status") == "amended"
                     and current.get("filing_status") != "amended"
@@ -514,11 +515,11 @@ class DigestFormatter:
             if len(manufacturers) > len(unique_manufacturers):
                 unique_manufacturers.append("…")
 
-            timestamps = [
-                item.get("timestamp")
-                for item in faa_pool
-                if isinstance(item.get("timestamp"), datetime)
-            ]
+            timestamps: List[datetime] = []
+            for entry in faa_pool:
+                ts_candidate = entry.get("timestamp")
+                if isinstance(ts_candidate, datetime):
+                    timestamps.append(ts_candidate)
             bundle = {
                 "title": "FAA Airworthiness Directives — "
                 f"{len(faa_pool)} notices today ({', '.join(unique_manufacturers) or 'Various'})",
@@ -543,11 +544,11 @@ class DigestFormatter:
             if not pool:
                 return
             self._remove_from_groups(groups, pool)
-            timestamps = [
-                item.get("timestamp")
-                for item in pool
-                if isinstance(item.get("timestamp"), datetime)
-            ]
+            timestamps: List[datetime] = []
+            for entry in pool:
+                ts_candidate = entry.get("timestamp")
+                if isinstance(ts_candidate, datetime):
+                    timestamps.append(ts_candidate)
             bundle = {
                 "title": title_builder(pool),
                 "link": link,
@@ -657,11 +658,11 @@ class DigestFormatter:
             if not items:
                 continue
             first = items[0]
-            timestamps = [
-                item.get("timestamp")
-                for item in items
-                if isinstance(item.get("timestamp"), datetime)
-            ]
+            timestamps: List[datetime] = []
+            for entry in items:
+                ts_candidate = entry.get("timestamp")
+                if isinstance(ts_candidate, datetime):
+                    timestamps.append(ts_candidate)
             link = first.get("link") or "https://www.federalregister.gov/"
             bundle = {
                 "title": f"{agency} administrative items — {len(items)} today",
@@ -689,7 +690,12 @@ class DigestFormatter:
         high_impact = high_impact[:BUDGET_HIGH_IMPACT]
         what_changed = what_changed[:BUDGET_WHAT_CHANGED]
 
-        selected_groups = {"rules": [], "notices": [], "dockets": [], "bills": []}
+        selected_groups: Dict[str, List[Dict[str, Any]]] = {
+            "rules": [],
+            "notices": [],
+            "dockets": [],
+            "bills": [],
+        }
         groups = classification["groups"]
         total_selected = 0
         for group_name in ["rules", "notices", "dockets", "bills"]:
@@ -746,7 +752,7 @@ class DigestFormatter:
 
     def _prepare_congress_section(
         self, congress_items: List[Dict[str, Any]]
-    ) -> (List[Dict[str, Any]], Dict[str, Any]):
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Prepare Congress committee lines with chamber caps and bundles."""
         if not congress_items:
             return [], {"total_count": 0}
@@ -756,7 +762,7 @@ class DigestFormatter:
 
         def infer_chamber(item: Dict[str, Any]) -> str:
             chamber = item.get("chamber")
-            if chamber:
+            if chamber and isinstance(chamber, str):
                 chamber = chamber.title()
                 if chamber in {"House", "Senate"}:
                     return chamber
@@ -882,7 +888,12 @@ class DigestFormatter:
 
         if selection["what_changed"]:
             lines.append("\n*What Changed*")
-            what_changed_map = {"rules": [], "notices": [], "dockets": [], "bills": []}
+            what_changed_map: Dict[str, List[Dict[str, Any]]] = {
+                "rules": [],
+                "notices": [],
+                "dockets": [],
+                "bills": [],
+            }
             for item in selection["what_changed"]:
                 norm_type = item.get("normalized_type") or normalize_type(item)
                 bucket = {

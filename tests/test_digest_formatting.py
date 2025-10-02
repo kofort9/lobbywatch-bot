@@ -8,25 +8,76 @@ from bot.signals import SignalType, SignalV2
 
 def _make_signal(**kwargs: object) -> SignalV2:
     now = kwargs.pop("timestamp", datetime.now(timezone.utc))
+    if not isinstance(now, datetime):
+        now = datetime.now(timezone.utc)
+    
+    # Extract and convert values with proper type checking
+    priority_score_val = kwargs.pop("priority_score", 1.0)
+    if not isinstance(priority_score_val, (int, float)):
+        priority_score_val = 1.0
+    
+    issue_codes_val = kwargs.pop("issue_codes", [])
+    if not isinstance(issue_codes_val, list):
+        issue_codes_val = []
+    
+    comment_surge_val = kwargs.pop("comment_surge", False)
+    if not isinstance(comment_surge_val, bool):
+        comment_surge_val = False
+    
+    # Extract remaining values with proper type checking
+    agency_val = kwargs.pop("agency", None)
+    if agency_val is not None and not isinstance(agency_val, str):
+        agency_val = None
+    
+    docket_id_val = kwargs.pop("docket_id", None)
+    if docket_id_val is not None and not isinstance(docket_id_val, str):
+        docket_id_val = None
+    
+    bill_id_val = kwargs.pop("bill_id", None)
+    if bill_id_val is not None and not isinstance(bill_id_val, str):
+        bill_id_val = None
+    
+    committee_val = kwargs.pop("committee", None)
+    if committee_val is not None and not isinstance(committee_val, str):
+        committee_val = None
+    
+    comment_end_date_val = kwargs.pop("comment_end_date", None)
+    if comment_end_date_val is not None and not isinstance(comment_end_date_val, str):
+        comment_end_date_val = None
+    
+    comments_24h_val = kwargs.pop("comments_24h", None)
+    if comments_24h_val is not None and not isinstance(comments_24h_val, int):
+        comments_24h_val = None
+    
+    comments_delta_val = kwargs.pop("comments_delta", None)
+    if comments_delta_val is not None and not isinstance(comments_delta_val, int):
+        comments_delta_val = None
+    
+    signal_type_val = kwargs.pop("signal_type", None)
+    if signal_type_val is not None and not isinstance(signal_type_val, SignalType):
+        signal_type_val = None
+    
     signal = SignalV2(
-        source=kwargs.pop("source", "federal_register"),
-        source_id=kwargs.pop("source_id"),
+        source=str(kwargs.pop("source", "federal_register")),
+        source_id=str(kwargs.pop("source_id", "")),
         timestamp=now,
-        title=kwargs.pop("title"),
-        link=kwargs.pop("link"),
-        priority_score=kwargs.pop("priority_score", 1.0),
-        issue_codes=kwargs.pop("issue_codes", []),
-        agency=kwargs.pop("agency", None),
-        docket_id=kwargs.pop("docket_id", None),
-        bill_id=kwargs.pop("bill_id", None),
-        committee=kwargs.pop("committee", None),
-        comment_end_date=kwargs.pop("comment_end_date", None),
-        comments_24h=kwargs.pop("comments_24h", None),
-        comments_delta=kwargs.pop("comments_delta", None),
-        comment_surge=kwargs.pop("comment_surge", False),
-        signal_type=kwargs.pop("signal_type", None),
+        title=str(kwargs.pop("title", "")),
+        link=str(kwargs.pop("link", "")),
+        priority_score=float(priority_score_val),
+        issue_codes=issue_codes_val,
+        agency=agency_val,
+        docket_id=docket_id_val,
+        bill_id=bill_id_val,
+        committee=committee_val,
+        comment_end_date=comment_end_date_val,
+        comments_24h=comments_24h_val,
+        comments_delta=comments_delta_val,
+        comment_surge=comment_surge_val,
+        signal_type=signal_type_val,
     )
     metrics = kwargs.pop("metrics", {})
+    if not isinstance(metrics, dict):
+        metrics = {}
     if signal.comment_end_date and "comment_end_date" not in metrics:
         metrics["comment_end_date"] = signal.comment_end_date
     if signal.comments_24h and "comments_24h" not in metrics:

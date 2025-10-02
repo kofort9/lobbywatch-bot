@@ -8,6 +8,7 @@ from Federal Register, Regulations.gov, and Congress sources.
 import os
 import sys
 from datetime import datetime, timezone
+from typing import Any, Dict
 
 # Add the bot directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -81,7 +82,7 @@ def test_regulations_gov_signal_link_creation() -> None:
     collector = DailySignalsCollector({})
 
     # Test with docket_id
-    doc_with_docket = {
+    doc_with_docket: Dict[str, Any] = {
         "id": "EPA-HQ-2025-0001",
         "attributes": {
             "title": "Test Docket",
@@ -109,7 +110,7 @@ def test_regulations_gov_signal_link_creation() -> None:
     assert signal.docket_id == "EPA-HQ-2025-0001"
 
     # Test with only document_id (no docket_id)
-    doc_with_document_only = {
+    doc_with_document_only: Dict[str, Any] = {
         "id": "EPA-HQ-2025-0002",
         "attributes": {
             "title": "Test Document",
@@ -133,7 +134,7 @@ def test_regulations_gov_signal_link_creation() -> None:
     assert signal.source == "regulations_gov"
 
     # Test with no IDs
-    doc_with_no_ids = {
+    doc_with_no_ids: Dict[str, Any] = {
         "id": "EPA-HQ-2025-0003",
         "attributes": {
             "title": "Test Document",
