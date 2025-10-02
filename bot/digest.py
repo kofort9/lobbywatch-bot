@@ -763,9 +763,9 @@ class DigestFormatter:
         def infer_chamber(item: Dict[str, Any]) -> str:
             chamber = item.get("chamber")
             if chamber and isinstance(chamber, str):
-                chamber = chamber.title()
-                if chamber in {"House", "Senate"}:
-                    return chamber
+                chamber_title = chamber.title()
+                if chamber_title in {"House", "Senate"}:
+                    return chamber_title
             committee_val = item.get("committee")
             committee = (
                 committee_val if isinstance(committee_val, str) else ""

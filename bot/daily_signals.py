@@ -885,7 +885,8 @@ class DailySignalsCollector:
             if isinstance(by_document, dict):
                 match = by_document.get(fr_doc_num.lower())
                 if match and isinstance(match, SignalV2):
-                    return match
+                    signal_result: SignalV2 = match
+                    return signal_result
 
         norm_title = self._normalize_text(title)
         if not norm_title:
