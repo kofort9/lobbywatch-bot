@@ -598,9 +598,15 @@ class DailySignalsCollector:
                 return None
             doc_id = doc_identifier
             document_raw = attributes.get("documentId")
-            document_id = document_raw if isinstance(document_raw, str) and document_raw else doc_id
+            document_id = (
+                document_raw
+                if isinstance(document_raw, str) and document_raw
+                else doc_id
+            )
             docket_raw = attributes.get("docketId")
-            docket_id = docket_raw if isinstance(docket_raw, str) and docket_raw else None
+            docket_id = (
+                docket_raw if isinstance(docket_raw, str) and docket_raw else None
+            )
             doc_type = attributes.get("documentType", "")
 
             posted_dt = self._parse_iso_datetime(attributes.get("postedDate"))
