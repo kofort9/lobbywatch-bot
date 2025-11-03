@@ -23,6 +23,9 @@ dependencies = [
     "pydantic-settings>=2.0",
     "flask>=3.0",
     "psycopg2-binary>=2.9",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.29",
+    "streamlit>=1.32",
 ]
 
 [project.optional-dependencies]
@@ -44,9 +47,10 @@ dev = [
 lobbylens = "bot.run:main"
 lobbylens-enhanced = "bot.enhanced_run:main"
 lobbylens-signals = "bot.daily_signals_cli:main"
+govsearch = "govsearch.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["bot*"]
+include = ["bot*", "govsearch*"]
 
 [tool.black]
 line-length = 88
