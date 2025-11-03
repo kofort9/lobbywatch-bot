@@ -4,6 +4,8 @@
 
 LobbyLens V1 LDA MVP is now **production-ready** with PostgreSQL backend and focused front page digest.
 
+> ⚠️ **SECURITY NOTE**: This document contains placeholder values for sensitive information. DO NOT commit actual secrets, API keys, passwords, or tokens to version control. Always use environment variables or a dedicated secret management system (such as GitHub Secrets, HashiCorp Vault, AWS Secrets Manager, or similar) for storing and managing sensitive credentials.
+
 ## ✅ What's Complete
 
 ### Core System
@@ -26,7 +28,7 @@ LobbyLens V1 LDA MVP is now **production-ready** with PostgreSQL backend and foc
 
 ### Production (Railway PostgreSQL)
 ```env
-DATABASE_URL=postgresql://postgres:SGPGDpHWGQkoikWPSlkVSvaRHxFrXsWl@switchback.proxy.rlwy.net:37990/railway
+DATABASE_URL=postgresql://postgres:<YOUR_DATABASE_PASSWORD>@switchback.proxy.rlwy.net:37990/railway
 ```
 
 ### Development (Local PostgreSQL)
@@ -45,10 +47,10 @@ DATABASE_FILE=lobbywatch.db
 ```env
 ENABLE_LDA_V1=true
 DATABASE_URL=postgresql://...
-LDA_API_KEY=37cdd62e714fd57d6cad079da319c85cc1880e9d
+LDA_API_KEY=<YOUR_LDA_API_KEY>
 SLACK_BOT_TOKEN=xoxb-...
-SLACK_SIGNING_SECRET=...
-LOBBYLENS_ADMIN_USER_ID=U09HCH4AQ1H
+SLACK_SIGNING_SECRET=<YOUR_SLACK_SIGNING_SECRET>
+LOBBYLENS_ADMIN_USER_ID=<YOUR_ADMIN_USER_ID>
 ```
 
 ### Optional
@@ -66,8 +68,8 @@ Top issue: TEC ($1.8M, 7). Biggest riser: Akin Gump (+$620K).
 Largest filing: Meta Platforms → Akin Gump ($420K).
 
 **New/Amended since last run**
-• Google LLC → Brownstein Hyatt ($150K) • Issues: TEC • <Filing>
-• Microsoft Corporation → Akin Gump ($320K) • Issues: HCR/TEC • <Filing> (amended)
+• Google LLC → Brownstein Hyatt ($150K) • Issues: TEC • 
+• Microsoft Corporation → Akin Gump ($320K) • Issues: HCR/TEC •  (amended)
 
 **Top registrants (Q)**
 • Akin Gump — $920K (3)
@@ -91,7 +93,7 @@ _$0 may indicate ≤$5K or not required to report_
 - `/lobbylens lda top registrants [q=2024Q3] [n=10]` - Top lobbying firms
 - `/lobbylens lda top clients [q=2024Q3] [n=10]` - Top lobbying clients
 - `/lobbylens lda issues [q=2024Q3]` - Top lobbying issues
-- `/lobbylens lda entity <name>` - Search for specific entity
+- `/lobbylens lda entity ` - Search for specific entity
 - `/lobbylens lda help` - LDA system help
 
 ## 🚀 Deployment Steps
@@ -100,19 +102,21 @@ _$0 may indicate ≤$5K or not required to report_
 ```bash
 # Your Railway PostgreSQL is already configured
 # Database: railway
-# Host: switchback.proxy.rlwy.net:37990
+# Host: <YOUR_RAILWAY_HOST>
 # User: postgres
 ```
 
 ### 2. Environment Setup
 ```bash
 # Set environment variables in Railway dashboard
-DATABASE_URL=postgresql://postgres:SGPGDpHWGQkoikWPSlkVSvaRHxFrXsWl@switchback.proxy.rlwy.net:37990/railway
+# IMPORTANT: Use GitHub Secrets or Railway environment variables
+# DO NOT commit secrets directly to the repository
+DATABASE_URL=postgresql://postgres:<PASSWORD>@<HOST>:<PORT>/railway
 ENABLE_LDA_V1=true
-LDA_API_KEY=37cdd62e714fd57d6cad079da319c85cc1880e9d
-SLACK_BOT_TOKEN=xoxb-9590582352451-9580667884167-CdQTL0etRC5gFUmjoEmZDGbv
-SLACK_SIGNING_SECRET=ccf7df297a7a8b10c9ce66960fa02060
-LOBBYLENS_ADMIN_USER_ID=U09HCH4AQ1H
+LDA_API_KEY=<YOUR_LDA_API_KEY>
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=<YOUR_SLACK_SIGNING_SECRET>
+LOBBYLENS_ADMIN_USER_ID=<YOUR_ADMIN_USER_ID>
 ```
 
 ### 3. Database Initialization
@@ -222,3 +226,16 @@ The LDA V1 MVP is considered successful when:
 **🎯 LobbyLens V1 LDA MVP is production-ready!**
 
 The system delivers focused, actionable lobbying insights with enterprise-grade reliability through PostgreSQL backend and thoughtful UX design.
+
+## 🔐 Security Best Practices
+
+When deploying this application:
+
+1. **Never commit secrets to version control** - Use environment variables
+2. **Use GitHub Secrets** - For CI/CD pipelines (Settings > Secrets and variables > Actions)
+3. **Use Railway Secrets** - For environment variable management
+4. **Rotate API keys regularly** - Implement key rotation policies
+5. **Use secret management tools** - Consider HashiCorp Vault, AWS Secrets Manager, etc.
+6. **Audit access logs** - Monitor who accessed what secrets and when
+7. **Enable MFA** - Protect admin accounts with multi-factor authentication
+8. **Keep dependencies updated** - Run security audits regularly
