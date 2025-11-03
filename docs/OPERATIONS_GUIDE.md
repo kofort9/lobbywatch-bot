@@ -38,7 +38,7 @@ LobbyLens V1 LDA MVP is now **production-ready** with PostgreSQL backend and foc
 
 ### Production (Railway PostgreSQL)
 ```env
-DATABASE_URL=postgresql://postgres:SGPGDpHWGQkoikWPSlkVSvaRHxFrXsWl@switchback.proxy.rlwy.net:37990/railway
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@switchback.proxy.rlwy.net:37990/railway
 ```
 
 ### Development (Local PostgreSQL)
@@ -56,11 +56,11 @@ DATABASE_FILE=lobbywatch.db
 ### Required for LDA V1
 ```env
 ENABLE_LDA_V1=true
-DATABASE_URL=postgresql://...
-LDA_API_KEY=37cdd62e714fd57d6cad079da319c85cc1880e9d
-SLACK_BOT_TOKEN=xoxb-...
-SLACK_SIGNING_SECRET=...
-LOBBYLENS_ADMIN_USER_ID=U09HCH4AQ1H
+DATABASE_URL=postgresql://user:password@host:port/database
+LDA_API_KEY=your_lda_api_key_here
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
+SLACK_SIGNING_SECRET=your-signing-secret-here
+LOBBYLENS_ADMIN_USER_ID=U1234567890
 ```
 
 ### Optional
@@ -119,12 +119,12 @@ _$0 may indicate ≤$5K or not required to report_
 ### 2. Environment Setup
 ```bash
 # Set environment variables in Railway dashboard
-DATABASE_URL=postgresql://postgres:SGPGDpHWGQkoikWPSlkVSvaRHxFrXsWl@switchback.proxy.rlwy.net:37990/railway
+DATABASE_URL=postgresql://user:password@host:port/database
 ENABLE_LDA_V1=true
-LDA_API_KEY=37cdd62e714fd57d6cad079da319c85cc1880e9d
-SLACK_BOT_TOKEN=xoxb-9590582352451-9580667884167-CdQTL0etRC5gFUmjoEmZDGbv
-SLACK_SIGNING_SECRET=ccf7df297a7a8b10c9ce66960fa02060
-LOBBYLENS_ADMIN_USER_ID=U09HCH4AQ1H
+LDA_API_KEY=your_lda_api_key_here
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
+SLACK_SIGNING_SECRET=your-signing-secret-here
+LOBBYLENS_ADMIN_USER_ID=U1234567890
 ```
 
 ### 3. Database Initialization
@@ -323,7 +323,7 @@ ENABLE_LDA_V1=true
 
 # Data source (api recommended for production)
 LDA_DATA_SOURCE=api
-LDA_API_KEY=37cdd62e714fd57d6cad079da319c85cc1880e9d
+LDA_API_KEY=your_lda_api_key_here
 LDA_API_BASE_URL=https://lda.senate.gov/api/v1/
 
 # Database (PostgreSQL for production)
@@ -403,8 +403,8 @@ This document lists all GitHub repository secrets required for automated daily V
 ### **Core Slack Integration**
 | Secret Name | Description | Required For | Example Value |
 |-------------|-------------|--------------|---------------|
-| `SLACK_BOT_TOKEN` | Slack bot token for posting messages | V2 Daily + LDA V1 | `xoxb-9590582352451-9580667884167-...` |
-| `SLACK_SIGNING_SECRET` | Slack signing secret for request verification | V2 Daily + LDA V1 | `ccf7df297a7a8b10c9ce66960fa02060` |
+| `SLACK_BOT_TOKEN` | Slack bot token for posting messages | V2 Daily + LDA V1 | `xoxb-your-bot-token-here` |
+| `SLACK_SIGNING_SECRET` | Slack signing secret for request verification | V2 Daily + LDA V1 | `your-signing-secret-here` |
 | `SLACK_WEBHOOK_URL` | Slack webhook URL for posting digests | V2 Daily | `https://hooks.slack.com/services/...` |
 | `LOBBYLENS_CHANNELS` | Comma-separated channel IDs to post to | V2 Daily + LDA V1 | `C123456,C789012` |
 
@@ -431,9 +431,9 @@ This document lists all GitHub repository secrets required for automated daily V
 ### **LDA V1 Quarterly System**
 | Secret Name | Description | Required For | Example Value |
 |-------------|-------------|--------------|---------------|
-| `DATABASE_URL` | PostgreSQL connection string | LDA V1 | `postgresql://postgres:...@switchback.proxy.rlwy.net:37990/railway` |
-| `LDA_API_KEY` | U.S. Senate LDA API key | LDA V1 | `37cdd62e714fd57d6cad079da319c85cc1880e9d` |
-| `LOBBYLENS_ADMIN_USER_ID` | Admin user ID for DM alerts | LDA V1 | `U09HCH4AQ1H` |
+| `DATABASE_URL` | PostgreSQL connection string | LDA V1 | `postgresql://user:password@host:port/database` |
+| `LDA_API_KEY` | U.S. Senate LDA API key | LDA V1 | `your_lda_api_key_here` |
+| `LOBBYLENS_ADMIN_USER_ID` | Admin user ID for DM alerts | LDA V1 | `U1234567890` |
 
 ### **Legacy V1 System (Removed)**
 | Secret Name | Description | Status |

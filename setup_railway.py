@@ -16,7 +16,13 @@ def setup_railway() -> None:
 
     try:
         # Connect to Railway PostgreSQL
-        database_url = "postgresql://postgres:SGPGDpHWGQkoikWPSlkVSvaRHxFrXsWl@switchback.proxy.rlwy.net:37990/railway"
+        # Get DATABASE_URL from environment variable
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise ValueError(
+                "DATABASE_URL environment variable not set. "
+                "Set it to your PostgreSQL connection string."
+            )
 
         print("1. 🔌 Connecting to Railway PostgreSQL...")
         conn = psycopg2.connect(database_url)

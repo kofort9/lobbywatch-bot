@@ -214,6 +214,35 @@ class PostgresManager(DatabaseManager):
                     watchlist_matches TEXT
                 );
 
+                -- Signal events table for government activity signals
+                CREATE TABLE IF NOT EXISTS signal_event (
+                    id SERIAL PRIMARY KEY,
+                    source TEXT NOT NULL,
+                    source_id TEXT NOT NULL,
+                    ts TIMESTAMP NOT NULL,
+                    title TEXT NOT NULL,
+                    link TEXT NOT NULL,
+                    agency TEXT,
+                    committee TEXT,
+                    bill_id TEXT,
+                    rin TEXT,
+                    docket_id TEXT,
+                    issue_codes TEXT DEFAULT '[]',
+                    metric_json TEXT DEFAULT '{}',
+                    priority_score REAL DEFAULT 0.0,
+                    signal_type TEXT,
+                    urgency TEXT,
+                    watchlist_matches TEXT DEFAULT '[]',
+                    regs_object_id TEXT,
+                    regs_docket_id TEXT,
+                    comment_end_date TIMESTAMP,
+                    comments_24h INTEGER DEFAULT 0,
+                    comments_delta INTEGER DEFAULT 0,
+                    comment_surge INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(source, source_id)
+                );
+
                 -- Create indexes for performance
                 CREATE INDEX IF NOT EXISTS idx_watchlist_channel
                     ON channel_watchlist(channel_id);
@@ -223,6 +252,13 @@ class PostgresManager(DatabaseManager):
                     ON digest_runs(channel_id, run_time);
                 CREATE INDEX IF NOT EXISTS idx_filing_tracking_processed
                     ON filing_tracking(processed_at);
+
+                -- Create indexes for signal_event table
+                CREATE INDEX IF NOT EXISTS idx_signal_ts ON signal_event(ts);
+                CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score);
+                CREATE INDEX IF NOT EXISTS idx_signal_source ON signal_event(source);
+                CREATE INDEX IF NOT EXISTS idx_signal_agency ON signal_event(agency);
+                CREATE INDEX IF NOT EXISTS idx_signal_created ON signal_event(created_at);
                 """
                 )
 
