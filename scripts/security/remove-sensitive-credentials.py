@@ -26,20 +26,23 @@ SENSITIVE_PATTERNS = [
     (r'(?i)(api[_-]?key|apikey)\s*[=:]\s*["\']?([A-Za-z0-9]{20,})["\']?', "API Key"),
     # Database URLs with passwords
     (
-        r'postgresql://[^:]+:([^@]+)@',
+        r"postgresql://[^:]+:([^@]+)@",
         "Database password in connection string",
     ),
     (
-        r'mysql://[^:]+:([^@]+)@',
+        r"mysql://[^:]+:([^@]+)@",
         "MySQL password in connection string",
     ),
     # Slack tokens
-    (r'xoxb-[A-Za-z0-9-]{20,}', "Slack bot token"),
-    (r'xoxa-[A-Za-z0-9-]{20,}', "Slack app token"),
-    (r'xoxp-[A-Za-z0-9-]{20,}', "Slack user token"),
-    (r'hooks\.slack\.com/services/[A-Za-z0-9/]+', "Slack webhook URL"),
+    (r"xoxb-[A-Za-z0-9-]{20,}", "Slack bot token"),
+    (r"xoxa-[A-Za-z0-9-]{20,}", "Slack app token"),
+    (r"xoxp-[A-Za-z0-9-]{20,}", "Slack user token"),
+    (r"hooks\.slack\.com/services/[A-Za-z0-9/]+", "Slack webhook URL"),
     # Signing secrets (hex strings)
-    (r'(?i)(signing[_-]?secret|secret)\s*[=:]\s*["\']?([a-f0-9]{32,})["\']?', "Signing secret"),
+    (
+        r'(?i)(signing[_-]?secret|secret)\s*[=:]\s*["\']?([a-f0-9]{32,})["\']?',
+        "Signing secret",
+    ),
     # Generic secrets (long alphanumeric strings)
     (
         r'(?i)(password|passwd|pwd|secret|token)\s*[=:]\s*["\']?([A-Za-z0-9]{16,})["\']?',
@@ -189,7 +192,9 @@ def main() -> None:
         print("\nNote: Make sure .env is in .gitignore and not committed.")
         sys.exit(0)
 
-    print(f"\n⚠️  Found {sum(len(v) for v in findings.values())} potential security issues:\n")
+    print(
+        f"\n⚠️  Found {sum(len(v) for v in findings.values())} potential security issues:\n"
+    )
 
     for file_path, file_findings in sorted(findings.items()):
         print(f"📄 {file_path}:")
@@ -199,7 +204,9 @@ def main() -> None:
         print()
 
     if args.check:
-        print("\n❌ Security check failed! Please remove sensitive data before committing.")
+        print(
+            "\n❌ Security check failed! Please remove sensitive data before committing."
+        )
         sys.exit(1)
     else:
         print("\n⚠️  Review the findings above and remove any sensitive data.")
@@ -208,6 +215,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-

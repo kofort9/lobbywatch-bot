@@ -246,12 +246,14 @@ class TestSignalsDatabaseV2:
         assert temp_db.add_watchlist_item(channel_id, "Google") is True
         assert temp_db.add_watchlist_item(channel_id, "privacy") is True
 
-        # Get watchlist (placeholder implementation returns empty list)
+        # Get watchlist items
         watchlist = temp_db.get_watchlist(channel_id)
-        assert len(watchlist) == 0  # Placeholder returns empty list
+        assert len(watchlist) == 3
+        assert "Google" in watchlist
 
-        # Remove watchlist item (placeholder implementation returns True)
+        # Remove watchlist item
         assert temp_db.remove_watchlist_item(channel_id, "Google") is True
+        assert "Google" not in temp_db.get_watchlist(channel_id)
 
     def test_get_watchlist_signals(self, temp_db: Any) -> None:
         """Test getting signals that match watchlist."""
@@ -421,18 +423,9 @@ class TestSignalsDatabaseV2:
 
         # Get default settings
         settings = temp_db.get_channel_settings(channel_id)
-        # The method might return empty dict or have different default values
-        if settings:
-            assert "channel_id" in settings or settings == {}
-            # Check if these keys exist before asserting their values
-            if "mini_digest_threshold" in settings:
-                assert settings["mini_digest_threshold"] == 10
-            if "high_priority_threshold" in settings:
-                assert settings["high_priority_threshold"] == 5.0
-            if "surge_threshold" in settings:
-                assert settings["surge_threshold"] == 200.0
-            if "show_summaries" in settings:
-                assert settings["show_summaries"] is True
+        assert settings["mini_digest_threshold"] == 10
+        assert settings["high_priority_threshold"] == 5.0
+        assert settings["surge_threshold"] == 200.0
 
         # Update settings
         assert (
@@ -444,12 +437,13 @@ class TestSignalsDatabaseV2:
             is True
         )
         assert (
-            temp_db.update_channel_setting(channel_id, "show_summaries", False) is True
-        )
+            temp_db.update_channel_setting(channel_id, "show_summaries", False) is False
+        )  # Unsupported setting
 
-        # Get updated settings (placeholder implementation returns empty dict)
+        # Get updated settings
         settings = temp_db.get_channel_settings(channel_id)
-        assert settings == {}  # Placeholder returns empty dict
+        assert settings["mini_digest_threshold"] == 15
+        assert settings["high_priority_threshold"] == 7.0
 
     def test_cleanup_old_signals(self, temp_db: Any) -> None:
         """Test cleaning up old signals."""
@@ -612,4 +606,4 @@ class TestSignalsDatabaseV2:
         result = temp_db.remove_watchlist_item(
             "nonexistent-channel", "nonexistent-item"
         )
-        assert result is True  # Should succeed even if nothing to remove
+        assert result is False

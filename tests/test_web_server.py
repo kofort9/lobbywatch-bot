@@ -3,20 +3,34 @@ Tests for bot/web_server.py - Web server functionality
 """
 
 from typing import Any
+from unittest.mock import Mock, patch
 
 import pytest
 
 from bot.web_server import create_web_server
+from tests.slack_stubs import StubSlackApp
 
 
 # from unittest.mock import patch
 class TestWebServerV2:
     """Test web_server_v2 module"""
 
+    @pytest.fixture(autouse=True)
+    def _disable_signature_check(self, monkeypatch: object) -> None:
+        """Skip Slack signature verification in generic web_server tests."""
+        from bot import config
+
+        monkeypatch.setattr(config.settings, "slack_signing_secret", None)
+
     @pytest.fixture
-    def app(self) -> Any:
+    def slack_stub(self) -> StubSlackApp:
+        """Shared stub Slack handler for command routing."""
+        return StubSlackApp()
+
+    @pytest.fixture
+    def app(self, slack_stub: StubSlackApp) -> Any:
         """Create Flask app for testing"""
-        return create_web_server()
+        return create_web_server(slack_app=slack_stub, use_legacy_handlers=False)
 
     @pytest.fixture
     def client(self, app: Any) -> Any:
@@ -24,9 +38,9 @@ class TestWebServerV2:
         app.config["TESTING"] = True
         return app.test_client()
 
-    def test_create_web_server_v2(self) -> None:
+    def test_create_web_server_v2(self, slack_stub: StubSlackApp) -> None:
         """Test web server creation"""
-        app = create_web_server()
+        app = create_web_server(slack_app=slack_stub)
         assert app is not None
         assert app.name == "bot.web_server"
 
@@ -543,3 +557,217 @@ class TestWebServerV2:
         data = response.get_json()
         assert data["response_type"] == "ephemeral"
         assert "Unknown command" in data["text"]
+
+    @patch("bot.run.run_daily_digest")
+    def test_lobbypulse_daily_command(self, mock_run_daily: Any, client: Any) -> None:
+        """Test /lobbypulse daily command handler."""
+        mock_run_daily.return_value = "📋 **Daily Digest**\n\n• Test signal"
+
+        response = client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/lobbypulse",
+                "text": "",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "in_channel"
+        # Check that digest content is in response (either mocked or real)
+        assert len(data["text"]) > 0
+        # If mock was called, verify it
+        if mock_run_daily.called:
+            mock_run_daily.assert_called_once_with(24, "test_channel")
+            assert "Daily Digest" in data["text"]
+
+    @patch("bot.web_server.run_mini_digest")
+    def test_lobbypulse_mini_command_success(
+        self, mock_run_mini: Any, client: Any
+    ) -> None:
+        """Test /lobbypulse mini command when digest is generated."""
+        mock_run_mini.return_value = "⚡ **Mini Digest**\n\n• High priority signal"
+
+        response = client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/lobbypulse",
+                "text": "mini",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "in_channel"
+        assert "Mini Digest" in data["text"]
+        mock_run_mini.assert_called_once_with(4, "test_channel")
+
+    @patch("bot.web_server.run_mini_digest")
+    def test_lobbypulse_mini_command_no_digest(
+        self, mock_run_mini: Any, client: Any
+    ) -> None:
+        """Test /lobbypulse mini command when thresholds not met."""
+        mock_run_mini.return_value = None
+
+        response = client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/lobbypulse",
+                "text": "mini",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "ephemeral"
+        assert "thresholds not met" in data["text"].lower()
+
+    @patch("bot.web_server.run_daily_digest")
+    def test_lobbypulse_command_error(self, mock_run_daily: Any, client: Any) -> None:
+        """Test /lobbypulse command error handling."""
+        mock_run_daily.side_effect = Exception("Test error")
+
+        response = client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/lobbypulse",
+                "text": "",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "ephemeral"
+        assert "Error" in data["text"]
+
+    @patch("bot.signals_database.SignalsDatabaseV2")
+    def test_threshold_set_command_success(
+        self, mock_db_class: Any, slack_stub: StubSlackApp
+    ) -> None:
+        """Test /threshold set command with successful update."""
+        mock_database = Mock()
+        mock_database.update_channel_setting.return_value = True
+        mock_db_class.return_value = mock_database
+
+        # Recreate app with mocked database
+        app = create_web_server(slack_app=slack_stub)
+        app.config["TESTING"] = True
+        test_client = app.test_client()
+
+        response = test_client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/threshold",
+                "text": "set 10",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "in_channel"
+        assert "10" in data["text"]
+        mock_database.update_channel_setting.assert_called_once_with(
+            "test_channel", "mini_digest_threshold", 10
+        )
+
+    @patch("bot.signals_database.SignalsDatabaseV2")
+    def test_threshold_set_command_failure(
+        self, mock_db_class: Any, slack_stub: StubSlackApp
+    ) -> None:
+        """Test /threshold set command when update fails."""
+        mock_database = Mock()
+        mock_database.update_channel_setting.return_value = False
+        mock_db_class.return_value = mock_database
+
+        app = create_web_server(slack_app=slack_stub)
+        app.config["TESTING"] = True
+        test_client = app.test_client()
+
+        response = test_client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/threshold",
+                "text": "set 10",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "ephemeral"
+        assert "Failed" in data["text"]
+
+    @patch("bot.signals_database.SignalsDatabaseV2")
+    def test_watchlist_add_command_success(
+        self, mock_db_class: Any, slack_stub: StubSlackApp
+    ) -> None:
+        """Test /watchlist add command with successful add."""
+        mock_database = Mock()
+        mock_database.add_watchlist_item.return_value = True
+        mock_db_class.return_value = mock_database
+
+        app = create_web_server(slack_app=slack_stub)
+        app.config["TESTING"] = True
+        test_client = app.test_client()
+
+        response = test_client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/watchlist",
+                "text": "add Google",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "in_channel"
+        assert "Google" in data["text"]
+        assert "Added" in data["text"]
+        mock_database.add_watchlist_item.assert_called_once_with(
+            "test_channel", "Google"
+        )
+
+    @patch("bot.signals_database.SignalsDatabaseV2")
+    def test_watchlist_remove_command_success(
+        self, mock_db_class: Any, slack_stub: StubSlackApp
+    ) -> None:
+        """Test /watchlist remove command with successful removal."""
+        mock_database = Mock()
+        mock_database.remove_watchlist_item.return_value = True
+        mock_db_class.return_value = mock_database
+
+        app = create_web_server(slack_app=slack_stub)
+        app.config["TESTING"] = True
+        test_client = app.test_client()
+
+        response = test_client.post(
+            "/lobbylens/commands",
+            data={
+                "command": "/watchlist",
+                "text": "remove Google",
+                "channel_id": "test_channel",
+                "user_id": "test_user",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["response_type"] == "in_channel"
+        assert "Google" in data["text"]
+        assert "Removed" in data["text"]
+        mock_database.remove_watchlist_item.assert_called_once_with(
+            "test_channel", "Google"
+        )

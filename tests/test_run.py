@@ -18,7 +18,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from bot.config import Settings
-from bot.run import create_notifier, fetch_data, run_daily_digest, setup_logging
+from bot.run import (
+    _plain_text_to_html,
+    create_notifier,
+    fetch_data,
+    run_daily_digest,
+    setup_logging,
+)
 
 
 class TestFetchData:
@@ -102,6 +108,19 @@ class TestSetupLogging:
         # Python logging will handle invalid levels gracefully
         with pytest.raises(AttributeError):
             setup_logging("INVALID")
+
+
+class TestHelpers:
+    """Helper utilities tests."""
+
+    def test_plain_text_to_html(self) -> None:
+        """Plain text is escaped, links converted, and line breaks preserved."""
+        sample = "Line 1 & 2\nSee [Example](https://example.com)"
+        html_body = _plain_text_to_html(sample)
+        assert "Line 1 &amp; 2" in html_body
+        assert '<a href="https://example.com">Example</a>' in html_body
+        assert "<p>Line 1 &amp; 2</p>" in html_body
+        assert "<p>See <a href=" in html_body
 
 
 class TestMainCommand:

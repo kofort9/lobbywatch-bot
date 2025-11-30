@@ -32,14 +32,22 @@ CREDENTIALS = {
         "name": "Slack Signing Secret",
         "old_value": "[REDACTED - check git history]",
         "rotation_instructions": "https://api.slack.com/apps → Your App → Basic Information → Regenerate",
-        "update_locations": ["GitHub Secrets SLACK_SIGNING_SECRET", "Railway", "local .env"],
+        "update_locations": [
+            "GitHub Secrets SLACK_SIGNING_SECRET",
+            "Railway",
+            "local .env",
+        ],
         "rotated": False,
     },
     "slack_webhook": {
         "name": "Slack Webhook URL",
         "old_value": "[REDACTED - check git history]",
         "rotation_instructions": "Slack → Apps → Incoming Webhooks → Delete old, create new",
-        "update_locations": ["GitHub Secrets SLACK_WEBHOOK_URL", "Railway", "local .env"],
+        "update_locations": [
+            "GitHub Secrets SLACK_WEBHOOK_URL",
+            "Railway",
+            "local .env",
+        ],
         "rotated": False,
     },
     "lda_api_key": {
@@ -53,14 +61,22 @@ CREDENTIALS = {
         "name": "Congress API Key",
         "old_value": "[REDACTED - check git history]",
         "rotation_instructions": "Regenerate at https://api.congress.gov/sign-up/",
-        "update_locations": ["GitHub Secrets CONGRESS_API_KEY", "Railway", "local .env"],
+        "update_locations": [
+            "GitHub Secrets CONGRESS_API_KEY",
+            "Railway",
+            "local .env",
+        ],
         "rotated": False,
     },
     "regulations_gov_api_key": {
         "name": "Regulations.gov API Key",
         "old_value": "[REDACTED - check git history]",
         "rotation_instructions": "Regenerate at https://open.gsa.gov/api/regulationsgov/",
-        "update_locations": ["GitHub Secrets REGULATIONS_GOV_API_KEY", "Railway", "local .env"],
+        "update_locations": [
+            "GitHub Secrets REGULATIONS_GOV_API_KEY",
+            "Railway",
+            "local .env",
+        ],
         "rotated": False,
     },
 }
@@ -137,4 +153,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

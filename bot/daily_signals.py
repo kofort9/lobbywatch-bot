@@ -20,6 +20,8 @@ from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from bot.signals import SignalsRulesEngine, SignalType, SignalV2
 from bot.signals_database import SignalsDatabaseV2
@@ -45,6 +47,16 @@ class DailySignalsCollector:
         self.session.headers.update(
             {"User-Agent": "LobbyLens/2.0 (Government Data Bot)"}
         )
+        self.timeout = float(config.get("http_timeout_seconds", 15.0))
+        retries = Retry(
+            total=int(config.get("http_retries", 3)),
+            backoff_factor=float(config.get("http_backoff", 0.5)),
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "HEAD"],
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
         # Initialize V2 components
         self.rules_engine = SignalsRulesEngine(watchlist)
@@ -190,6 +202,11 @@ class DailySignalsCollector:
             "livestock": "AGR",
         }
 
+    def _get(self, url: str, **kwargs: Any) -> requests.Response:
+        """Session GET with default timeout and retries configured."""
+        kwargs.setdefault("timeout", self.timeout)
+        return self.session.get(url, **kwargs)
+
     def collect_signals(self, hours_back: int = 24) -> List[SignalV2]:
         """Collect signals from all sources for the specified time period."""
         logger.info(f"Collecting signals from last {hours_back} hours")
@@ -248,7 +265,7 @@ class DailySignalsCollector:
                 "sort": "updateDate+desc",
             }
 
-            response = self.session.get(bills_url, params=params)
+            response = self._get(bills_url, params=params)
             response.raise_for_status()
             data = response.json()
 
@@ -273,7 +290,7 @@ class DailySignalsCollector:
                 "limit": 50,
             }
 
-            response = self.session.get(committees_url, params=params)
+            response = self._get(committees_url, params=params)
             response.raise_for_status()
             data = response.json()
 
@@ -325,11 +342,11 @@ class DailySignalsCollector:
             params_list.extend(field_params)
 
             try:
-                response = self.session.get(url, params=params_list)
+                response = self._get(url, params=params_list)
                 response.raise_for_status()
             except requests.HTTPError as exc:  # type: ignore
                 if exc.response is not None and exc.response.status_code == 400:
-                    response = self.session.get(url, params=base_params)
+                    response = self._get(url, params=base_params)
                     response.raise_for_status()
                 else:
                     raise
@@ -368,7 +385,7 @@ class DailySignalsCollector:
 
             next_url: Optional[str] = url
             while next_url:
-                response = self.session.get(next_url, params=request_params)
+                response = self._get(next_url, params=request_params)
                 response.raise_for_status()
                 data = response.json()
                 request_params = None  # Only send params on first request
@@ -733,7 +750,7 @@ class DailySignalsCollector:
             if not doc_id:
                 continue
             try:
-                response = self.session.get(f"{self.regs_base_url}/documents/{doc_id}")
+                response = self._get(f"{self.regs_base_url}/documents/{doc_id}")
                 response.raise_for_status()
                 payload = response.json()
                 data = payload.get("data")
@@ -772,7 +789,7 @@ class DailySignalsCollector:
         next_url: Optional[str] = f"{self.regs_base_url}/comments"
         try:
             while next_url:
-                response = self.session.get(
+                response = self._get(
                     next_url, params=params if next_url.endswith("/comments") else None
                 )
                 response.raise_for_status()
