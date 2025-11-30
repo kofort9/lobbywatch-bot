@@ -170,19 +170,22 @@ def create_notifier() -> Notifier:
     settings.validate_notifier_config()
 
     if settings.notifier_type == "slack":
-        return SlackNotifier(settings.slack_webhook_url or "")
+        return cast(Notifier, SlackNotifier(settings.slack_webhook_url or ""))
 
     if settings.notifier_type == "email":
         recipients = settings.get_email_recipients()
-        return EmailNotifier(
-            host=settings.smtp_host or "",
-            port=int(settings.smtp_port),
-            from_address=settings.email_from_address or "",
-            to_addresses=recipients,
-            username=settings.smtp_username,
-            password=settings.smtp_password,
-            use_tls=settings.smtp_use_tls,
-            subject_prefix=settings.email_subject_prefix,
+        return cast(
+            Notifier,
+            EmailNotifier(
+                host=settings.smtp_host or "",
+                port=int(settings.smtp_port),
+                from_address=settings.email_from_address or "",
+                to_addresses=recipients,
+                username=settings.smtp_username,
+                password=settings.smtp_password,
+                use_tls=settings.smtp_use_tls,
+                subject_prefix=settings.email_subject_prefix,
+            ),
         )
 
     raise ValueError("No supported notifier configured")
