@@ -12,8 +12,8 @@ Architecture:
 # V2: Enhanced Daily Signals Tests (Current Active System)
 # =============================================================================
 
-from datetime import datetime, timezone
-from typing import Dict, List
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -327,6 +327,158 @@ class TestDailySignalsCollector:
         signals = collector._collect_regulations_gov_signals(24)
 
         assert len(signals) == 0
+
+    def test_match_federal_register_signal_prefers_docket_docnum_and_title(
+        self, collector: DailySignalsCollector
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        fr_signals = [
+            SignalV2(
+                source="federal_register",
+                source_id="fr-old",
+                timestamp=now - timedelta(hours=5),
+                title="Airworthiness Directives for Boeing Jets",
+                link="https://example.com/fr-old",
+                docket_id="FAA-2025-0001",
+                priority_score=3.0,
+            ),
+            SignalV2(
+                source="federal_register",
+                source_id="fr-new",
+                timestamp=now - timedelta(hours=1),
+                title="Airworthiness Directives for Boeing Jets",
+                link="https://example.com/fr-new",
+                docket_id="FAA-2025-0001",
+                priority_score=4.0,
+            ),
+            SignalV2(
+                source="federal_register",
+                source_id="FR-DOC-55",
+                timestamp=now - timedelta(hours=2),
+                title="Cybersecurity Rules for Hospitals",
+                link="https://example.com/fr-doc",
+                docket_id="HHS-2025-0002",
+                priority_score=4.2,
+            ),
+        ]
+
+        fr_index = collector._build_federal_register_index(fr_signals)
+
+        docket_match = collector._match_federal_register_signal(
+            fr_index, "FAA-2025-0001", None, "", now
+        )
+        assert docket_match is not None
+        assert docket_match.source_id == "fr-new"
+
+        docnum_match = collector._match_federal_register_signal(
+            fr_index, None, "FR-DOC-55", "", None
+        )
+        assert docnum_match is not None
+        assert docnum_match.source_id == "FR-DOC-55"
+
+        title_match = collector._match_federal_register_signal(
+            fr_index,
+            None,
+            None,
+            "Cybersecurity Rules for Hospitals",
+            now,
+        )
+        assert title_match is not None
+        assert title_match.source_id == "FR-DOC-55"
+
+    def test_fetch_regulations_gov_comment_metrics_detects_surge(
+        self, collector: DailySignalsCollector, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        payload = {
+            "data": [
+                {
+                    "attributes": {
+                        "lastModifiedDate": (now - timedelta(hours=2))
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    }
+                },
+                {
+                    "attributes": {
+                        "lastModifiedDate": (now - timedelta(hours=20))
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    }
+                },
+                {
+                    "attributes": {
+                        "lastModifiedDate": (now - timedelta(hours=30))
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    }
+                },
+                {
+                    "attributes": {
+                        "lastModifiedDate": (now - timedelta(hours=60))
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    }
+                },
+            ],
+            "links": {"next": None},
+        }
+
+        class DummyResponse:
+            def __init__(self, payload: Dict[str, Any]):
+                self.payload = payload
+
+            def json(self) -> Dict[str, Any]:
+                return self.payload
+
+            def raise_for_status(self) -> None:
+                return None
+
+        calls: List[Any] = []
+
+        def fake_get(url: str, params: Dict[str, Any] | None = None) -> DummyResponse:
+            calls.append((url, params))
+            return DummyResponse(payload)
+
+        monkeypatch.setattr(collector, "_get", fake_get)
+
+        metrics = collector._fetch_regulations_gov_comment_metrics(
+            "DOC-123", now - timedelta(hours=6)
+        )
+
+        assert metrics["comments_24h"] == 2
+        assert metrics["comments_prev_24h"] == 1
+        assert metrics["comments_delta"] == 1
+        assert metrics["comment_surge"] is True
+        assert calls
+
+    def test_collect_committee_activities_filters_old_hearings(
+        self, collector: DailySignalsCollector, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        today = datetime.now(timezone.utc).date()
+        recent_date = today.isoformat()
+        old_date = (today - timedelta(days=10)).isoformat()
+
+        mock_response = Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
+            "hearings": [
+                {"id": "1", "title": "AI Oversight", "date": recent_date, "url": "https://example.com/hearing"},
+                {"id": "2", "title": "Older Hearing", "date": old_date, "url": "https://example.com/old"},
+            ]
+        }
+
+        monkeypatch.setattr(
+            collector.session, "get", lambda url, params=None: mock_response
+        )
+
+        committee = {"systemCode": "HSGA00", "name": "Homeland Security", "chamber": "House"}
+        signals = collector._collect_committee_activities(committee, hours_back=72)
+
+        assert len(signals) == 1
+        assert signals[0].committee == "Homeland Security"
+        assert "AI Oversight" in signals[0].title
+        assert signals[0].metrics.get("committee_code") == "HSGA00"
 
     def test_extract_issue_codes(self, collector: DailySignalsCollector) -> None:
         """Test issue code extraction from text."""

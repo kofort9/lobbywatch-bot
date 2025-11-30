@@ -14,6 +14,8 @@ Architecture:
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from bot.digest import DigestFormatter
 from bot.signals import SignalV2
 
@@ -109,6 +111,92 @@ class TestDigestFormatter:
 
         assert "comments close" in digest_text
         assert "comments (24h surge)" in digest_text
+
+    def test_apply_enhanced_scoring_boosts_and_penalties(self) -> None:
+        """Enhanced scoring should add boosts and penalties deterministically."""
+        formatter = DigestFormatter()
+        now = datetime.now(timezone.utc)
+        signal = SignalV2(
+            source="regulations_gov",
+            source_id="doc-boost-1",
+            timestamp=now - timedelta(days=40),
+            title="Safety Rule",
+            link="https://example.com/boost",
+            priority_score=1.0,
+            deadline=(now + timedelta(days=5)).isoformat(),
+            effective_date=(now + timedelta(days=10)).isoformat(),
+            comment_surge_pct=150.0,
+        )
+
+        enhanced = formatter._apply_enhanced_scoring([signal])
+
+        assert len(enhanced) == 1
+        assert enhanced[0] is not signal
+        assert enhanced[0].priority_score == pytest.approx(3.5)
+        assert enhanced[0].source_id == signal.source_id
+
+    def test_bundle_similar_signals_creates_bundled_entry(self) -> None:
+        formatter = DigestFormatter()
+        now = datetime.now(timezone.utc)
+        signals = [
+            SignalV2(
+                source="federal_register",
+                source_id="fr-1",
+                timestamp=now,
+                title="Airworthiness Directives: Engine Safety",
+                link="https://example.com/1",
+                agency="Federal Aviation Administration",
+                priority_score=4.0,
+            ),
+            SignalV2(
+                source="federal_register",
+                source_id="fr-2",
+                timestamp=now,
+                title="Airworthiness Directives: Engine Safety",
+                link="https://example.com/2",
+                agency="Federal Aviation Administration",
+                priority_score=5.5,
+            ),
+            SignalV2(
+                source="federal_register",
+                source_id="fr-3",
+                timestamp=now,
+                title="EPA Notice on Water Quality",
+                link="https://example.com/3",
+                agency="Environmental Protection Agency",
+                priority_score=2.5,
+            ),
+        ]
+
+        bundled = formatter._bundle_similar_signals(signals)
+
+        bundled_signal = next(
+            s for s in bundled if s.source_id.startswith("bundled_Federal Aviation")
+        )
+        assert "2 directives today" in bundled_signal.title
+        assert bundled_signal.priority_score == 5.5
+        assert any(s.title == "EPA Notice on Water Quality" for s in bundled)
+
+    def test_get_why_matters_clause_deadline_and_surge(self) -> None:
+        formatter = DigestFormatter()
+        now = datetime.now(timezone.utc)
+        deadline = (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+        signal = SignalV2(
+            source="regulations_gov",
+            source_id="doc-why-1",
+            timestamp=now,
+            title="Docket With Surge",
+            link="https://example.com/why",
+            comment_end_date=deadline,
+            comment_surge=True,
+            comments_24h=50,
+        )
+        signal.metrics = {"comment_surge": True, "comments_24h": 50}
+
+        clause = formatter._get_why_matters_clause(signal)
+
+        assert "comments close today" in clause
+        assert "comments (24h surge)" in clause
 
 
 # =============================================================================
