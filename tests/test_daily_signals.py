@@ -463,8 +463,18 @@ class TestDailySignalsCollector:
         mock_response.raise_for_status.return_value = None
         mock_response.json.return_value = {
             "hearings": [
-                {"id": "1", "title": "AI Oversight", "date": recent_date, "url": "https://example.com/hearing"},
-                {"id": "2", "title": "Older Hearing", "date": old_date, "url": "https://example.com/old"},
+                {
+                    "id": "1",
+                    "title": "AI Oversight",
+                    "date": recent_date,
+                    "url": "https://example.com/hearing",
+                },
+                {
+                    "id": "2",
+                    "title": "Older Hearing",
+                    "date": old_date,
+                    "url": "https://example.com/old",
+                },
             ]
         }
 
@@ -472,7 +482,11 @@ class TestDailySignalsCollector:
             collector.session, "get", lambda url, params=None: mock_response
         )
 
-        committee = {"systemCode": "HSGA00", "name": "Homeland Security", "chamber": "House"}
+        committee = {
+            "systemCode": "HSGA00",
+            "name": "Homeland Security",
+            "chamber": "House",
+        }
         signals = collector._collect_committee_activities(committee, hours_back=72)
 
         assert len(signals) == 1
