@@ -162,33 +162,33 @@ def create_notifier() -> Notifier:
     """Create and return configured notifier.
 
     Returns:
-        Configured SlackNotifier instance
+        Configured SlackNotifier or EmailNotifier instance
 
     Raises:
         ValueError: If no notifier is properly configured
     """
     settings.validate_notifier_config()
 
+    notifier: Notifier
+
     if settings.notifier_type == "slack":
-        return cast(Notifier, SlackNotifier(settings.slack_webhook_url or ""))
-
-    if settings.notifier_type == "email":
+        notifier = SlackNotifier(settings.slack_webhook_url or "")
+    elif settings.notifier_type == "email":
         recipients = settings.get_email_recipients()
-        return cast(
-            Notifier,
-            EmailNotifier(
-                host=settings.smtp_host or "",
-                port=int(settings.smtp_port),
-                from_address=settings.email_from_address or "",
-                to_addresses=recipients,
-                username=settings.smtp_username,
-                password=settings.smtp_password,
-                use_tls=settings.smtp_use_tls,
-                subject_prefix=settings.email_subject_prefix,
-            ),
+        notifier = EmailNotifier(
+            host=settings.smtp_host or "",
+            port=int(settings.smtp_port),
+            from_address=settings.email_from_address or "",
+            to_addresses=recipients,
+            username=settings.smtp_username,
+            password=settings.smtp_password,
+            use_tls=settings.smtp_use_tls,
+            subject_prefix=settings.email_subject_prefix,
         )
+    else:
+        raise ValueError("No supported notifier configured")
 
-    raise ValueError("No supported notifier configured")
+    return notifier
 
 
 def _plain_text_to_html(text: str) -> str:
