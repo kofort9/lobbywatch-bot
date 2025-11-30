@@ -3,8 +3,10 @@
 Lightweight guide for measuring and improving test coverage while new features (email, dashboard APIs) are added.
 
 ## Current Snapshot (full suite)
-- Last full run: `pytest --cov=bot --cov-report=term-missing` → **64% overall** (2025-02-XX).
-- **Highest coverage**: `bot/notifiers/email.py` (100%), `bot/notifiers/slack.py` (100%), `bot/database_postgres.py` (100%), `bot/signals.py` (85%), `bot/utils.py` (92%), `bot/web_server.py` (85%), `bot/database.py` (78%)
+- Last full run: `pytest --cov=bot --cov-report=term-missing` → **66% overall** (2025-11-30)
+- **Test Count**: 303 tests passing
+- **Improvement**: Coverage increased from 57% to 66% (+9 percentage points)
+- **Highest coverage**: `bot/notifiers/email.py` (100%), `bot/notifiers/slack.py` (100%), `bot/database_postgres.py` (100%), `bot/signals.py` (90%), `bot/utils.py` (92%), `bot/daily_signals.py` (89%), `bot/enhanced_digest.py` (89%)
 - **Remaining low coverage (post-new tests)**:
   - `bot/enhanced_run.py`: 41% — CLI/server paths still untested (86 lines untested)
   - `bot/lda_scheduler.py`: 48% — ETL internals still uncovered (34 lines untested)
@@ -18,7 +20,7 @@ Lightweight guide for measuring and improving test coverage while new features (
 
 ## Progress & Remaining Gaps
 
-**Progress**: Smoke/edge coverage added for `enhanced_run`, `lda_scheduler`, `slack_app`, and `enhanced_digest` (see `tests/test_enhanced_run.py`, `tests/test_enhanced_run_additional.py`, `tests/test_lda_scheduler.py`, `tests/test_lda_scheduler_additional.py`, `tests/test_slack_app_enhanced.py`, `tests/test_enhanced_digest.py`). These modules are no longer at 0–19% and overall coverage is now 64% (+7 points from the 57% baseline).
+**Progress**: Smoke/edge coverage added for `enhanced_run`, `lda_scheduler`, `slack_app`, `enhanced_digest`, and `web_server` (see `tests/test_enhanced_run.py`, `tests/test_enhanced_run_additional.py`, `tests/test_lda_scheduler.py`, `tests/test_lda_scheduler_additional.py`, `tests/test_slack_app_enhanced.py`, `tests/test_enhanced_digest.py`, `tests/test_web_server_security.py`). These modules are no longer at 0–19% and overall coverage is now 66% (+9 points from the 57% baseline). Significant improvements in `daily_signals.py` (89%, was 78%) and `web_server.py` (52%, was 5%).
 
 **Still missing**:
 1. Deeper paths and failure modes in `slack_app.py` (LDA subcommands, Slack errors, signature failures).
@@ -56,8 +58,9 @@ Lightweight guide for measuring and improving test coverage while new features (
 | `bot/matching.py` | ~42% | Needs more edge cases and issue/entity matching permutations. |
 | `bot/fr_digest.py` | ~37% | Formatting edge cases and surge logic remain. |
 | `bot/run.py` | 72% | Notifier selection and CLI options still missing. |
-| `bot/daily_signals.py` | 75% | Retry/backoff branches and surge logic still untested. |
+| `bot/daily_signals.py` | 89% | Significant improvement; retry/backoff branches and surge logic still untested. |
 | `bot/signals_database.py` | 64% | Persistence/statistics/watchlist stubs need coverage. |
+| `bot/web_server.py` | 52% | Security verification covered; advanced command handling still missing. |
 
 _*Coverage numbers come from the latest full-suite run noted above._
 
