@@ -849,8 +849,9 @@ class SignalsDatabasePG(SignalsDatabaseV2):
                     """,
                     (channel_id, term.strip()),
                 )
+                inserted = int(cur.rowcount or 0)
             conn.commit()
-        return True
+        return inserted > 0
 
     def remove_watchlist_item(self, channel_id: str, term: str) -> bool:
         if not channel_id or not term:
@@ -861,7 +862,7 @@ class SignalsDatabasePG(SignalsDatabaseV2):
                     "DELETE FROM watchlist_item WHERE channel_id = %s AND term = %s",
                     (channel_id, term.strip()),
                 )
-                deleted = cur.rowcount
+                deleted = int(cur.rowcount or 0)
             conn.commit()
         return deleted > 0
 

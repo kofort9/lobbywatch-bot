@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 import traceback
-from typing import Optional
+from typing import Optional, cast
 
 import click
 from rich.console import Console
@@ -17,7 +17,7 @@ from bot.signals_database import create_signals_database
 from .config import settings
 
 # V2 System - Enhanced digest with consolidated modules (no version suffixes)
-from .notifiers.base import NotificationError
+from .notifiers.base import NotificationError, Notifier
 from .notifiers.email import EmailNotifier
 from .notifiers.slack import SlackNotifier
 
@@ -55,7 +55,7 @@ def run_daily_digest(hours_back: int = 24, channel_id: str = "test_channel") -> 
         logger.warning(f"Failed to persist signals: {exc}")
 
     # Format digest
-    digest = formatter.format_daily_digest(signals, hours_back)
+    digest = cast(str, formatter.format_daily_digest(signals, hours_back))
 
     return digest
 
@@ -106,7 +106,7 @@ def run_mini_digest(
         or len(watchlist_hits) >= 1
     ):
         # Format mini digest
-        digest = formatter.format_mini_digest(signals)
+        digest = cast(str, formatter.format_mini_digest(signals))
         return digest
     else:
         logger.info("Mini-digest thresholds not met")
@@ -256,7 +256,7 @@ def _plain_text_to_html(text: str) -> str:
     )
 
 
-def _send_digest_via_notifier(notifier: object, digest_text: str) -> None:
+def _send_digest_via_notifier(notifier: Notifier, digest_text: str) -> None:
     """Send digest using notifier; include HTML when emailing."""
     if isinstance(notifier, EmailNotifier):
         html_body = _plain_text_to_html(digest_text)
