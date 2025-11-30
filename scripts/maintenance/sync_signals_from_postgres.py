@@ -3,11 +3,11 @@
 
 Example:
 
-    python scripts/sync_signals_from_postgres.py \
+    python scripts/maintenance/sync_signals_from_postgres.py \
         --postgres "$DATABASE_URL" --sqlite signals.db --hours 72
 
 The script reuses the formatter loading utilities so the resulting
-`signals.db` is compatible with `scripts/preview_local_digest.py` and tests.
+`signals.db` is compatible with `scripts/maintenance/preview_local_digest.py` and tests.
 """
 
 from __future__ import annotations
@@ -18,14 +18,14 @@ from pathlib import Path
 
 try:
     from bot.signals_database import SignalsDatabaseV2
-    from scripts.preview_local_digest import load_signals_postgres
+    from scripts.maintenance.preview_local_digest import load_signals_postgres
 except ModuleNotFoundError:  # pragma: no cover - allow direct script invocation
-    ROOT_DIR = Path(__file__).resolve().parent.parent
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent
     if str(ROOT_DIR) not in sys.path:
         sys.path.insert(0, str(ROOT_DIR))
 
     from bot.signals_database import SignalsDatabaseV2
-    from scripts.preview_local_digest import load_signals_postgres
+    from scripts.maintenance.preview_local_digest import load_signals_postgres
 
 
 def parse_args() -> argparse.Namespace:

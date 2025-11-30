@@ -6,7 +6,7 @@ exactly what the formatter will emit without hitting external APIs.
 
 Example usage:
 
-    python scripts/preview_local_digest.py --db signals_v2.db --hours 48
+    python scripts/maintenance/preview_local_digest.py --db tests/fixtures/signals_v2.db --hours 48
 
 """
 
@@ -28,7 +28,7 @@ try:
     from bot.signals import SignalType, SignalV2, Urgency
     from bot.signals_database import SignalsDatabaseV2
 except ModuleNotFoundError:  # pragma: no cover - allow direct script invocation
-    ROOT_DIR = Path(__file__).resolve().parent.parent
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent
     if str(ROOT_DIR) not in sys.path:
         sys.path.insert(0, str(ROOT_DIR))
 

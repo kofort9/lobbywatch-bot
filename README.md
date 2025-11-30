@@ -1,282 +1,233 @@
-# 🔍 LobbyLens
+# LobbyLens
 
-A two-layer government monitoring system providing daily government activity signals and quarterly lobbying analysis.
+**LobbyLens** is a comprehensive government monitoring and analysis platform that provides real-time tracking of government activity and quarterly lobbying disclosure analysis. The system integrates multiple government data sources to deliver actionable intelligence through Slack and email notifications.
 
-## 🏗️ **Two-Layer Architecture**
+> **Note**: The production deployment is currently offline due to Railway credit limitations. The codebase is fully functional and can be deployed to any compatible hosting platform. Local development and testing remain fully supported.
 
-### **V2: Daily Activity Layer** (Currently Active)
-- **Data Source**: Government APIs (Congress, Federal Register, Regulations.gov)
-- **Purpose**: Track what the government is doing daily
-- **Content**: Bills, hearings, regulations, regulatory actions
-- **Deployment**: Railway (main.py) + Docker (updated)
+## Overview
 
-### **V1: Quarterly Money Layer** (Production Ready - September 2025)
-- **Data Source**: U.S. Senate LDA REST API (real-time lobbying disclosure data)
-- **Purpose**: Track who's paying whom to lobby, how much, on which issues
-- **Content**: Real lobbying filings, clients, registrants, amounts, issue codes
-- **Status**: ✅ **Production ready** with Railway PostgreSQL backend
-- **Database**: **PostgreSQL** (migrated from SQLite for better concurrency)
+LobbyLens operates on a two-layer architecture:
 
-> **📋 Architecture Note**: The system has evolved to separate daily government activity monitoring (V2) from quarterly lobbying analysis (V1). V2 is currently active and tracks government actions, while V1 is prepared for future LDA data integration.
+- **V2: Daily Activity Monitoring** — Real-time tracking of government actions including bills, hearings, regulations, and regulatory actions
+- **V1: Quarterly Lobbying Analysis** — Comprehensive analysis of lobbying disclosure data from the U.S. Senate LDA system
 
-![Tests](https://github.com/your-username/lobbylens/workflows/Tests%20and%20Code%20Quality/badge.svg)
-![Daily Digest](https://github.com/your-username/lobbylens/workflows/LobbyLens%20Daily%20Digest/badge.svg)
+## Architecture
+
+### V2: Daily Activity Layer (Active)
+
+The daily activity layer monitors government operations in real-time through official APIs:
+
+- **Data Sources**: Congress API, Federal Register API, Regulations.gov API
+- **Content**: Bills, hearings, regulations, regulatory actions, comment periods
+- **Deployment**: Railway-hosted service with Docker support
+- **Features**:
+  - Priority-based signal scoring and filtering
+  - Watchlist-based alerting
+  - Industry categorization and snapshots
+  - Mobile-optimized digest formatting
+  - Automated daily and mini-digest generation
+
+### V1: Quarterly Lobbying Analysis (Production Ready)
+
+The quarterly analysis layer processes lobbying disclosure data:
+
+- **Data Source**: U.S. Senate LDA REST API
+- **Purpose**: Track lobbying expenditures, registrants, clients, and issue codes
+- **Database**: PostgreSQL (Railway-managed) for production scalability
+- **Status**: Production-ready with comprehensive ETL pipeline
+- **Features**:
+  - Front-page digest focusing on high-impact filings
+  - Top registrants, clients, and issue analysis
+  - Quarter-over-quarter trend tracking
+  - Amendment detection and tracking
+  - Admin-controlled digest posting
 
 ## Features
 
-### V2: Daily Government Activity (Currently Active)
-- 📰 **Daily Digest**: Bills, hearings, regulations, and regulatory actions
-- 🎯 **Smart Filtering**: Watchlist-based alerts and threshold triggers
-- 📊 **Priority Scoring**: Deterministic scoring based on source, timing, and relevance
-- 🔍 **Issue Mapping**: Automatic categorization using rule-based mappings
-- 📱 **Mobile Formatting**: Character budgets, line breaking, mobile-friendly design
-- 🏭 **Industry Snapshots**: Categorized view of government activity by industry
+### Daily Government Activity Monitoring
 
-### V1: LDA Front Page Digest (Production Ready)
-- 🎯 **Front Page Digest**: Focused "biggest hitters" analysis (not firehose)
-- 🏢 **Smart Selection**: Top registrants, clients, QoQ movers, new entrants
-- 📈 **Amendment Tracking**: Labels amended filings, shows latest versions
-- 💰 **Amount Semantics**: `$420K`, `$1.2M`, `—` for unreported, `$0` for explicit zero
-- 🔄 **Since Last Run**: Shows new/amended filings since previous digest
-- 🏛️ **Admin Controls**: Digest posting restricted to channel admins
-- 📊 **PostgreSQL Backend**: No database locking, handles concurrent operations
+- **Intelligent Signal Processing**: Rule-based priority scoring with configurable weights
+- **Watchlist Alerts**: Real-time notifications for entities matching configured watchlists
+- **Industry Categorization**: Automatic mapping of agencies and committees to industry sectors
+- **Deadline Tracking**: Identification of upcoming comment periods and effective dates
+- **Surge Detection**: Recognition of significant increases in regulatory comment activity
+- **Mobile-Optimized Formatting**: Character budgets and line breaking for mobile readability
 
-### Platform Features
-- 🚀 **Slack Integration**: Clean, formatted messages with direct links
-- ⚙️ **Automated Scheduling**: Daily digests, weekly refresh, and quarterly reports via GitHub Actions
-- 🔒 **Secure**: Environment-based configuration
-- 🧪 **Well Tested**: Comprehensive test suite with deterministic logic
-- 💬 **Interactive Commands**: Full Slack slash command support
+### Lobbying Disclosure Analysis
 
-## Data Sources & Cadence
+- **Front-Page Digest**: Curated analysis of high-impact lobbying activity
+- **Trend Analysis**: Quarter-over-quarter comparisons and movement tracking
+- **Entity Search**: Fuzzy matching for registrants, clients, and entities
+- **Issue Code Mapping**: Automatic categorization using official LDA issue codes
+- **Data Export**: CSV and structured data exports for further analysis
 
-### V2: Daily Government Activity (Active)
-- **Congress API**: Bills, votes, hearings, committee actions
-- **Federal Register API**: Rules, notices, regulatory actions by agency
-- **Regulations.gov API**: Dockets, comment counts, regulatory surges
-- **Refresh**: Daily (8 AM PT) + Mini (4 PM PT if thresholds hit)
-- **Content**: Government actions, regulatory changes, bill movements
+### Platform Capabilities
 
-### V1: Quarterly Lobbying Data (Prepared)
-- **Source**: Senate/House LDA bulk files (XML/CSV)
-- **Refresh**: Quarterly (when new data is published)
-- **Content**: Actual lobbying filings, clients, registrants, amounts, issue codes
-- **Output**: Comprehensive quarterly reports with CSV exports
+- **Multi-Channel Delivery**: Slack integration with slash commands and email notifications
+- **Automated Scheduling**: GitHub Actions workflows for daily, weekly, and quarterly updates
+- **Secure Configuration**: Environment-based secrets management with signature verification
+- **Comprehensive Testing**: 63% test coverage with deterministic, rule-based logic
+- **Interactive Commands**: Full Slack slash command interface for on-demand access
 
-## 💬 **Slack Commands**
+## Data Sources
+
+### Daily Activity Sources
+
+| Source | Content | Refresh Frequency |
+|--------|---------|------------------|
+| Congress API | Bills, votes, hearings, committee actions | Daily (8 AM PT) |
+| Federal Register API | Rules, notices, regulatory actions | Daily (8 AM PT) |
+| Regulations.gov API | Dockets, comment counts, regulatory surges | Daily (8 AM PT) + Mini (4 PM PT) |
+
+### Quarterly Lobbying Data
+
+| Source | Content | Refresh Frequency |
+|--------|---------|-------------------|
+| U.S. Senate LDA API | Lobbying filings, registrants, clients, amounts | Quarterly (when published) |
+
+## Slack Integration
 
 LobbyLens provides comprehensive Slack integration with interactive slash commands for digest generation, watchlist management, and system configuration.
 
-### **Digest Commands**
-- **`/lobbypulse`** - Generate daily digest (24h of government activity)
-- **`/lobbypulse mini`** - Generate mini digest (4h, when thresholds met)
-- **`/lobbypulse help`** - Show all available commands
+**Security & handlers**
+- All Slack HTTP entrypoints enforce signing secret verification; production fails closed if `SLACK_SIGNING_SECRET` is missing.
+- Flask routes now reuse the richer `bot.slack_app.SlackApp` handler stack (admin checks, confirmations, watchlist flows) so behaviour stays consistent across slash commands and events.
+- A `use_legacy_handlers` flag exists for tests/local fallback; keep it disabled in production.
 
-### **Watchlist Commands**
-- **`/watchlist add <entity>`** - Add entity to watchlist (e.g., `/watchlist add Google`)
-- **`/watchlist remove <entity>`** - Remove entity from watchlist
-- **`/watchlist list`** - Show current watchlist items
+### Digest Commands
 
-### **Settings Commands**
-- **`/threshold set <number>`** - Set mini-digest threshold (e.g., `/threshold set 5`)
-- **`/threshold`** - Show current threshold settings
+- `/lobbypulse` — Generate daily digest (24-hour window)
+- `/lobbypulse mini` — Generate mini digest (4-hour window, threshold-based)
+- `/lobbypulse help` — Display command reference
 
-### **LDA Commands** (V1 - Admin Only for Digest)
-- **`/lobbylens lda digest [q=2024Q3]`** - Post LDA money digest (channel admins only)
-- **`/lobbylens lda top registrants [q=2024Q3] [n=10]`** - Top lobbying firms
-- **`/lobbylens lda top clients [q=2024Q3] [n=10]`** - Top lobbying clients
-- **`/lobbylens lda issues [q=2024Q3]`** - Top lobbying issues
-- **`/lobbylens lda entity <name>`** - Search for specific entity
-- **`/lobbylens lda help`** - LDA system help and issue codes
+### Watchlist Management
 
-### **System Commands**
-- **`/lobbylens`** - Show system status and database statistics
-- **`/lobbylens help`** - Show comprehensive system help and features
+- `/watchlist add <entity>` — Add entity to watchlist
+- `/watchlist remove <entity>` — Remove entity from watchlist
+- `/watchlist list` — Display current watchlist
 
-### **Command Examples**
-```bash
-# Get daily digest
-/lobbypulse
+### Configuration
 
-# Get mini digest
-/lobbypulse mini
+- `/threshold set <number>` — Configure mini-digest threshold
+- `/threshold` — Display current threshold settings
 
-# Add entities to watchlist
-/watchlist add Google
-/watchlist add Microsoft
-/watchlist add "Federal Reserve"
+### LDA Commands (Admin Only)
 
-# Set mini-digest threshold
-/threshold set 5
+- `/lobbylens lda digest [q=2024Q3]` — Post LDA quarterly digest
+- `/lobbylens lda top registrants [q=2024Q3] [n=10]` — Display top lobbying firms
+- `/lobbylens lda top clients [q=2024Q3] [n=10]` — Display top lobbying clients
+- `/lobbylens lda issues [q=2024Q3]` — Display top lobbying issues
+- `/lobbylens lda entity <name>` — Search for specific entity
+- `/lobbylens lda help` — Display LDA system help
 
-# Check system status
-/lobbylens
+### System Commands
 
-# Get help
-/lobbypulse help
-```
-
-### **Digest Format**
-The daily digest includes:
-- **🔎 Watchlist Alerts** - Signals matching your watchlist entities
-- **📈 What Changed** - Recent government activity and regulatory changes
-- **🏭 Industry Snapshots** - Categorized view by industry (Tech, Health, Energy, etc.)
-- **⏰ Deadlines** - Upcoming deadlines and comment periods
-- **📊 Docket Surges** - Regulatory dockets with significant activity increases
-- **📜 New Bills & Actions** - Recent congressional activity
-
-## 🚀 **Recent Updates (September 2025)**
-
-### Real Slack Links Implementation ✅
-- **Real URLs Everywhere**: All digest links now use actual URLs instead of placeholders
-- **Slack mrkdwn Formatting**: Proper `<URL|Label>` formatting for all links
-- **Source-Specific Labels**: FR, Docket, Document, Congress labels based on data source
-- **URL Priority Logic**: Federal Register (html_url → pdf_url), Regulations.gov (docket_id → document_id)
-- **Graceful Error Handling**: Missing URLs are omitted rather than showing placeholders
-- **Comprehensive Testing**: 25+ new tests covering all link scenarios
-
-### Federal Register Daily Digest Enhancement ✅
-- **Outlier Section**: High-scoring signals that don't make top 7 get dedicated outlier section
-- **Industry Mapping**: Automatic agency-to-industry categorization (FAA→Aviation, EPA→Environment, etc.)
-- **Priority Scoring**: Deterministic scoring with boosts for deadlines, high-impact agencies, keywords
-- **FAA AD Bundling**: Airworthiness Directives bundled into single line with manufacturer counts
-- **Why-It-Matters Clauses**: Deterministic explanations (Effective date, Comments close, etc.)
-- **Clean Formatting**: Removed confusing footer messages, improved mobile readability
-
-### LDA V1 MVP Complete ✅
-- **PostgreSQL Migration**: Migrated from SQLite to Railway PostgreSQL for production
-- **Front Page Digest**: Implemented focused "biggest hitters" digest (not data firehose)
-- **Real API Integration**: Live U.S. Senate LDA REST API data ingestion
-- **Admin Permissions**: Digest posting restricted to channel admins
-- **DM Alerts**: ETL error notifications sent via Slack DM
-
-### Database Migration: SQLite → PostgreSQL
-
-**Why PostgreSQL?**
-- **Concurrency**: SQLite had database locking issues during ETL operations
-- **Scalability**: PostgreSQL handles thousands of lobbying filings without locks
-- **Production Ready**: Railway PostgreSQL provides managed backups and monitoring
-- **ACID Compliance**: Better transaction handling for complex ETL operations
-- **Concurrent Access**: Multiple processes can read/write simultaneously
-
-**Migration Benefits:**
-- ✅ **Zero database locks** during LDA data ingestion
-- ✅ **Better performance** with proper indexing and query optimization
-- ✅ **Production reliability** with automatic backups and failover
-- ✅ **Scalability** for handling 18,000+ quarterly LDA filings
-
-### What Changed
-- **Database Backend**: SQLite → PostgreSQL (Railway managed)
-- **LDA System**: Complete V1 MVP with front page digest
-- **ETL Pipeline**: Robust API integration with retries and error handling
-- **Slack Integration**: Admin-only digest posting with comprehensive help
-
-### Files Removed
-- `bot/web_server_v2.py` - Redundant with `web_server.py`
-- `bot/run_v2.py` - Not used in deployment
-- `bot/digest.py` - Superseded by `digest_v2.py`
-- `bot/signals_database.py` - Superseded by `signals_database_v2.py`
-- `bot/daily_signals.py` - Superseded by `daily_signals_v2.py`
-- `bot/signals_digest.py` - Superseded by `digest_v2.py`
-- `bot/daily_signals_cli.py` - Superseded by main run modules
-- `README_V2.md` - Consolidated into main README
-- `lobbywatch.db` - V1 database file
-
-### Files Kept (V1 Money Layer)
-- `bot/enhanced_run.py` - V1 entry point for lobbying data
-- `bot/enhanced_digest.py` - V1 digest for lobbying data
-- `bot/slack_app.py` - V1 Slack integration
-- `bot/matching.py` - V1 fuzzy matching for lobbying entities
-- `bot/database.py` - V1 database for lobbying data
-- `bot/database_postgres.py` - V1 PostgreSQL support
-
-### Issue Mapping (No AI)
-- **Agency → Issue Codes**: FCC→TEC, HHS→HCR, etc.
-- **Committee → Issue Codes**: Finance→FIN, Energy & Commerce→ENE/TEC
-- **Bill Keywords → Issue Codes**: Deterministic keyword mapping
-- **Priority Scoring**: Rule-based scoring with configurable weights
-
-### Weekly Collector Workflow ✅
-- Added `.github/workflows/weekly-collector.yml` to run the signals collector each Friday at 23:00 UTC (16:00 PT)
-- Weekly run keeps the `signal_event` table fresh and uploads the SQLite snapshot for debugging
-- Uses the same secret set as the daily workflow; no additional configuration is required once secrets live in GitHub
-
-### Local Digest Preview Utilities ✅
-- `scripts/preview_local_digest.py` renders the digest from either SQLite or Railway PostgreSQL data sources
-- `scripts/sync_signals_from_postgres.py` copies recent `signal_event` rows from Railway into a local SQLite cache for offline checks
-- Consolidated legacy markdown docs into `docs/LDA_OVERVIEW.md` and `docs/OPERATIONS_GUIDE.md` for easier reference
+- `/lobbylens` — Display system status and statistics
+- `/lobbylens help` — Display comprehensive system help
 
 ## Quick Start
 
-### 1. Clone and Install
+### Prerequisites
+
+- Python 3.10 or higher
+- PostgreSQL (production) or SQLite (development)
+- Git
+
+### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/your-username/lobbylens.git
 cd lobbylens
+
+# Install in development mode
 pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
 ```
 
-### 2. Set Up Environment
+### Configuration
+
+1. **Environment Setup**
 
 ```bash
+# Copy example environment file
 cp .env.example .env
-# Edit .env with your API keys and Slack webhook
+
+# Edit .env with your configuration
+# Required: Slack credentials, API keys, database URL
 ```
 
-### 3. Configure Slack
+2. **Slack App Configuration**
 
-1. Create a Slack app at https://api.slack.com/apps
-2. Add an "Incoming Webhook" to your desired channel
-3. Copy the webhook URL to your `.env` file
+   - Create a Slack app at https://api.slack.com/apps
+   - Configure OAuth & Permissions with required scopes
+   - Add an Incoming Webhook to your desired channel
+   - Copy webhook URL, bot token, and signing secret to `.env`
 
-### 4. Get API Keys
+3. **API Keys**
 
-- **Congress API**: Get a key at https://api.congress.gov/sign-up/
-- **Regulations.gov API**: Get a key at https://api.data.gov/signup/
-- **Regulations.gov**: Get a key at https://open.gsa.gov/api/regulationsgov/
+   - **Congress API**: Register at https://api.congress.gov/sign-up/
+   - **Regulations.gov API**: Register at https://open.gsa.gov/api/regulationsgov/
+   - **LDA API**: Contact U.S. Senate LDA for API access
 
-### 5. Run Locally
+### Running Locally
 
 ```bash
-# Test with dry run (no actual notification)
+# Test with dry run (no notifications)
 lobbylens --dry-run
 
-# Run normally (sends to Slack)
+# Run normally (sends notifications)
 lobbylens
 
 # Skip data fetching (use existing database)
 lobbylens --skip-fetch
 ```
 
-## GitHub Actions Setup
+## Deployment
+
+### Current Status
+
+**Production Deployment**: Currently offline due to Railway credit limitations. The application can be deployed to any compatible hosting platform that supports PostgreSQL and Python 3.10+.
+
+### Railway Deployment
+
+LobbyLens is configured for deployment on Railway with PostgreSQL (when credits are available):
+
+1. **Database Setup**: Railway automatically provisions PostgreSQL
+2. **Environment Variables**: Configure all required secrets in Railway dashboard
+3. **Deployment**: Push to main branch triggers automatic deployment
+
+**Alternative Deployment Options**:
+- **Heroku**: Compatible with PostgreSQL add-on
+- **Render**: Supports PostgreSQL and Python applications
+- **DigitalOcean App Platform**: PostgreSQL and Python runtime support
+- **AWS/GCP/Azure**: Full control with managed PostgreSQL services
+- **Self-hosted**: Deploy on any server with PostgreSQL and Docker support
+
+### GitHub Actions
+
+Automated workflows handle scheduled operations:
+
+- **Daily Digest** (`.github/workflows/daily.yml`): Runs at 8:00 AM PT daily
+- **Weekly Collector** (`.github/workflows/weekly-collector.yml`): Runs Fridays at 23:00 UTC
+- **Quarterly LDA Update** (`.github/workflows/lda-quarterly.yml`): Runs monthly on the 15th
+- **Testing** (`.github/workflows/test.yml`): Runs on every push and pull request
 
 ### Required Secrets
 
-Add these secrets in your GitHub repository settings (`Settings > Secrets and variables > Actions`):
+Configure these secrets in GitHub repository settings:
 
 | Secret Name | Description | Required |
 |-------------|-------------|----------|
-| `SLACK_BOT_TOKEN` | Slack bot token for enhanced features | ✅ Yes |
-| `SLACK_SIGNING_SECRET` | Slack signing secret for request verification | ✅ Yes |
-| `LOBBYLENS_CHANNELS` | Comma-separated Slack channel IDs | ✅ Yes |
-
-### Optional API Keys (for Daily Signals)
-
-| Secret Name | Description | Required |
-|-------------|-------------|----------|
-| `CONGRESS_API_KEY` | Congress API key for bills/hearings | ⚠️ Recommended |
-| `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | ⚠️ Recommended |
-
-### Workflows
-
-- **Daily Digest** (`.github/workflows/daily.yml`): Runs at 8:00 AM PT daily
-- **Weekly Collector** (`.github/workflows/weekly-collector.yml`): Runs Fridays at 23:00 UTC (16:00 PT)
-- **Quarterly LDA Update** (`.github/workflows/lda-quarterly.yml`): Runs on the 15th of each month to refresh lobbying data
-- **Testing** (`.github/workflows/test.yml`): Runs on every push/PR
-
-### Manual Triggers
-
-You can manually trigger the daily digest from the GitHub Actions tab using "Run workflow".
+| `SLACK_BOT_TOKEN` | Slack bot token for enhanced features | Yes |
+| `SLACK_SIGNING_SECRET` | Slack signing secret for request verification | Yes |
+| `LOBBYLENS_CHANNELS` | Comma-separated Slack channel IDs | Yes |
+| `DATABASE_URL` | PostgreSQL connection string | Yes (production) |
+| `CONGRESS_API_KEY` | Congress API key | Recommended |
+| `REGULATIONS_GOV_API_KEY` | Regulations.gov API key | Recommended |
+| `LDA_API_KEY` | U.S. Senate LDA API key | Optional (V1 features) |
 
 ## Configuration
 
@@ -284,185 +235,91 @@ You can manually trigger the daily digest from the GitHub Actions tab using "Run
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | - | **PostgreSQL connection string (production)** |
-| `DATABASE_FILE` | `lobbywatch.db` | SQLite database path (development fallback) |
-| `SLACK_WEBHOOK_URL` | - | Slack webhook URL (required) |
+| `DATABASE_URL` | - | PostgreSQL connection string (production) |
+| `DATABASE_FILE` | `lobbywatch.db` | SQLite database path (development) |
+| `SLACK_WEBHOOK_URL` | - | Slack webhook URL (legacy) |
 | `SLACK_BOT_TOKEN` | - | Slack bot token for enhanced features |
 | `SLACK_SIGNING_SECRET` | - | Slack signing secret for request verification |
 | `LOBBYLENS_ADMIN_USER_ID` | - | Slack user ID for DM alerts |
 | `ENABLE_LDA_V1` | `false` | Enable LDA V1 features |
 | `LDA_API_KEY` | - | U.S. Senate LDA API key |
-| `CONGRESS_API_KEY` | - | Congress API key for bills/hearings |
+| `CONGRESS_API_KEY` | - | Congress API key |
 | `REGULATIONS_GOV_API_KEY` | - | Regulations.gov API key |
 | `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARN, ERROR) |
 | `DRY_RUN` | `false` | Generate digest without sending |
+| `ENVIRONMENT` | `development` | Environment (development, staging, production) |
 
 ### Database Configuration
 
-**PostgreSQL (Production - Recommended):**
+**PostgreSQL (Production - Recommended)**
+
 ```bash
 DATABASE_URL=postgresql://user:password@host:port/database
 ```
 
-**SQLite (Development - Fallback):**
+**SQLite (Development - Fallback)**
+
 ```bash
 DATABASE_FILE=lobbywatch.db
 ```
 
 The system automatically detects PostgreSQL when `DATABASE_URL` is set and falls back to SQLite otherwise.
 
-### CLI Options
-
-```bash
-lobbylens --help
-
-Options:
-  --dry-run         Generate digest but don't send notification
-  --skip-fetch      Skip data fetching, only generate digest
-  --log-level TEXT  Set logging level [DEBUG|INFO|WARNING|ERROR]
-  --help           Show this message and exit
-```
-
-## Developer Utilities
-
-### Preview the Daily Digest Locally
-
-```bash
-# Render digest from local SQLite cache (defaults to signals.db)
-python scripts/preview_local_digest.py --db signals.db --hours 24
-
-# Render digest directly from Railway PostgreSQL
-python scripts/preview_local_digest.py --db "$DATABASE_URL" --hours 48
-```
-
-### Sync Railway Signals into SQLite
-
-```bash
-python scripts/sync_signals_from_postgres.py \
-  --postgres "$DATABASE_URL" \
-  --sqlite signals.db \
-  --hours 72
-```
-
-This helper copies recent `signal_event` rows into `signals.db`, making it easy to preview formatting changes offline.
-
-### Documentation
-
-- `docs/LDA_OVERVIEW.md` – combined history of the LDA V1 implementation
-- `docs/OPERATIONS_GUIDE.md` – consolidated deployment, readiness, and secrets reference
-- Additional reference material lives under `docs/`
-
-### Slack Commands
-
-| Command | Description | Usage |
-|---------|-------------|-------|
-| `/lobbypulse` | Generate fresh lobbying digest | `/lobbypulse [daily\|mini\|help]` |
-| `/watchlist` | Manage watchlist entities | `/watchlist add\|remove\|list [name]` |
-| `/threshold` | Set alert thresholds | `/threshold set [number]` |
-| `/summary` | Toggle digest descriptions | `/summary set [on\|off]` |
-| `/lobbylens` | General bot help | `/lobbylens [help]` |
-
-## Sample Output
-
-### V2: Federal Register Daily Digest
-```
-📋 **Federal Register Daily Digest** — 2025-09-29
-Mini-stats: Final 2 · Proposed 2 · Notices 3 · High-priority 4 · Updated 16:11 PT
-
-📈 **What Changed** (6):
-• [Health] Final Rule — Medicare Program; Hospital Inpatient Prospective Payment Systems — Effective Oct 20 • <https://www.federalregister.gov/documents/2024/01/15/CMS-2024-0001|FR>
-• [Energy] Final Rule — Electric Transmission Incentives Policy Statement — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/FERC-2024-0001|FR>
-• [Trade/Tech] Proposed Rule — Export Administration Regulations: Revisions to License Exception ENC — Comments close in 11 days • <https://www.federalregister.gov/documents/2024/01/15/BIS-2024-0001|FR>
-• [Tech/Telecom] Proposed Rule — Spectrum Rules and Policies for the 6 GHz Band — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/FCC-2024-0001|FR>
-• [Cyber] Meeting/Hearing — Cybersecurity and Infrastructure Security Agency Advisory Committee Meeting — Regulatory action • <https://www.federalregister.gov/documents/2024/01/15/CISA-2024-0001|FR>
-• [Finance] Notice — Enforcement Policy for Sanctions Violations — Enforcement • <https://www.federalregister.gov/documents/2024/01/15/OFAC-2024-0001|FR>
-
-🏭 **Industry Snapshot**:
-• Trade/Tech: 1 proposed
-• Health: 1 rules
-• Energy: 1 rules
-• Tech/Telecom: 1 proposed
-• Finance: 1 notices
-• Cyber: 1 notices
-• Aviation: 1 notices
-
-✈️ **FAA Airworthiness Directives**:
-• FAA Airworthiness Directives — 5 notices today (Airbus, Boeing, De Havilland, Other) • <https://www.federalregister.gov/agencies/federal-aviation-administration?publication_date=2025-09-29|FAA>
-```
-
-### V1: LDA Front Page Digest (Biggest Hitters)
-```
-💵 **LDA 2024Q3** disclosed $2.3M (▲200% QoQ). Top registrant: Akin Gump ($920K). 
-Top issue: TEC ($1.8M, 7). Biggest riser: Akin Gump (+$620K). 
-Largest filing: Meta Platforms → Akin Gump ($420K).
-
-**New/Amended since last run**
-• Google LLC → Brownstein Hyatt ($150K) • Issues: TEC • <Filing>
-• Microsoft Corporation → Akin Gump ($320K) • Issues: HCR/TEC • <Filing> (amended)
-
-**Top registrants (Q)**
-• Akin Gump — $920K (3)
-• Covington & Burling — $630K (2)
-
-**Movers & new entrants**
-• QoQ risers: Akin Gump +$620K QoQ · Covington & Burling +$430K QoQ
-• New clients: Acme Health Systems $250K · JH Whitney Data $40K
-
-_$0 may indicate ≤$5K or not required to report_
-
-/lobbylens lda help · Updated 21:20 PT
-```
-
-## Testing Plan
-
-### Quarterly Testing
-- **Fixture Data**: Download most recent LDA quarter (Senate + House bulk files)
-- **Local Processing**: Import into Postgres, run normalization, generate reports
-- **Output Validation**: Review CSVs and quarterly report for accuracy
-- **Slack Dry-Run**: Format mock quarterly summary (no posting)
-
-### Daily Signals Testing
-- **Live API Testing**: Use 24h window with real APIs or canned fixtures
-- **Scoring Validation**: Verify priority scoring sorts items correctly
-- **Watchlist Testing**: Inject known hits to test trigger logic
-- **Surge Detection**: Test comment surge detection with test deltas
-- **Slack Dry-Run**: Render digest blocks, ensure proper section capping
-
-### Local Development
-```bash
-# Test quarterly pipeline
-python -m bot.quarterly --dry-run
-
-# Test daily signals
-python -m bot.daily_signals --dry-run
-
-# Test full integration
-python -m bot.enhanced_run --mode server --dry-run
-```
-
 ## Development
 
-### Prerequisites
+### Project Structure
 
-- Python 3.10+
-- PostgreSQL (for production) or SQLite (for development)
-- Git
+```
+lobbylens/
+├── bot/                    # Main application package
+│   ├── __init__.py
+│   ├── config.py          # Configuration management
+│   ├── digest.py          # Daily digest computation
+│   ├── daily_signals.py   # Signal collection and processing
+│   ├── signals_database.py # Signal persistence layer
+│   ├── run.py             # CLI entry point
+│   ├── web_server.py      # Flask web server for Slack
+│   ├── api.py             # FastAPI endpoints
+│   ├── notifiers/         # Notification providers
+│   │   ├── base.py        # Base notification protocol
+│   │   ├── slack.py       # Slack implementation
+│   │   └── email.py       # Email implementation
+│   └── ...
+├── govsearch/             # Search service (FastAPI + Streamlit)
+├── tests/                 # Test suite
+│   ├── conftest.py       # Pytest fixtures
+│   └── test_*.py         # Test modules
+├── scripts/              # Utility scripts
+├── docs/                 # Documentation
+├── .github/workflows/    # GitHub Actions
+├── pyproject.toml        # Project configuration
+└── README.md            # This file
+```
 
-### Setup
+### Testing
+
+The test suite includes comprehensive coverage:
+
+- **Unit Tests**: Module-level testing with 63% overall coverage
+- **Integration Tests**: End-to-end workflow validation
+- **API Tests**: External API integration testing with mocks
+- **Security Tests**: Signature verification and permission checks
 
 ```bash
-# Install in development mode
-pip install -e ".[dev]"
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run tests
+# Run all tests
 pytest
 
-# Run tests with coverage
+# Run with coverage report
 pytest --cov=bot --cov-report=html
 
+# Run specific test suite
+pytest tests/test_digest.py -v
+pytest tests/test_api.py -v
+```
+
+### Code Quality
+
+```bash
 # Format code
 black bot tests
 isort bot tests
@@ -470,91 +327,62 @@ isort bot tests
 # Type checking
 mypy bot
 
-# Lint
+# Linting
 flake8 bot tests
 ```
 
-### Testing
+### Developer Utilities
 
-The test suite includes:
-
-- **Unit tests**: All modules with >90% coverage
-- **Integration tests**: End-to-end CLI testing
-- **Mock testing**: External API calls and notifications
-- **Snapshot testing**: Digest format validation
-- **Link testing**: Real URL validation and Slack mrkdwn formatting
-- **Outlier testing**: Federal Register digest outlier section logic
-- **Signal testing**: Government API data processing and URL creation
-- **Digest testing**: All formatter types with real link integration
+**Preview Local Digest**
 
 ```bash
-# Run all tests
-pytest -v
+# Render digest from local SQLite cache
+python scripts/maintenance/preview_local_digest.py --db signals.db --hours 24
 
-# Run specific test files
-pytest tests/test_digest.py -v
-
-# Run link-related tests
-pytest tests/test_digest_links.py tests/test_slack_link_helper.py tests/test_signal_link_creation.py -v
-
-# Run FR digest tests
-pytest tests/test_fr_digest_outlier.py -v
-
-# Run with debugging
-pytest -v -s --pdb
+# Render digest from Railway PostgreSQL
+python scripts/maintenance/preview_local_digest.py --db "$DATABASE_URL" --hours 48
 ```
 
-### Project Structure
+**Sync Signals from PostgreSQL**
 
+```bash
+python scripts/maintenance/sync_signals_from_postgres.py \
+  --postgres "$DATABASE_URL" \
+  --sqlite signals.db \
+  --hours 72
 ```
-lobbylens/
-├── bot/                    # Main package
-│   ├── __init__.py
-│   ├── config.py          # Settings and environment
-│   ├── digest.py          # Daily digest computation
-│   ├── fr_digest.py       # Federal Register digest formatter
-│   ├── utils.py           # Utility functions (slack_link helper)
-│   ├── run.py             # CLI entry point
-│   └── notifiers/         # Notification providers
-│       ├── __init__.py
-│       ├── base.py        # Base protocol
-│       └── slack.py       # Slack implementation
-├── tests/                 # Test suite
-│   ├── conftest.py       # Pytest fixtures
-│   ├── test_*.py         # Test modules
-│   ├── test_digest_links.py      # Real URL testing
-│   ├── test_slack_link_helper.py # Link helper testing
-│   ├── test_signal_link_creation.py # Signal URL creation
-│   ├── test_fr_digest_outlier.py  # FR digest outlier testing
-│   └── snapshots/        # Expected outputs
-├── state/                # Runtime state files
-├── .github/workflows/    # GitHub Actions
-│   ├── daily.yml        # Daily digest runner
-│   └── test.yml         # CI/CD pipeline
-├── pyproject.toml       # Project configuration
-├── .env.example         # Environment template
-└── README.md           # This file
-```
+
+## Security
+
+LobbyLens implements multiple security measures:
+
+- **Request Verification**: All Slack endpoints verify request signatures using HMAC-SHA256
+- **Fail-Closed Permissions**: Permission checks deny access by default on errors
+- **Environment-Based Secrets**: All credentials managed through environment variables
+- **Production Hardening**: Signature verification required in production environments
+
+See `docs/SECURITY.md` for current security posture, required actions, and testing notes. `docs/SECURITY_CLEANUP.md` documents historical exposure and git-rewrite options.
 
 ## Database Schema
 
-LobbyLens uses a custom database schema designed for both quarterly LDA analysis and daily signals:
+The system uses a hybrid schema supporting both daily signals and quarterly lobbying data:
 
 ```sql
--- Core entities (clients, registrants)
+-- Core entities
 entity(id, name, type)
 
--- Issue codes (HCR, TAX, DEF, etc.)
+-- Issue codes
 issue(id, code, description)
 
 -- Filing records (quarterly LDA data)
 filing(id, client_id, registrant_id, filing_date, created_at, amount, url, description)
 
--- Filing-issue relationships (many-to-many)
+-- Filing-issue relationships
 filing_issue(id, filing_id, issue_id)
 
--- Daily signal events (v2 system)
-signal_event(id, source, source_id, ts, title, link, agency, committee, bill_id, rin, docket_id, issue_codes, metric_json, priority_score, created_at)
+-- Daily signal events
+signal_event(id, source, source_id, timestamp, title, link, agency, committee, 
+             bill_id, rin, docket_id, issue_codes, metrics_json, priority_score, created_at)
 
 -- Channel-specific settings
 channel_settings(channel_id, threshold, show_summaries, created_at)
@@ -567,26 +395,27 @@ watchlist(channel_id, entity_type, name, display_name, entity_id, fuzzy_score, c
 
 ### Common Issues
 
-**No notifications received:**
-- Check Slack webhook URL is correct
-- Verify webhook has proper channel permissions
-- Check GitHub Actions logs for errors
+**No notifications received**
+- Verify Slack webhook URL and bot token are correct
+- Check webhook has proper channel permissions
+- Review GitHub Actions logs for errors
+- Ensure `SLACK_SIGNING_SECRET` is configured for production
 
-**Database not found:**
-- Database is created automatically on first run
-- Check `DATABASE_FILE` path in configuration
-- Ensure proper file permissions
+**Database connection errors**
+- Verify `DATABASE_URL` format (PostgreSQL) or `DATABASE_FILE` path (SQLite)
+- Check database permissions and network connectivity
+- Ensure database schema is initialized
 
-**API rate limits:**
-- Congress API: 5000 requests/day
-- Federal Register: No rate limit (be respectful)
-- Regulations.gov: 1000 requests/day
-- Consider reducing fetch limits in code
+**API rate limits**
+- Congress API: 5,000 requests/day
+- Federal Register: No official limit (use responsibly)
+- Regulations.gov: 1,000 requests/day
+- Consider adjusting fetch limits in configuration
 
-**Memory issues:**
-- SQLite database can grow large over time
-- Consider periodic cleanup of old records
-- Archive state files regularly
+**Signature verification failures**
+- Ensure `SLACK_SIGNING_SECRET` matches Slack app configuration
+- Verify request timestamp is within 5-minute window
+- Check that raw request body is used for signature calculation
 
 ### Debug Mode
 
@@ -595,19 +424,22 @@ watchlist(channel_id, entity_type, name, display_name, entity_id, fuzzy_score, c
 export LOG_LEVEL=DEBUG
 lobbylens --dry-run
 
-# Check digest computation only
-python -c "from bot.digest import compute_digest; print(compute_digest('lobbywatch.db'))"
-
 # Test Slack notification
-python -c "from bot.notifiers.slack import SlackNotifier; SlackNotifier('YOUR_WEBHOOK').send('Test message')"
+python -c "from bot.notifiers.slack import SlackNotifier; \
+           SlackNotifier('YOUR_WEBHOOK').send('Test message')"
 ```
 
-### GitHub Actions Debug
+## Documentation
 
-- Check the Actions tab for workflow runs
-- Download artifacts (database files) for inspection
-- Use workflow dispatch for manual testing
-- Check repository secrets are properly set
+Additional documentation is available in the `docs/` directory:
+
+- `LDA_OVERVIEW.md` — LDA V1 implementation details
+- `OPERATIONS_GUIDE.md` — Deployment and operations reference
+- `TEST_COVERAGE.md` — Test coverage metrics and targets
+- `TECHNICAL_DEBT.md` — Known issues and improvement areas
+- `IMPROVEMENTS.md` — Planned enhancements
+- `docs/SECURITY.md` — Security posture, required actions, and testing
+- `docs/SECURITY_CLEANUP.md` — History of exposure and git cleanup guidance
 
 ## Contributing
 
@@ -615,8 +447,8 @@ python -c "from bot.notifiers.slack import SlackNotifier; SlackNotifier('YOUR_WE
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make changes and add tests
 4. Run the full test suite: `pytest`
-5. Ensure code quality: `black . && isort . && flake8`
-6. Submit a pull request
+5. Ensure code quality: `black . && isort . && flake8 .`
+6. Submit a pull request with a clear description
 
 ## License
 
@@ -624,6 +456,9 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- [U.S. Senate LDA API](https://lda.senate.gov/api/) for lobbying data
-- [Congress API](https://api.congress.gov/) for bills and hearings
-- Built with direct government API integrations for real-time data
+- [U.S. Senate LDA API](https://lda.senate.gov/api/) for lobbying disclosure data
+- [Congress API](https://api.congress.gov/) for legislative data
+- [Federal Register API](https://www.federalregister.gov/api/v1) for regulatory data
+- [Regulations.gov API](https://open.gsa.gov/api/regulationsgov/) for docket information
+
+Built with direct government API integrations for real-time, authoritative data.

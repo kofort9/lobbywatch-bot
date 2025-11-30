@@ -4,6 +4,7 @@
 import json
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 from bot.digest import DigestFormatter
@@ -12,7 +13,10 @@ from bot.signals import SignalType, SignalV2
 
 def load_signals_from_db() -> List[SignalV2]:
     """Load signals directly from the SQLite database."""
-    conn = sqlite3.connect("signals_v2.db")
+    fixtures_dir = Path(__file__).resolve().parent / "tests" / "fixtures"
+    db_path = fixtures_dir / "signals_v2.db"
+
+    conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 

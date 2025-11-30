@@ -12,8 +12,8 @@ import sys
 from datetime import datetime, timezone
 from typing import Dict
 
-# Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# Add repo root to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Configure logging
 logging.basicConfig(

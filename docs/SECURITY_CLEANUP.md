@@ -53,16 +53,9 @@ These are safe and expected in a public repository.
 - [x] Review all changed files
 - [ ] **TODO**: Rotate any credentials that were exposed in git history (if repository was previously private with commits containing real credentials)
 
-## 🚨 URGENT: Credentials Were Exposed in Public Repository
+## 🚨 Credentials Were Exposed in Git History
 
-**The repository was made public with credentials in git history. See `URGENT_SECURITY_ACTIONS.md` for immediate steps.**
-
-### Immediate Actions Required:
-
-1. **Rotate ALL exposed credentials** (see URGENT_SECURITY_ACTIONS.md for complete list)
-2. **Update all deployment environments** (GitHub Secrets, Railway, local `.env`)
-3. **Test all integrations** with new credentials
-4. **Consider git history cleanup** (see URGENT_SECURITY_ACTIONS.md for options)
+This repo previously contained credentials in history. For the current rotation checklist and security posture, see `docs/SECURITY.md`.
 
 ### Exposed Credentials Found in Git History:
 
@@ -74,9 +67,8 @@ These are safe and expected in a public repository.
 - Congress API key: `[REDACTED - starts with 4Nfl]`
 - Regulations.gov API key: `[REDACTED - starts with SnAf]`
 
-**All of these must be rotated immediately. See URGENT_SECURITY_ACTIONS.md for full details.**
+**All of these must be rotated. See `docs/SECURITY.md` for the current action list.**
 
 ## 🚀 Ready for Public Release
 
 The repository is now ready to be made public. All sensitive credentials have been removed from tracked files.
-

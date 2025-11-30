@@ -14,11 +14,18 @@ Architecture:
 # =============================================================================
 
 import json
+import logging
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from bot.signals import SignalV2
+
+try:
+    import psycopg2
+    import psycopg2.extras
+except Exception:  # pragma: no cover - optional dependency
+    psycopg2 = None  # type: ignore
 
 
 class SignalsDatabaseV2:
@@ -106,6 +113,32 @@ class SignalsDatabaseV2:
                 if "duplicate column" in str(exc).lower():
                     continue
                 raise
+
+        # Watchlist and channel settings
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS watchlist_item (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                channel_id TEXT NOT NULL,
+                term TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(channel_id, term)
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS channel_settings (
+                channel_id TEXT PRIMARY KEY,
+                mini_digest_threshold INTEGER DEFAULT 10,
+                high_priority_threshold REAL DEFAULT 5.0,
+                surge_threshold REAL DEFAULT 200.0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
         conn.commit()
         conn.close()
@@ -436,29 +469,514 @@ class SignalsDatabaseV2:
         return self.get_database_stats()
 
     def add_watchlist_item(self, channel_id: str, term: str) -> bool:
-        """Add a watchlist item (placeholder implementation)."""
-        # This would need to be implemented based on your watchlist schema
-        return True
+        """Add a watchlist item."""
+        if not channel_id or not term:
+            return False
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+
+        try:
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO watchlist_item (channel_id, term)
+                VALUES (?, ?)
+                """,
+                (channel_id, term.strip()),
+            )
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
 
     def remove_watchlist_item(self, channel_id: str, term: str) -> bool:
-        """Remove a watchlist item (placeholder implementation)."""
-        # This would need to be implemented based on your watchlist schema
-        return True
+        """Remove a watchlist item."""
+        if not channel_id or not term:
+            return False
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+
+        try:
+            cur.execute(
+                """
+                DELETE FROM watchlist_item
+                WHERE channel_id = ? AND term = ?
+                """,
+                (channel_id, term.strip()),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        except Exception:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
 
     def get_watchlist(self, channel_id: str) -> List[str]:
-        """Get watchlist items for a channel (placeholder implementation)."""
-        # This would need to be implemented based on your watchlist schema
-        return []
+        """Get watchlist items for a channel."""
+        if not channel_id:
+            return []
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT term FROM watchlist_item
+            WHERE channel_id = ?
+            ORDER BY created_at DESC
+            """,
+            (channel_id,),
+        )
+
+        rows = cur.fetchall()
+        conn.close()
+
+        return [row[0] for row in rows]
 
     def update_channel_setting(self, channel_id: str, setting: str, value: Any) -> bool:
-        """Update a channel setting (placeholder implementation)."""
-        # This would need to be implemented based on your channel settings schema
+        """Update or insert a channel setting."""
+        if setting not in {
+            "mini_digest_threshold",
+            "high_priority_threshold",
+            "surge_threshold",
+        }:
+            return False
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+
+        try:
+            # Ensure row exists
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO channel_settings (channel_id)
+                VALUES (?)
+                """,
+                (channel_id,),
+            )
+
+            cur.execute(
+                f"""
+                UPDATE channel_settings
+                SET {setting} = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE channel_id = ?
+                """,
+                (value, channel_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        except Exception:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_channel_settings(self, channel_id: str) -> Dict[str, Any]:
+        """Get channel settings with defaults when missing."""
+        defaults: Dict[str, Any] = {
+            "mini_digest_threshold": 10,
+            "high_priority_threshold": 5.0,
+            "surge_threshold": 200.0,
+        }
+
+        if not channel_id:
+            return defaults
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT mini_digest_threshold, high_priority_threshold, surge_threshold
+            FROM channel_settings
+            WHERE channel_id = ?
+            """,
+            (channel_id,),
+        )
+        row = cur.fetchone()
+        conn.close()
+
+        if not row:
+            return defaults
+
+        return {
+            "mini_digest_threshold": row[0],
+            "high_priority_threshold": row[1],
+            "surge_threshold": row[2],
+        }
+
+    def health_check(self) -> Dict[str, Any]:
+        """Perform a simple database health check."""
+        try:
+            conn = sqlite3.connect(self.db_path, timeout=2)
+            cur = conn.cursor()
+            cur.execute("SELECT 1")
+            cur.fetchone()
+            conn.close()
+            return {"database": "ok"}
+        except Exception as exc:
+            return {"database": "error", "detail": str(exc)}
+
+
+# -----------------------------------------------------------------------------
+# Postgres implementation for production
+# -----------------------------------------------------------------------------
+
+
+class SignalsDatabasePG(SignalsDatabaseV2):
+    """PostgreSQL-backed signals database (subset of methods used today)."""
+
+    def __init__(self, database_url: str):
+        if not psycopg2:
+            raise RuntimeError("psycopg2 is required for PostgreSQL backend")
+        self.database_url = database_url
+        self._ensure_schema_pg()
+
+    def _conn(self):
+        return psycopg2.connect(
+            self.database_url, cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+    def _ensure_schema_pg(self) -> None:
+        ddl = """
+        CREATE TABLE IF NOT EXISTS signal_event (
+            id SERIAL PRIMARY KEY,
+            source TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            ts TIMESTAMPTZ NOT NULL,
+            title TEXT NOT NULL,
+            link TEXT NOT NULL,
+            agency TEXT,
+            committee TEXT,
+            bill_id TEXT,
+            rin TEXT,
+            docket_id TEXT,
+            issue_codes JSONB DEFAULT '[]',
+            metric_json JSONB DEFAULT '{}',
+            priority_score REAL DEFAULT 0.0,
+            signal_type TEXT,
+            urgency TEXT,
+            watchlist_matches JSONB DEFAULT '[]',
+            regs_object_id TEXT,
+            regs_docket_id TEXT,
+            comment_end_date TEXT,
+            comments_24h INTEGER DEFAULT 0,
+            comments_delta INTEGER DEFAULT 0,
+            comment_surge BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source, source_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS watchlist_item (
+            id SERIAL PRIMARY KEY,
+            channel_id TEXT NOT NULL,
+            term TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(channel_id, term)
+        );
+
+        CREATE TABLE IF NOT EXISTS channel_settings (
+            channel_id TEXT PRIMARY KEY,
+            mini_digest_threshold INTEGER DEFAULT 10,
+            high_priority_threshold REAL DEFAULT 5.0,
+            surge_threshold REAL DEFAULT 200.0,
+            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_signal_ts ON signal_event(ts);
+        CREATE INDEX IF NOT EXISTS idx_signal_priority ON signal_event(priority_score);
+        CREATE INDEX IF NOT EXISTS idx_signal_source ON signal_event(source);
+        CREATE INDEX IF NOT EXISTS idx_signal_agency ON signal_event(agency);
+        """
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(ddl)
+            conn.commit()
+
+    def save_signals(self, signals: List[SignalV2]) -> int:
+        if not signals:
+            return 0
+        saved = 0
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                for signal in signals:
+                    try:
+                        cur.execute(
+                            """
+                            INSERT INTO signal_event (
+                                source, source_id, ts, title, link, agency, committee,
+                                bill_id, rin, docket_id, issue_codes, metric_json,
+                                priority_score, signal_type, urgency, watchlist_matches,
+                                regs_object_id, regs_docket_id, comment_end_date,
+                                comments_24h, comments_delta, comment_surge
+                            )
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            ON CONFLICT (source, source_id) DO UPDATE SET
+                                ts = EXCLUDED.ts,
+                                title = EXCLUDED.title,
+                                link = EXCLUDED.link,
+                                agency = EXCLUDED.agency,
+                                committee = EXCLUDED.committee,
+                                bill_id = EXCLUDED.bill_id,
+                                rin = EXCLUDED.rin,
+                                docket_id = EXCLUDED.docket_id,
+                                issue_codes = EXCLUDED.issue_codes,
+                                metric_json = EXCLUDED.metric_json,
+                                priority_score = EXCLUDED.priority_score,
+                                signal_type = EXCLUDED.signal_type,
+                                urgency = EXCLUDED.urgency,
+                                watchlist_matches = EXCLUDED.watchlist_matches,
+                                regs_object_id = EXCLUDED.regs_object_id,
+                                regs_docket_id = EXCLUDED.regs_docket_id,
+                                comment_end_date = EXCLUDED.comment_end_date,
+                                comments_24h = EXCLUDED.comments_24h,
+                                comments_delta = EXCLUDED.comments_delta,
+                                comment_surge = EXCLUDED.comment_surge
+                            """,
+                            (
+                                signal.source,
+                                signal.source_id,
+                                signal.timestamp,
+                                signal.title,
+                                signal.link,
+                                signal.agency,
+                                signal.committee,
+                                signal.bill_id,
+                                signal.rin,
+                                signal.docket_id,
+                                psycopg2.extras.Json(signal.issue_codes),
+                                psycopg2.extras.Json(signal.metrics),
+                                signal.priority_score,
+                                (
+                                    signal.signal_type.value
+                                    if signal.signal_type
+                                    else None
+                                ),
+                                signal.urgency.value if signal.urgency else None,
+                                psycopg2.extras.Json(signal.watchlist_matches),
+                                signal.regs_object_id,
+                                signal.regs_docket_id,
+                                signal.comment_end_date,
+                                signal.comments_24h or 0,
+                                signal.comments_delta or 0,
+                                bool(signal.comment_surge),
+                            ),
+                        )
+                        saved += 1
+                    except Exception:
+                        conn.rollback()
+                        continue
+            conn.commit()
+        return saved
+
+    def get_recent_signals(
+        self, hours_back: int = 24, min_priority: float = 0.0
+    ) -> List[SignalV2]:
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM signal_event
+                    WHERE ts >= %s AND priority_score >= %s
+                    ORDER BY priority_score DESC, ts DESC
+                    """,
+                    (cutoff_time, min_priority),
+                )
+                rows = cur.fetchall()
+        signals: List[SignalV2] = []
+        for row in rows:
+            try:
+                signals.append(self._row_to_signal_pg(row))
+            except Exception:
+                continue
+        return signals
+
+    def get_database_stats(self) -> Dict[str, Any]:
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM signal_event")
+                total_signals = cur.fetchone()["count"]
+
+                cur.execute(
+                    "SELECT source, COUNT(*) as count FROM signal_event GROUP BY source"
+                )
+                by_source = {row["source"]: row["count"] for row in cur.fetchall()}
+
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+                cur.execute(
+                    "SELECT COUNT(*) FROM signal_event WHERE ts >= %s",
+                    (cutoff_time,),
+                )
+                recent_signals = cur.fetchone()["count"]
+
+                cur.execute(
+                    "SELECT COUNT(*) FROM signal_event WHERE ts >= %s AND priority_score >= 3.0",
+                    (cutoff_time,),
+                )
+                high_priority = cur.fetchone()["count"]
+
+                cur.execute(
+                    "SELECT AVG(priority_score) FROM signal_event WHERE ts >= %s",
+                    (cutoff_time,),
+                )
+                avg_priority = cur.fetchone()["avg"]
+
+        return {
+            "total_signals": total_signals,
+            "recent_signals_24h": recent_signals,
+            "high_priority_24h": high_priority,
+            "average_priority": round(avg_priority or 0.0, 2),
+            "by_source": by_source,
+        }
+
+    def add_watchlist_item(self, channel_id: str, term: str) -> bool:
+        if not channel_id or not term:
+            return False
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO watchlist_item (channel_id, term)
+                    VALUES (%s, %s)
+                    ON CONFLICT (channel_id, term) DO NOTHING
+                    """,
+                    (channel_id, term.strip()),
+                )
+                inserted = int(cur.rowcount or 0)
+            conn.commit()
+        return inserted > 0
+
+    def remove_watchlist_item(self, channel_id: str, term: str) -> bool:
+        if not channel_id or not term:
+            return False
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM watchlist_item WHERE channel_id = %s AND term = %s",
+                    (channel_id, term.strip()),
+                )
+                deleted = int(cur.rowcount or 0)
+            conn.commit()
+        return deleted > 0
+
+    def get_watchlist(self, channel_id: str) -> List[str]:
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT term FROM watchlist_item WHERE channel_id = %s ORDER BY created_at DESC",
+                    (channel_id,),
+                )
+                rows = cur.fetchall()
+        return [row["term"] for row in rows]
+
+    def update_channel_setting(self, channel_id: str, setting: str, value: Any) -> bool:
+        if setting not in {
+            "mini_digest_threshold",
+            "high_priority_threshold",
+            "surge_threshold",
+        }:
+            return False
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO channel_settings (channel_id)
+                    VALUES (%s)
+                    ON CONFLICT (channel_id) DO NOTHING
+                    """,
+                    (channel_id,),
+                )
+                cur.execute(
+                    f"""
+                    UPDATE channel_settings
+                    SET {setting} = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE channel_id = %s
+                    """,
+                    (value, channel_id),
+                )
+            conn.commit()
         return True
 
     def get_channel_settings(self, channel_id: str) -> Dict[str, Any]:
-        """Get channel settings (placeholder implementation)."""
-        # This would need to be implemented based on your channel settings schema
-        return {}
+        defaults: Dict[str, Any] = {
+            "mini_digest_threshold": 10,
+            "high_priority_threshold": 5.0,
+            "surge_threshold": 200.0,
+        }
+        with self._conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT mini_digest_threshold, high_priority_threshold, surge_threshold
+                    FROM channel_settings
+                    WHERE channel_id = %s
+                    """,
+                    (channel_id,),
+                )
+                row = cur.fetchone()
+        if not row:
+            return defaults
+        return {
+            "mini_digest_threshold": row["mini_digest_threshold"],
+            "high_priority_threshold": row["high_priority_threshold"],
+            "surge_threshold": row["surge_threshold"],
+        }
+
+    def health_check(self) -> Dict[str, Any]:
+        try:
+            with self._conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
+                    cur.fetchone()
+            return {"database": "ok", "backend": "postgres"}
+        except Exception as exc:
+            return {"database": "error", "backend": "postgres", "detail": str(exc)}
+
+    def _row_to_signal_pg(self, row: Any) -> SignalV2:
+        from bot.signals import SignalType, Urgency
+
+        issue_codes = row["issue_codes"] or []
+        metrics = row["metric_json"] or {}
+        watchlist_matches = row["watchlist_matches"] or []
+        timestamp = row["ts"]
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        signal_type = SignalType(row["signal_type"]) if row.get("signal_type") else None
+        urgency = Urgency(row["urgency"]) if row.get("urgency") else None
+        return SignalV2(
+            source=row["source"],
+            source_id=row["source_id"],
+            timestamp=timestamp,
+            title=row["title"],
+            link=row["link"],
+            agency=row["agency"],
+            committee=row["committee"],
+            bill_id=row["bill_id"],
+            rin=row["rin"],
+            docket_id=row["docket_id"],
+            issue_codes=issue_codes,
+            metrics=metrics,
+            priority_score=row["priority_score"],
+            deadline=row.get("comment_end_date") or metrics.get("comment_end_date"),
+            comment_end_date=row.get("comment_end_date"),
+            comments_24h=row.get("comments_24h"),
+            comments_delta=row.get("comments_delta"),
+            comment_surge=bool(row.get("comment_surge")),
+            regs_object_id=row.get("regs_object_id"),
+            regs_document_id=row.get("source_id"),
+            regs_docket_id=row.get("regs_docket_id"),
+            signal_type=signal_type,
+            urgency=urgency,
+            watchlist_matches=watchlist_matches,
+            watchlist_hit=bool(watchlist_matches),
+        )
 
 
 # =============================================================================
@@ -504,3 +1022,17 @@ class LegacySignalsDatabase:
 
 # Export V2 as the default
 SignalsDatabase = SignalsDatabaseV2  # For backward compatibility
+
+
+def create_signals_database(database_url: Optional[str] = None) -> SignalsDatabaseV2:
+    """Factory to create appropriate signals database backend."""
+    if database_url and database_url.startswith("postgres"):
+        try:
+            return SignalsDatabasePG(database_url)
+        except Exception as exc:
+            logging.warning(
+                "Failed to connect to Postgres backend (%s); falling back to SQLite. Detail: %s",
+                database_url,
+                exc,
+            )
+    return SignalsDatabaseV2()

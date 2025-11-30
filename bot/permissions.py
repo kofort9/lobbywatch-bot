@@ -52,8 +52,9 @@ class PermissionManager:
 
         except Exception as e:
             logger.error(f"Failed to check channel admin status: {e}")
-            # Fail open - allow if we can't check
-            return True
+            # Fail closed - deny access if we can't verify permissions
+            # This prevents unauthorized access when permission checks fail
+            return False
 
     def _fetch_channel_admins(self, channel_id: str) -> Set[str]:
         """Fetch channel admins from Slack API.

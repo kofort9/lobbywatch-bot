@@ -1,24 +1,118 @@
 """Web server for handling Slack events and slash commands with v2 system."""
 
 # Removed unused import
+import hashlib
+import hmac
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from flask import Flask, jsonify, request
 
+# Patch-friendly imports for tests
+from bot.run import run_daily_digest, run_mini_digest
+from bot.signals_database import create_signals_database
+
 logger = logging.getLogger(__name__)
 
 
-def create_web_server(slack_app: Optional[Any] = None) -> Flask:
+def verify_slack_request(request_obj: Any) -> bool:
+    """Verify that request came from Slack with proper signature validation.
+
+    Args:
+        request_obj: Flask request object
+
+    Returns:
+        True if request is valid, False otherwise
+    """
+    from bot.config import settings
+
+    signing_secret = settings.slack_signing_secret
+    if not signing_secret:
+        # In production, this should be an error
+        if settings.is_production():
+            logger.error("SLACK_SIGNING_SECRET not set in production!")
+            return False
+        else:
+            logger.warning(
+                "SLACK_SIGNING_SECRET not set, skipping verification (dev mode)"
+            )
+            return True
+
+    timestamp = request_obj.headers.get("X-Slack-Request-Timestamp", "")
+    signature = request_obj.headers.get("X-Slack-Signature", "")
+
+    if not timestamp or not signature:
+        logger.warning("Missing Slack signature headers")
+        return False
+
+    try:
+        # Check timestamp is recent (within 5 minutes)
+        request_timestamp = int(timestamp)
+        if abs(time.time() - request_timestamp) > 300:
+            logger.warning("Slack request timestamp too old")
+            return False
+    except ValueError:
+        logger.warning("Invalid Slack request timestamp")
+        return False
+
+    # Use the raw request body exactly as Slack sent it; altering order or encoding
+    # will break signature verification.
+    body = request_obj.get_data(cache=True, as_text=True)
+
+    # Create signature
+    sig_basestring = f"v0:{timestamp}:{body}"
+    expected_signature = (
+        "v0="
+        + hmac.new(
+            signing_secret.encode(),
+            sig_basestring.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+    )
+
+    is_valid = hmac.compare_digest(expected_signature, signature)
+    if not is_valid:
+        logger.warning("Invalid Slack request signature")
+
+    return is_valid
+
+
+def create_web_server(
+    slack_app: Optional[Any] = None, use_legacy_handlers: bool = False
+) -> Flask:
     """Create Flask web server for v2 Slack integration."""
 
     app = Flask(__name__)
 
     # Import v2 components (will be consolidated)
-    from bot.run import run_daily_digest, run_mini_digest
-    from bot.signals_database import SignalsDatabaseV2
+    from bot.config import settings
 
-    database = SignalsDatabaseV2()
+    db_url = settings.signals_database_url or settings.database_url
+    database = create_signals_database(db_url)
+    slack_handler = slack_app
+
+    if slack_handler is not None:
+        # Allow injected Slack handlers (tests) to see the database object.
+        if hasattr(slack_handler, "set_database"):
+            try:
+                slack_handler.set_database(database)
+            except Exception:
+                pass
+        elif not hasattr(slack_handler, "database"):
+            try:
+                slack_handler.database = database
+            except Exception:
+                pass
+
+    if slack_handler is None and not use_legacy_handlers:
+        # Build SlackApp using the richer handler stack for admin/confirmation flows.
+        from bot.database import DatabaseManager
+        from bot.slack_app import SlackApp
+
+        db_manager = DatabaseManager(settings.database_file)
+        db_manager.ensure_enhanced_schema()
+        slack_handler = SlackApp(db_manager)
 
     @app.route("/", methods=["GET"])
     def root() -> Any:
@@ -50,6 +144,19 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
     @app.route("/lobbylens/commands", methods=["POST"])
     def handle_slash_command() -> Any:
         """Handle Slack slash commands."""
+        # Verify Slack signature
+        if not verify_slack_request(request):
+            logger.warning("Unauthorized slash command request - invalid signature")
+            return (
+                jsonify(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "Unauthorized: Invalid request signature",
+                    }
+                ),
+                401,
+            )
+
         try:
             # Parse command data
             command_data = {
@@ -64,8 +171,11 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
 
             logger.info(f"Received command: {command_data}")
 
-            # Route commands
-            response = handle_command(command_data)
+            # Route commands through SlackApp when available
+            if slack_handler is not None:
+                response = slack_handler.handle_slash_command(command_data)
+            else:
+                response = handle_command(command_data)
             return jsonify(response)
 
         except Exception as e:
@@ -80,6 +190,11 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
     @app.route("/lobbylens/events", methods=["POST"])
     def handle_events() -> Any:
         """Handle Slack events."""
+        # Verify Slack signature
+        if not verify_slack_request(request):
+            logger.warning("Unauthorized event request - invalid signature")
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
         try:
             # Handle URL verification
             if request.json and request.json.get("type") == "url_verification":
@@ -88,6 +203,13 @@ def create_web_server(slack_app: Optional[Any] = None) -> Flask:
             # Handle other events
             event_data = request.json
             logger.info(f"Received event: {event_data}")
+
+            if (
+                slack_handler is not None
+                and event_data
+                and event_data.get("type") == "event_callback"
+            ):
+                slack_handler.handle_message_event(event_data.get("event", {}))
 
             return jsonify({"status": "ok"})
 
