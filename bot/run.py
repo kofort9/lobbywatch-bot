@@ -158,7 +158,7 @@ def fetch_data() -> tuple[int, int]:
     return 0, 0
 
 
-def create_notifier() -> object:
+def create_notifier() -> Notifier:
     """Create and return configured notifier.
 
     Returns:
